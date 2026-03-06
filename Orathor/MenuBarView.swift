@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct MenuBarView: View {
-    @State private var audioService = AudioService()
+    @State private var viewModel = TranscriptionViewModel()
 
     var body: some View {
         VStack(spacing: 12) {
@@ -9,21 +9,37 @@ struct MenuBarView: View {
                 .font(.headline)
 
             Button {
-                toggleRecording()
+                viewModel.toggleRecording()
             } label: {
                 HStack {
-                    Image(systemName: audioService.isRecording ? "stop.circle.fill" : "mic.circle.fill")
+                    Image(systemName: viewModel.isRecording ? "stop.circle.fill" : "mic.circle.fill")
                         .font(.title2)
-                    Text(audioService.isRecording ? "Stop" : "Start Dictation")
+                    Text(viewModel.isRecording ? "Stop" : "Start Dictation")
                 }
                 .frame(maxWidth: .infinity)
             }
             .controlSize(.large)
-            .tint(audioService.isRecording ? .red : .accentColor)
+            .tint(viewModel.isRecording ? .red : .accentColor)
 
-            if audioService.isRecording {
-                AudioLevelView(level: audioService.audioLevel)
+            if viewModel.isRecording {
+                AudioLevelView(level: viewModel.currentAudioLevel)
                     .frame(height: 4)
+            }
+
+            if !viewModel.currentTranscription.isEmpty {
+                ScrollView {
+                    Text(viewModel.currentTranscription)
+                        .font(.body)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .textSelection(.enabled)
+                }
+                .frame(maxHeight: 150)
+            }
+
+            if let error = viewModel.errorMessage {
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(.red)
             }
 
             Divider()
@@ -35,17 +51,8 @@ struct MenuBarView: View {
         }
         .padding()
         .frame(width: 250)
-    }
-
-    private func toggleRecording() {
-        if audioService.isRecording {
-            audioService.stopRecording()
-        } else {
-            do {
-                try audioService.startRecording()
-            } catch {
-                print("Failed to start recording: \(error.localizedDescription)")
-            }
+        .task {
+            await viewModel.checkPermissions()
         }
     }
 }

@@ -6,6 +6,7 @@ final class AudioService {
     var audioLevel: Float = 0
 
     private var audioEngine: AVAudioEngine?
+    var onAudioBuffer: ((AVAudioPCMBuffer, AVAudioFormat) -> Void)?
 
     func startRecording() throws {
         let engine = AVAudioEngine()
@@ -18,6 +19,7 @@ final class AudioService {
             Task { @MainActor in
                 self.audioLevel = level
             }
+            self.onAudioBuffer?(buffer, format)
         }
 
         engine.prepare()
