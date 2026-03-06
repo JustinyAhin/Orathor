@@ -2,10 +2,19 @@ import SwiftUI
 
 // MARK: - Color Tokens
 // Most colors auto-generated from asset catalog (SurfacePrimary, BorderSubtle, etc.)
-// Only add aliases here that don't map 1:1 to asset names.
 
 extension Color {
     static let brand = Color.accentColor
+}
+
+// MARK: - Brand Gradient
+
+extension LinearGradient {
+    static let brand = LinearGradient(
+        colors: [.brand, .brandGradientEnd],
+        startPoint: .leading,
+        endPoint: .trailing
+    )
 }
 
 // MARK: - Spacing Scale
@@ -20,6 +29,7 @@ enum Spacing {
     static let xl: CGFloat = 20
     static let xxl: CGFloat = 24
     static let xxxl: CGFloat = 32
+    static let xxxxl: CGFloat = 48
 }
 
 // MARK: - Corner Radius
@@ -43,5 +53,10 @@ enum OType {
     static let caption = Font.system(size: 11, weight: .regular)
     static let captionMedium = Font.system(size: 11, weight: .medium)
     static let micro = Font.system(size: 10, weight: .medium)
-    static let stat = Font.system(size: 28, weight: .semibold, design: .rounded)
+
+    // Monospace — distinctive technical precision for data
+    static let stat = Font.system(size: 32, weight: .bold, design: .monospaced)
+    static let mono = Font.system(size: 13, weight: .regular, design: .monospaced)
+    static let monoSmall = Font.system(size: 11, weight: .medium, design: .monospaced)
+    static let monoMicro = Font.system(size: 10, weight: .medium, design: .monospaced)
 }

@@ -59,15 +59,13 @@ struct RecordingOverlayView: View {
                 )
                 .onAppear { isPulsing = true }
 
-            Text("Recording")
-                .font(OType.callout)
-                .fontWeight(.medium)
+            Text("REC")
+                .font(OType.monoSmall)
                 .foregroundStyle(Color.textPrimary)
 
             if viewModel.recordingMode == .clipboard {
-                Image(systemName: "doc.on.clipboard")
-                    .font(OType.caption)
-                    .fontWeight(.medium)
+                Text("CLIP")
+                    .font(OType.monoMicro)
                     .foregroundStyle(Color.textTertiary)
             }
 
@@ -94,9 +92,20 @@ private struct OverlayLevelBars: View {
     var body: some View {
         HStack(spacing: 2) {
             ForEach(0..<barCount, id: \.self) { index in
+                let active = isActive(index)
                 RoundedRectangle(cornerRadius: 1)
-                    .fill(isActive(index) ? Color.brand : Color.textTertiary.opacity(0.3))
-                    .frame(width: 2, height: isActive(index) ? max(3, CGFloat(level) * 16) : 3)
+                    .fill(
+                        active
+                            ? AnyShapeStyle(
+                                LinearGradient(
+                                    colors: [.brand, .brandGradientEnd],
+                                    startPoint: .bottom,
+                                    endPoint: .top
+                                )
+                              )
+                            : AnyShapeStyle(Color.textTertiary.opacity(0.3))
+                    )
+                    .frame(width: 2, height: active ? max(3, CGFloat(level) * 16) : 3)
             }
         }
         .animation(.easeOut(duration: 0.05), value: level)

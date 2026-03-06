@@ -29,11 +29,16 @@ struct MainWindowView: View {
 
     private var sidebar: some View {
         VStack(spacing: 0) {
-            Text("Orathor")
-                .font(OType.captionMedium)
-                .foregroundStyle(Color.textTertiary)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, Spacing.md)
+            VStack(spacing: Spacing.sm) {
+                Text("Orathor")
+                    .font(OType.captionMedium)
+                    .foregroundStyle(Color.textTertiary)
+                WaveformAccent(amplitude: 2, wavelength: 10, lineWidth: 1)
+                    .frame(width: 60)
+                    .opacity(0.4)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, Spacing.md)
 
             List(selection: $selectedSection) {
                 ForEach(AppSection.allCases.filter { $0 != .settings }) { section in

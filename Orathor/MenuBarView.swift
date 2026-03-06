@@ -51,16 +51,24 @@ struct MenuBarView: View {
     }
 
     private var header: some View {
-        HStack {
-            Text("Recents")
-                .sectionHeaderStyle()
-            Spacer()
+        VStack(spacing: 0) {
+            HStack {
+                Text("Recents")
+                    .sectionHeaderStyle()
+                Spacer()
+                if viewModel.isRecording {
+                    recordingBadge
+                }
+            }
+            .padding(.horizontal, Spacing.lg)
+            .padding(.vertical, Spacing.sm)
+
             if viewModel.isRecording {
-                recordingBadge
+                WaveformAccent(amplitude: 2, wavelength: 8, lineWidth: 1, animated: true)
+                    .padding(.horizontal, Spacing.lg)
+                    .padding(.bottom, Spacing.xs)
             }
         }
-        .padding(.horizontal, Spacing.lg)
-        .padding(.vertical, Spacing.sm)
     }
 
     private var recordingBadge: some View {
@@ -69,12 +77,12 @@ struct MenuBarView: View {
                 .fill(Color.recording)
                 .frame(width: 6, height: 6)
             Text("REC")
-                .font(OType.micro)
+                .font(OType.monoMicro)
         }
         .foregroundStyle(Color.recording)
         .padding(.horizontal, Spacing.sm)
         .padding(.vertical, 3)
-        .background(Color.recording.opacity(0.15), in: Capsule())
+        .background(Color.recording.opacity(0.12), in: Capsule())
     }
 
     private var searchBar: some View {
@@ -100,12 +108,15 @@ struct MenuBarView: View {
     private var transcriptList: some View {
         Group {
             if viewModel.historyService.entries.isEmpty {
-                VStack(spacing: Spacing.sm) {
-                    Text("No transcripts yet")
+                VStack(spacing: Spacing.md) {
+                    WaveformAccent(amplitude: 3, wavelength: 12, lineWidth: 1.5)
+                        .frame(width: 80)
+                        .opacity(0.3)
+                    Text("Your voice, captured")
                         .font(OType.body)
                         .foregroundStyle(Color.textSecondary)
-                    Text("Press \(viewModel.settingsViewModel.insertHotkey.displayName) to start dictating")
-                        .font(OType.caption)
+                    Text("Press \(viewModel.settingsViewModel.insertHotkey.displayName) to start")
+                        .font(OType.monoSmall)
                         .foregroundStyle(Color.textTertiary)
                 }
                 .frame(maxWidth: .infinity)
@@ -218,9 +229,9 @@ struct TranscriptEntryRow: View {
             let seconds = Int(entry.durationSeconds)
             Text("\(seconds)s")
             Text("\u{2022}")
-            Text("\(entry.wordCount) words")
+            Text("\(entry.wordCount)w")
         }
-        .font(OType.micro)
+        .font(OType.monoMicro)
         .foregroundStyle(Color.textTertiary)
     }
 
@@ -309,7 +320,7 @@ struct AudioLevelView: View {
     var body: some View {
         GeometryReader { geometry in
             RoundedRectangle(cornerRadius: 2)
-                .fill(Color.brand.gradient)
+                .fill(LinearGradient.brand)
                 .frame(width: geometry.size.width * CGFloat(level))
                 .animation(.easeOut(duration: 0.05), value: level)
         }

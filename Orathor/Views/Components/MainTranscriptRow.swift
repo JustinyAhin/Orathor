@@ -12,7 +12,7 @@ struct MainTranscriptRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: Spacing.md) {
             Text(entry.timestamp, format: .dateTime.hour().minute())
-                .font(OType.caption)
+                .font(OType.monoSmall)
                 .foregroundStyle(Color.textTertiary)
                 .frame(width: 44, alignment: .trailing)
                 .padding(.top, 2)
@@ -28,8 +28,8 @@ struct MainTranscriptRow: View {
                     Text("\u{2022}")
                         .foregroundStyle(Color.borderDefault)
                         .font(OType.micro)
-                    Text("\(entry.wordCount) words")
-                        .font(OType.micro)
+                    Text("\(entry.wordCount)w")
+                        .font(OType.monoMicro)
                         .foregroundStyle(Color.textTertiary)
                 }
 

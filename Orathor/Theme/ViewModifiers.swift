@@ -15,12 +15,48 @@ struct CardModifier: ViewModifier {
                 RoundedRectangle(cornerRadius: radius)
                     .stroke(Color.borderSubtle, lineWidth: 0.5)
             )
+            .shadow(color: .black.opacity(0.04), radius: 8, y: 2)
     }
 }
 
 extension View {
     func cardStyle(radius: CGFloat = Radius.xl, padding: CGFloat = Spacing.lg) -> some View {
         modifier(CardModifier(radius: radius, padding: padding))
+    }
+}
+
+// MARK: - Gradient Accent Card (top border accent)
+
+struct GradientAccentCardModifier: ViewModifier {
+    var radius: CGFloat = Radius.xl
+    var padding: CGFloat = Spacing.lg
+
+    func body(content: Content) -> some View {
+        content
+            .padding(padding)
+            .background(Color.surfaceElevated)
+            .clipShape(RoundedRectangle(cornerRadius: radius))
+            .overlay(
+                RoundedRectangle(cornerRadius: radius)
+                    .stroke(Color.borderSubtle, lineWidth: 0.5)
+            )
+            .overlay(alignment: .top) {
+                LinearGradient.brand
+                    .frame(height: 2)
+                    .clipShape(
+                        UnevenRoundedRectangle(
+                            topLeadingRadius: radius,
+                            topTrailingRadius: radius
+                        )
+                    )
+            }
+            .shadow(color: .black.opacity(0.04), radius: 8, y: 2)
+    }
+}
+
+extension View {
+    func gradientAccentCard(radius: CGFloat = Radius.xl, padding: CGFloat = Spacing.lg) -> some View {
+        modifier(GradientAccentCardModifier(radius: radius, padding: padding))
     }
 }
 

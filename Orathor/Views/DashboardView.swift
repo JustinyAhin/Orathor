@@ -67,6 +67,11 @@ struct DashboardView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.xxl) {
                 statsSection
+
+                WaveformAccent(amplitude: 2, wavelength: 14, lineWidth: 1)
+                    .opacity(0.2)
+                    .padding(.horizontal, Spacing.xxl)
+
                 HStack(alignment: .top, spacing: Spacing.xxl) {
                     topSourcesSection
                     activitySection
@@ -78,7 +83,7 @@ struct DashboardView: View {
         .navigationTitle("Dashboard")
     }
 
-    // MARK: - Stats Row
+    // MARK: - Stats Row (Hero)
 
     private var statsSection: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
@@ -86,9 +91,9 @@ struct DashboardView: View {
                 .sectionHeaderStyle()
 
             HStack(spacing: Spacing.lg) {
-                StatCell(label: "Total words", value: formattedCount(totalWords))
+                StatCell(label: "Total words", value: formattedCount(totalWords), isHero: true)
                 StatCell(label: "Time saved", value: formattedDuration(totalDuration))
-                StatCell(label: "Average WPM", value: String(format: "%.0f", averageWPM))
+                StatCell(label: "Avg WPM", value: String(format: "%.0f", averageWPM))
             }
         }
     }
@@ -101,11 +106,16 @@ struct DashboardView: View {
                 .sectionHeaderStyle()
 
             if topSources.isEmpty {
-                Text("No data yet")
-                    .font(OType.body)
-                    .foregroundStyle(Color.textSecondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .cardStyle()
+                VStack(spacing: Spacing.sm) {
+                    Image(systemName: "waveform.badge.mic")
+                        .font(.system(size: 20))
+                        .foregroundStyle(Color.textTertiary)
+                    Text("Speak to fill this space")
+                        .font(OType.caption)
+                        .foregroundStyle(Color.textTertiary)
+                }
+                .frame(maxWidth: .infinity)
+                .cardStyle(padding: Spacing.xxl)
             } else {
                 VStack(spacing: 0) {
                     ForEach(Array(topSources.enumerated()), id: \.offset) { index, source in
@@ -118,8 +128,8 @@ struct DashboardView: View {
                                 .font(OType.body)
                                 .foregroundStyle(Color.textPrimary)
                             Spacer()
-                            Text("\(formattedCount(source.wordCount)) words")
-                                .font(OType.caption)
+                            Text("\(formattedCount(source.wordCount))")
+                                .font(OType.monoSmall)
                                 .foregroundStyle(Color.textTertiary)
                         }
                         .padding(.horizontal, Spacing.lg)
@@ -139,7 +149,7 @@ struct DashboardView: View {
         let weekdays = ["M", "T", "W", "T", "F", "S", "S"]
 
         return VStack(alignment: .leading, spacing: Spacing.md) {
-            Text("Monthly activity")
+            Text("Activity")
                 .sectionHeaderStyle()
 
             VStack(alignment: .trailing, spacing: Spacing.xxs) {
@@ -147,9 +157,9 @@ struct DashboardView: View {
                     VStack(spacing: Spacing.xxs) {
                         ForEach(0..<7, id: \.self) { row in
                             Text(weekdays[row])
-                                .font(OType.micro)
+                                .font(OType.monoMicro)
                                 .foregroundStyle(Color.textTertiary)
-                                .frame(width: 14, height: 14)
+                                .frame(width: 16, height: 16)
                         }
                     }
 
@@ -166,7 +176,7 @@ struct DashboardView: View {
                 }
 
                 Text("\(grid.activeDays) active days")
-                    .font(OType.micro)
+                    .font(OType.monoMicro)
                     .foregroundStyle(Color.textTertiary)
                     .padding(.top, Spacing.xxs)
             }
@@ -187,23 +197,43 @@ struct DashboardView: View {
         }
 
         return RoundedRectangle(cornerRadius: Radius.xs)
-            .fill(intensity < 0 ? Color.clear : (intensity == 0 ? Color.surfaceSecondary : Color.brand.opacity(intensity)))
-            .frame(width: 14, height: 14)
+            .fill(
+                intensity < 0
+                    ? AnyShapeStyle(Color.clear)
+                    : intensity == 0
+                        ? AnyShapeStyle(Color.surfaceSecondary)
+                        : AnyShapeStyle(
+                            LinearGradient(
+                                colors: [
+                                    Color.brand.opacity(intensity),
+                                    Color.brandGradientEnd.opacity(intensity)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                          )
+            )
+            .frame(width: 16, height: 16)
     }
 
     // MARK: - Recent Transcripts
 
     private var recentTranscriptsSection: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            Text("Recent transcripts")
+            Text("Recent")
                 .sectionHeaderStyle()
 
             if entries.isEmpty {
-                Text("No transcripts yet")
-                    .font(OType.body)
-                    .foregroundStyle(Color.textSecondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .cardStyle()
+                VStack(spacing: Spacing.sm) {
+                    Image(systemName: "text.word.spacing")
+                        .font(.system(size: 20))
+                        .foregroundStyle(Color.textTertiary)
+                    Text("Your voice, captured")
+                        .font(OType.caption)
+                        .foregroundStyle(Color.textTertiary)
+                }
+                .frame(maxWidth: .infinity)
+                .cardStyle(padding: Spacing.xxl)
             } else {
                 VStack(spacing: 0) {
                     ForEach(Array(entries.prefix(5).enumerated()), id: \.element.id) { index, entry in
@@ -212,9 +242,9 @@ struct DashboardView: View {
                         }
                         HStack(spacing: Spacing.md) {
                             Text(entry.timestamp, format: .dateTime.hour().minute())
-                                .font(OType.caption)
+                                .font(OType.monoSmall)
                                 .foregroundStyle(Color.textTertiary)
-                                .frame(width: 40, alignment: .trailing)
+                                .frame(width: 44, alignment: .trailing)
 
                             VStack(alignment: .leading, spacing: Spacing.xxs) {
                                 if let appName = entry.targetAppName {
@@ -233,8 +263,8 @@ struct DashboardView: View {
 
                             Spacer()
 
-                            Text("\(entry.wordCount) words")
-                                .font(OType.micro)
+                            Text("\(entry.wordCount)w")
+                                .font(OType.monoMicro)
                                 .foregroundStyle(Color.textTertiary)
                         }
                         .padding(.horizontal, Spacing.lg)
@@ -299,17 +329,18 @@ private struct ActivityGrid {
 private struct StatCell: View {
     let label: String
     let value: String
+    var isHero: Bool = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.xxs) {
+        VStack(alignment: .leading, spacing: Spacing.xs) {
             Text(label)
-                .font(OType.caption)
+                .font(OType.captionMedium)
                 .foregroundStyle(Color.textTertiary)
             Text(value)
                 .font(OType.stat)
-                .foregroundStyle(Color.textPrimary)
+                .foregroundStyle(isHero ? AnyShapeStyle(LinearGradient.brand) : AnyShapeStyle(Color.textPrimary))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .cardStyle()
+        .gradientAccentCard()
     }
 }
