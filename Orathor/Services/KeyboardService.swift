@@ -65,6 +65,7 @@ final class KeyboardService {
         guard event.keyCode == UInt16(kVK_Escape), isToggled else { return }
         isToggled = false
         justToggledOn = false
+        SoundService.playStop()
         onAction?(.cancelRecording)
     }
 
@@ -92,6 +93,7 @@ final class KeyboardService {
             lastTapTime = nil
             isToggled = true
             justToggledOn = true
+            SoundService.playStart()
             onAction?(.startRecording)
             return
         }
@@ -102,6 +104,7 @@ final class KeyboardService {
             try? await Task.sleep(nanoseconds: holdThreshold)
             guard !Task.isCancelled, isModifierDown else { return }
             isHolding = true
+            SoundService.playStart()
             onAction?(.startRecording)
         }
     }
@@ -113,6 +116,7 @@ final class KeyboardService {
         // Release after hold → stop
         if isHolding {
             isHolding = false
+            SoundService.playStop()
             onAction?(.stopRecording)
             return
         }
@@ -126,6 +130,7 @@ final class KeyboardService {
         // Press in toggle mode → stop
         if isToggled {
             isToggled = false
+            SoundService.playStop()
             onAction?(.stopRecording)
             return
         }

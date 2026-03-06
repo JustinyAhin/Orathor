@@ -1,11 +1,21 @@
-import AppKit
+import AudioToolbox
 
 enum SoundService {
+    private static let startSoundID: SystemSoundID = loadSound("Tink")
+    private static let stopSoundID: SystemSoundID = loadSound("Pop")
+
+    private static func loadSound(_ name: String) -> SystemSoundID {
+        var soundID: SystemSoundID = 0
+        let url = URL(fileURLWithPath: "/System/Library/Sounds/\(name).aiff")
+        AudioServicesCreateSystemSoundID(url as CFURL, &soundID)
+        return soundID
+    }
+
     static func playStart() {
-        NSSound(named: "Tink")?.play()
+        AudioServicesPlaySystemSound(startSoundID)
     }
 
     static func playStop() {
-        NSSound(named: "Pop")?.play()
+        AudioServicesPlaySystemSound(stopSoundID)
     }
 }

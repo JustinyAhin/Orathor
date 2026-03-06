@@ -156,6 +156,9 @@ cd /Users/iamsegbedji/work/projects/Orathor && xcodebuild -scheme Orathor -confi
 # Build
 xcodebuild -scheme Orathor -configuration Debug build
 
+# Quit, rebuild, and relaunch
+./scripts/rebuild.sh
+
 # Build and run (release)
 xcodebuild -scheme Orathor -configuration Release build
 
