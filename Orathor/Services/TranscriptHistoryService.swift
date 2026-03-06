@@ -81,7 +81,7 @@ final class TranscriptHistoryService {
             let data = try encoder.encode(entries)
             try data.write(to: transcriptsFileURL, options: .atomic)
         } catch {
-            print("Failed to save transcripts: \(error)")
+            logger.error("Failed to save transcripts: \(error)")
         }
     }
 }

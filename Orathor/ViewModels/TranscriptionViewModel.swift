@@ -26,6 +26,7 @@ final class TranscriptionViewModel {
 
     init() {
         speechService = TranscriptionViewModel.makeSpeechService(for: settingsViewModel.selectedEngine, apiKey: settingsViewModel.deepgramApiKey)
+        configureSpeechServiceErrorHandler()
     }
 
     func setUp() {
@@ -35,6 +36,7 @@ final class TranscriptionViewModel {
         settingsViewModel.onEngineChanged = { [weak self] engine in
             guard let self, !self.isRecording else { return }
             self.speechService = TranscriptionViewModel.makeSpeechService(for: engine, apiKey: self.settingsViewModel.deepgramApiKey)
+            self.configureSpeechServiceErrorHandler()
         }
 
         keyboardService.insertHotkey = settingsViewModel.insertHotkey
@@ -54,6 +56,9 @@ final class TranscriptionViewModel {
                 self.shouldAutoInsert = (mode == .insertAtCursor)
                 self.startRecording()
                 RecordingOverlay.show(viewModel: self)
+                if !self.isRecording, self.errorMessage != nil {
+                    self.scheduleErrorOverlayDismiss()
+                }
             case .stopRecording:
                 Task {
                     await self.stopRecording()
@@ -78,6 +83,29 @@ final class TranscriptionViewModel {
             hasPermission = settingsViewModel.isDeepgramConfigured
         }
         hasAccessibility = TextInsertionService.hasAccessibilityPermission
+    }
+
+    private func configureSpeechServiceErrorHandler() {
+        if let deepgram = speechService as? DeepgramService {
+            deepgram.onError = { [weak self] message in
+                Task { @MainActor in
+                    guard let self else { return }
+                    self.errorMessage = message
+                    await self.stopRecording()
+                    self.scheduleErrorOverlayDismiss()
+                }
+            }
+        }
+    }
+
+    private func scheduleErrorOverlayDismiss() {
+        let msg = errorMessage
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(3))
+            if self.errorMessage == msg, !self.isRecording {
+                RecordingOverlay.hide()
+            }
+        }
     }
 
     func toggleRecording() {
@@ -115,6 +143,7 @@ final class TranscriptionViewModel {
             }
             // Recreate service with current API key in case it changed
             speechService = TranscriptionViewModel.makeSpeechService(for: .deepgram, apiKey: settingsViewModel.deepgramApiKey)
+            configureSpeechServiceErrorHandler()
         }
 
         do {
@@ -132,6 +161,7 @@ final class TranscriptionViewModel {
                             Task { @MainActor in
                                 self.errorMessage = error.localizedDescription
                                 await self.stopRecording()
+                                self.scheduleErrorOverlayDismiss()
                             }
                         }
                     }

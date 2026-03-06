@@ -4,6 +4,7 @@ import AVFoundation
 final class DeepgramService: NSObject, TranscriptionService, URLSessionWebSocketDelegate {
     var transcribedText = ""
     var isTranscribing = false
+    var onError: ((String) -> Void)?
 
     private let apiKey: String
     private var webSocketTask: URLSessionWebSocketTask?
@@ -114,7 +115,11 @@ final class DeepgramService: NSObject, TranscriptionService, URLSessionWebSocket
     }
 
     private func handleDisconnect() {
-        guard isTranscribing, reconnectAttempts < maxReconnectAttempts else { return }
+        guard isTranscribing else { return }
+        guard reconnectAttempts < maxReconnectAttempts else {
+            onError?("Connection to Deepgram lost. Transcription may be incomplete.")
+            return
+        }
         reconnectAttempts += 1
 
         let delay = pow(2.0, Double(reconnectAttempts))

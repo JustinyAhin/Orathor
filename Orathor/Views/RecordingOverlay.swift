@@ -53,6 +53,40 @@ struct RecordingOverlayView: View {
     @State private var isPulsing = false
 
     var body: some View {
+        Group {
+            if let error = viewModel.errorMessage, !viewModel.isRecording {
+                errorContent(error)
+            } else {
+                recordingContent
+            }
+        }
+        .padding(.horizontal, Spacing.lg)
+        .padding(.vertical, Spacing.sm)
+        .background {
+            RoundedRectangle(cornerRadius: Radius.xl)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: Radius.xl)
+                        .stroke(Color.borderSubtle, lineWidth: 0.5)
+                )
+        }
+        .fixedSize()
+    }
+
+    private func errorContent(_ message: String) -> some View {
+        HStack(spacing: Spacing.sm) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(Color.warning)
+                .font(.system(size: 11))
+            Text(message)
+                .font(OType.monoSmall)
+                .foregroundStyle(Color.textPrimary)
+                .lineLimit(2)
+        }
+        .frame(maxWidth: 300)
+    }
+
+    private var recordingContent: some View {
         HStack(spacing: Spacing.sm) {
             Circle()
                 .fill(Color.recording)
@@ -77,17 +111,6 @@ struct RecordingOverlayView: View {
             OverlayLevelBars(level: viewModel.currentAudioLevel)
                 .frame(width: 50, height: 16)
         }
-        .padding(.horizontal, Spacing.lg)
-        .padding(.vertical, Spacing.sm)
-        .background {
-            RoundedRectangle(cornerRadius: Radius.xl)
-                .fill(.ultraThinMaterial)
-                .overlay(
-                    RoundedRectangle(cornerRadius: Radius.xl)
-                        .stroke(Color.borderSubtle, lineWidth: 0.5)
-                )
-        }
-        .fixedSize()
     }
 }
 

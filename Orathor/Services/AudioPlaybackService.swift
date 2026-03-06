@@ -1,4 +1,7 @@
 import AVFoundation
+import os
+
+private let playbackLogger = Logger(subsystem: "segbedji.Orathor", category: "AudioPlayback")
 
 @Observable
 final class AudioPlaybackService {
@@ -14,7 +17,7 @@ final class AudioPlaybackService {
             player?.play()
             isPlaying = true
         } catch {
-            print("Audio playback failed: \(error)")
+            playbackLogger.error("Audio playback failed: \(error)")
         }
     }
 

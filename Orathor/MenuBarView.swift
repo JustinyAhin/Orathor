@@ -22,6 +22,9 @@ struct MenuBarView: View {
     var body: some View {
         VStack(spacing: 0) {
             header
+            if let error = viewModel.errorMessage, !viewModel.isRecording {
+                errorBanner(error)
+            }
             SubtleDivider()
             searchBar
             transcriptList
@@ -89,6 +92,30 @@ struct MenuBarView: View {
         .padding(.horizontal, Spacing.sm)
         .padding(.vertical, 3)
         .background(Color.recording.opacity(0.12), in: Capsule())
+    }
+
+    private func errorBanner(_ message: String) -> some View {
+        HStack(spacing: Spacing.xs) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(Color.warning)
+                .font(.system(size: 11))
+            Text(message)
+                .font(OType.caption)
+                .foregroundStyle(Color.textPrimary)
+                .lineLimit(2)
+            Spacer()
+            Button {
+                viewModel.errorMessage = nil
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 9, weight: .bold))
+                    .foregroundStyle(Color.textTertiary)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, Spacing.lg)
+        .padding(.vertical, Spacing.sm)
+        .background(Color.warning.opacity(0.1))
     }
 
     private var searchBar: some View {

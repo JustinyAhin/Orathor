@@ -118,6 +118,15 @@
 - MenuBarView: amber accent bars on transcript rows; tighter header with audio level bar when recording
 - Updated design context (kb/design.md): "Bold, warm, confident" personality; Raycast reference
 
+### Step 15: Error Handling
+- RecordingOverlayView shows error state (warning icon + message) when recording fails to start or transcription breaks mid-session
+- Error overlay auto-dismisses after 3 seconds via `scheduleErrorOverlayDismiss()`
+- MenuBarView shows inline error banner with dismiss (X) button when popover is open
+- DeepgramService surfaces reconnect exhaustion (3 failed attempts) via `onError` callback
+- ViewModel wires up `configureSpeechServiceErrorHandler()` on every speech service creation (init, engine switch, recording start)
+- Errors shown for: mic access denied, speech permission denied, missing API key, Deepgram connection failure, speech engine unavailable
+- Replaced `print()` with `os.Logger` in TranscriptHistoryService (save failures) and AudioPlaybackService (playback failures)
+
 ## Remaining
 
 ### Core Features
@@ -125,7 +134,7 @@
 - [ ] Command mode ("new line", "select all", "delete that" voice commands)
 
 ### Polish
-- [ ] Error handling with user-facing alerts
+- [x] Error handling with user-facing alerts
 - [ ] Permission status indicators in settings
 - [ ] App icon
 - [ ] Accessibility permission onboarding flow
