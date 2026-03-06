@@ -49,6 +49,7 @@ struct MainWindowView: View {
                             )
                             .padding(.horizontal, Spacing.md)
                             .padding(.vertical, Spacing.xs)
+                            .contentShape(Rectangle())
                             .background(
                                 selectedSection == section
                                     ? Color.surfaceElevated
