@@ -72,6 +72,7 @@
 ### Step 10: Searchable History
 - Search bar in menu bar popover filters transcripts by text content and app name
 - Case-insensitive local filtering via `localizedCaseInsensitiveContains`
+- Yellow background highlight on matching text in search results
 - "No matching transcripts" empty state when search yields no results
 - Search text resets when popover closes (`@State` lifecycle)
 
