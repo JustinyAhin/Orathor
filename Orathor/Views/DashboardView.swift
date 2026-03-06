@@ -119,7 +119,7 @@ private struct HomeStatItem: View {
                 .font(OType.stat)
                 .foregroundStyle(
                     isHero
-                        ? AnyShapeStyle(LinearGradient.brand)
+                        ? AnyShapeStyle(Color.brand)
                         : AnyShapeStyle(Color.textPrimary)
                 )
             Text(label)

@@ -21,11 +21,16 @@ enum RecordingOverlay {
 
             let content = RecordingOverlayView(viewModel: viewModel)
             let hostingView = NSHostingView(rootView: content)
-            hostingView.frame.size = hostingView.fittingSize
-            p.setContentSize(hostingView.fittingSize)
             p.contentView = hostingView
             panel = p
         }
+
+        if let hostingView = panel?.contentView as? NSHostingView<RecordingOverlayView> {
+            let size = hostingView.fittingSize
+            hostingView.frame.size = size
+            panel?.setContentSize(size)
+        }
+
         positionAtBottomCenter()
         panel?.orderFrontRegardless()
     }
@@ -82,6 +87,7 @@ struct RecordingOverlayView: View {
                         .stroke(Color.borderSubtle, lineWidth: 0.5)
                 )
         }
+        .fixedSize()
     }
 }
 

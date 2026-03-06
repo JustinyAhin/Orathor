@@ -41,7 +41,7 @@ struct GradientAccentCardModifier: ViewModifier {
                     .stroke(Color.borderSubtle, lineWidth: 0.5)
             )
             .overlay(alignment: .top) {
-                LinearGradient.brand
+                Color.brand
                     .frame(height: 2)
                     .clipShape(
                         UnevenRoundedRectangle(
@@ -76,12 +76,8 @@ struct LeftAccentCardModifier: ViewModifier {
                     .stroke(Color.borderSubtle, lineWidth: 0.5)
             )
             .overlay(alignment: .leading) {
-                LinearGradient(
-                    colors: [.brand, .brandGradientEnd],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .frame(width: 2.5)
+                Color.brand
+                    .frame(width: 2.5)
                 .clipShape(
                     UnevenRoundedRectangle(
                         topLeadingRadius: radius,
