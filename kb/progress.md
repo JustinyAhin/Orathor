@@ -61,12 +61,13 @@
 - Each entry shows app icon/name, text preview, duration, word count
 - Click to copy transcript text
 
-## In Progress
-
-### Persistence
-- [ ] Persist transcript entries to JSON on disk
-- [ ] Save audio recordings as .m4a files
-- [ ] Storage at ~/Library/Application Support/segbedji.Orathor/
+### Step 9: Persistence + Transcript Actions
+- Transcript entries persisted to JSON at ~/Library/Application Support/segbedji.Orathor/
+- Audio recordings saved as .m4a files in Recordings/ subdirectory
+- AudioPlaybackService for playing back saved recordings
+- Transcript row actions: copy icon, "..." menu (Play, Show in Finder, Delete)
+- Fixed .path() vs .path bug (percent-encoded path broke FileManager lookup)
+- Cancel via Escape discards audio file and skips saving entry
 
 ## Remaining
 
