@@ -9,7 +9,11 @@ struct HotkeyField: View {
     @State private var escapeMonitor: Any?
 
     var body: some View {
-        LabeledContent(label) {
+        HStack {
+            Text(label)
+                .font(OType.body)
+                .foregroundStyle(Color.textPrimary)
+            Spacer()
             Button {
                 if isListening { stopListening() } else { startListening() }
             } label: {
@@ -59,7 +63,11 @@ struct OptionalHotkeyField: View {
     @State private var escapeMonitor: Any?
 
     var body: some View {
-        LabeledContent(label) {
+        HStack {
+            Text(label)
+                .font(OType.body)
+                .foregroundStyle(Color.textPrimary)
+            Spacer()
             HStack(spacing: Spacing.xs) {
                 Button {
                     if isListening { stopListening() } else { startListening() }

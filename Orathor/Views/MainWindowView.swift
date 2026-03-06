@@ -18,9 +18,9 @@ struct MainWindowView: View {
                 case .settings:
                     ScrollView {
                         SettingsView(viewModel: viewModel.settingsViewModel)
-                            .frame(maxWidth: 500, alignment: .leading)
-                            .padding(Spacing.xxxl)
-                            .frame(maxWidth: .infinity, alignment: .topLeading)
+                            .frame(maxWidth: 440)
+                            .padding(.vertical, Spacing.xxxl)
+                            .frame(maxWidth: .infinity)
                     }
                 }
             }

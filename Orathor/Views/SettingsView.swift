@@ -8,7 +8,6 @@ struct SettingsView: View {
             engineSection
             hotkeySection
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
         .animation(.easeInOut(duration: 0.2), value: viewModel.selectedEngine)
     }
 
@@ -19,18 +18,16 @@ struct SettingsView: View {
             Text("Speech Engine")
                 .sectionHeaderStyle()
 
-            VStack(alignment: .leading, spacing: Spacing.md) {
-                Picker("Engine", selection: $viewModel.selectedEngine) {
-                    ForEach(SpeechEngine.allCases) { engine in
-                        Text(engine.displayName).tag(engine)
-                    }
-                }
-                .pickerStyle(.radioGroup)
-                .labelsHidden()
+            VStack(alignment: .leading, spacing: 0) {
+                engineRow(.apple)
+                SubtleDivider()
+                engineRow(.deepgram)
 
                 if viewModel.selectedEngine == .deepgram {
+                    SubtleDivider()
+
                     VStack(alignment: .leading, spacing: Spacing.sm) {
-                        SecureField("API Key", text: $viewModel.deepgramApiKey)
+                        SecureField("Deepgram API Key", text: $viewModel.deepgramApiKey)
                             .textFieldStyle(.roundedBorder)
 
                         if viewModel.isDeepgramConfigured {
@@ -38,20 +35,49 @@ struct SettingsView: View {
                                 .font(OType.caption)
                                 .foregroundStyle(Color.success)
                         } else {
-                            Label("Required", systemImage: "exclamationmark.triangle.fill")
+                            Label("Required for cloud transcription", systemImage: "exclamationmark.triangle.fill")
                                 .font(OType.caption)
                                 .foregroundStyle(Color.warning)
                         }
                     }
+                    .padding(.horizontal, Spacing.lg)
+                    .padding(.vertical, Spacing.md)
                     .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
-            .cardStyle()
+            .cardStyle(padding: 0)
 
             Text(viewModel.selectedEngine.description)
                 .font(OType.caption)
                 .foregroundStyle(Color.textTertiary)
         }
+    }
+
+    private func engineRow(_ engine: SpeechEngine) -> some View {
+        Button {
+            viewModel.selectedEngine = engine
+        } label: {
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(engine.displayName)
+                        .font(OType.body)
+                        .foregroundStyle(Color.textPrimary)
+                    Text(engine == .apple ? "On-device, private" : "Cloud, higher accuracy")
+                        .font(OType.caption)
+                        .foregroundStyle(Color.textTertiary)
+                }
+                Spacer()
+                Image(systemName: viewModel.selectedEngine == engine ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 16))
+                    .foregroundStyle(
+                        viewModel.selectedEngine == engine ? Color.brand : Color.textTertiary
+                    )
+            }
+            .padding(.horizontal, Spacing.lg)
+            .padding(.vertical, Spacing.md)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Hotkeys
