@@ -33,7 +33,7 @@
 - Auto-insert at cursor when recording stops via hotkey
 
 ### Step 6: UX Polish
-- Audio feedback sounds (Tink/Pop/Funk) on recording start/stop/cancel via AudioServicesPlaySystemSound
+- Audio feedback sounds (Sosumi/Purr/Morse) on recording start/stop/cancel via AudioServicesPlaySystemSound
 - Sounds fire from KeyboardService before audio engine setup for instant feedback
 - Removed Insert at Cursor / Copy buttons from popover
 - Fixed transcription not clearing between sessions

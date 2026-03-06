@@ -1,9 +1,9 @@
 import AudioToolbox
 
 enum SoundService {
-    private static let startSoundID: SystemSoundID = loadSound("Tink")
-    private static let stopSoundID: SystemSoundID = loadSound("Pop")
-    private static let cancelSoundID: SystemSoundID = loadSound("Funk")
+    private static let startSoundID: SystemSoundID = loadSound("Sosumi")
+    private static let stopSoundID: SystemSoundID = loadSound("Purr")
+    private static let cancelSoundID: SystemSoundID = loadSound("Morse")
 
     private static func loadSound(_ name: String) -> SystemSoundID {
         var soundID: SystemSoundID = 0
