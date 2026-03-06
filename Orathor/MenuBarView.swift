@@ -4,6 +4,7 @@ struct MenuBarView: View {
     var viewModel: TranscriptionViewModel
     @State private var playbackService = AudioPlaybackService()
     @State private var searchText = ""
+    @State private var escapeMonitor: Any?
 
     private var filteredEntries: [TranscriptEntry] {
         let query = searchText.trimmingCharacters(in: .whitespaces)
@@ -27,6 +28,21 @@ struct MenuBarView: View {
         .task {
             viewModel.setUp()
             await viewModel.checkPermissions()
+        }
+        .onAppear {
+            escapeMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
+                if event.keyCode == 53 { // Escape
+                    NSApp.keyWindow?.close()
+                    return nil
+                }
+                return event
+            }
+        }
+        .onDisappear {
+            if let monitor = escapeMonitor {
+                NSEvent.removeMonitor(monitor)
+                escapeMonitor = nil
+            }
         }
     }
 

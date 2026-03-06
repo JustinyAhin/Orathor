@@ -75,6 +75,7 @@
 - Yellow background highlight on matching text in search results
 - "No matching transcripts" empty state when search yields no results
 - Search text resets when popover closes (`@State` lifecycle)
+- Escape key closes menu bar popover (NSEvent local monitor)
 
 ## Remaining
 
