@@ -45,6 +45,10 @@ struct SettingsView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
+            Text("Available: \(HotkeyModifier.allCases.map(\.displayName).joined(separator: ", "))")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+
             HotkeyField(label: "Insert at cursor", hotkey: $viewModel.insertHotkey)
             OptionalHotkeyField(label: "Copy to clipboard", hotkey: $viewModel.clipboardHotkey)
         }

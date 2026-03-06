@@ -2,17 +2,21 @@ import SwiftUI
 
 struct MenuBarView: View {
     var viewModel: TranscriptionViewModel
+    @Environment(\.openWindow) private var openWindow
     @State private var playbackService = AudioPlaybackService()
     @State private var searchText = ""
     @State private var escapeMonitor: Any?
 
     private var filteredEntries: [TranscriptEntry] {
         let query = searchText.trimmingCharacters(in: .whitespaces)
-        guard !query.isEmpty else { return viewModel.historyService.entries }
-        return viewModel.historyService.entries.filter { entry in
+        let source = viewModel.historyService.entries
+        if query.isEmpty {
+            return Array(source.prefix(15))
+        }
+        return Array(source.filter { entry in
             entry.text.localizedCaseInsensitiveContains(query)
             || (entry.targetAppName?.localizedCaseInsensitiveContains(query) ?? false)
-        }
+        }.prefix(15))
     }
 
     var body: some View {
@@ -118,29 +122,19 @@ struct MenuBarView: View {
     }
 
     private var footer: some View {
-        VStack(spacing: 0) {
-            HStack {
-                DisclosureGroup("Settings") {
-                    SettingsView(viewModel: viewModel.settingsViewModel)
-                        .padding(.top, 4)
-                }
-                .font(.subheadline)
+        HStack {
+            Button("Open Orathor") {
+                openWindow(id: "main")
+                NSApp.activate(ignoringOtherApps: true)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
-
-            Divider()
-
-            HStack {
-                Button("Quit") {
-                    NSApplication.shared.terminate(nil)
-                }
-                .keyboardShortcut("q")
-                Spacer()
+            Spacer()
+            Button("Quit") {
+                NSApplication.shared.terminate(nil)
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
+            .keyboardShortcut("q")
         }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
     }
 }
 

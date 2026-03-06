@@ -90,12 +90,22 @@
 - Menu bar hint text updates dynamically based on configured insert hotkey
 - Defaults: Right Command (insert), Right Option (clipboard)
 
+### Step 12: Main App Window
+- NavigationSplitView with sidebar: Dashboard, Transcripts, Settings
+- Sidebar has app branding (waveform + "Orathor") at top, Settings separated at bottom
+- Dashboard: horizontal stats row (total words, time saved, avg WPM), top sources with app icons, monthly activity heatmap, recent transcripts
+- Transcripts: date-grouped entries ("Today", "Yesterday", etc.) in rounded cards, hover-only action buttons, compact rows with time column
+- Settings moved from menu bar popover to main window sidebar
+- "Open Orathor" button in menu bar popover footer opens the window
+- Menu bar popover capped to 15 most recent transcripts
+- Shared `@Observable` ViewModel between MenuBarExtra and Window scenes
+- TextHighlighter utility extracted for shared search-highlight logic
+
 ## Remaining
 
 ### Core Features
 - [ ] Smart formatting (auto-punctuation, capitalization)
 - [ ] Command mode ("new line", "select all", "delete that" voice commands)
-- [ ] Main app window (beyond menu bar)
 
 ### Polish
 - [ ] Error handling with user-facing alerts

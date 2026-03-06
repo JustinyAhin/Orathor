@@ -16,5 +16,10 @@ struct OrathorApp: App {
             MenuBarView(viewModel: viewModel)
         }
         .menuBarExtraStyle(.window)
+
+        Window("Orathor", id: "main") {
+            MainWindowView(viewModel: viewModel)
+        }
+        .defaultSize(width: 800, height: 600)
     }
 }
