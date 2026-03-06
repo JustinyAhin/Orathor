@@ -24,10 +24,17 @@ final class TranscriptionViewModel {
             guard let self else { return }
             switch action {
             case .startRecording:
+                SoundService.playStart()
                 self.shouldAutoInsert = true
                 self.startRecording()
                 RecordingOverlay.show(viewModel: self)
             case .stopRecording:
+                SoundService.playStop()
+                self.stopRecording()
+                RecordingOverlay.hide()
+            case .cancelRecording:
+                SoundService.playStop()
+                self.shouldAutoInsert = false
                 self.stopRecording()
                 RecordingOverlay.hide()
             }

@@ -6,12 +6,15 @@ final class KeyboardService {
     enum Action {
         case startRecording
         case stopRecording
+        case cancelRecording
     }
 
     var onAction: ((Action) -> Void)?
 
     private var globalMonitor: Any?
     private var localMonitor: Any?
+    private var globalKeyMonitor: Any?
+    private var localKeyMonitor: Any?
     private var isModifierDown = false
     private var lastTapTime: Date?
     private var isHolding = false
@@ -34,13 +37,35 @@ final class KeyboardService {
             }
             return event
         }
+        globalKeyMonitor = NSEvent.addGlobalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            MainActor.assumeIsolated {
+                self?.handleKeyDown(event)
+            }
+        }
+        localKeyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            MainActor.assumeIsolated {
+                self?.handleKeyDown(event)
+            }
+            return event
+        }
     }
 
     func stop() {
         if let globalMonitor { NSEvent.removeMonitor(globalMonitor) }
         if let localMonitor { NSEvent.removeMonitor(localMonitor) }
+        if let globalKeyMonitor { NSEvent.removeMonitor(globalKeyMonitor) }
+        if let localKeyMonitor { NSEvent.removeMonitor(localKeyMonitor) }
         globalMonitor = nil
         localMonitor = nil
+        globalKeyMonitor = nil
+        localKeyMonitor = nil
+    }
+
+    private func handleKeyDown(_ event: NSEvent) {
+        guard event.keyCode == UInt16(kVK_Escape), isToggled else { return }
+        isToggled = false
+        justToggledOn = false
+        onAction?(.cancelRecording)
     }
 
     private func handleFlags(_ event: NSEvent) {
