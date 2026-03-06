@@ -22,20 +22,20 @@ struct MenuBarView: View {
     var body: some View {
         VStack(spacing: 0) {
             header
-            Divider()
+            SubtleDivider()
             searchBar
             transcriptList
-            Divider()
+            SubtleDivider()
             footer
         }
-        .frame(width: 320)
+        .frame(width: 340)
         .task {
             viewModel.setUp()
             await viewModel.checkPermissions()
         }
         .onAppear {
             escapeMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
-                if event.keyCode == 53 { // Escape
+                if event.keyCode == 53 {
                     NSApp.keyWindow?.close()
                     return nil
                 }
@@ -52,58 +52,73 @@ struct MenuBarView: View {
 
     private var header: some View {
         HStack {
-            Text("Recent transcripts")
-                .font(.headline)
+            Text("Recents")
+                .sectionHeaderStyle()
             Spacer()
             if viewModel.isRecording {
-                HStack(spacing: 6) {
-                    Circle()
-                        .fill(.red)
-                        .frame(width: 8, height: 8)
-                    Text("Recording...")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                recordingBadge
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
+        .padding(.horizontal, Spacing.lg)
+        .padding(.vertical, Spacing.sm)
+    }
+
+    private var recordingBadge: some View {
+        HStack(spacing: Spacing.xxs) {
+            Circle()
+                .fill(Color.recording)
+                .frame(width: 6, height: 6)
+            Text("REC")
+                .font(OType.micro)
+        }
+        .foregroundStyle(Color.recording)
+        .padding(.horizontal, Spacing.sm)
+        .padding(.vertical, 3)
+        .background(Color.recording.opacity(0.15), in: Capsule())
     }
 
     private var searchBar: some View {
-        HStack {
+        HStack(spacing: Spacing.sm) {
             Image(systemName: "magnifyingglass")
-                .foregroundStyle(.secondary)
+                .font(OType.caption)
+                .foregroundStyle(Color.textTertiary)
             TextField("Search transcripts...", text: $searchText)
                 .textFieldStyle(.plain)
-                .font(.subheadline)
+                .font(OType.body)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
+        .padding(.horizontal, Spacing.md)
+        .padding(.vertical, Spacing.xs)
+        .background(Color.surfaceSecondary, in: RoundedRectangle(cornerRadius: Radius.sm))
+        .overlay(
+            RoundedRectangle(cornerRadius: Radius.sm)
+                .stroke(Color.borderSubtle, lineWidth: 0.5)
+        )
+        .padding(.horizontal, Spacing.lg)
+        .padding(.vertical, Spacing.sm)
     }
 
     private var transcriptList: some View {
         Group {
             if viewModel.historyService.entries.isEmpty {
-                VStack(spacing: 8) {
+                VStack(spacing: Spacing.sm) {
                     Text("No transcripts yet")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                        .font(OType.body)
+                        .foregroundStyle(Color.textSecondary)
                     Text("Press \(viewModel.settingsViewModel.insertHotkey.displayName) to start dictating")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
+                        .font(OType.caption)
+                        .foregroundStyle(Color.textTertiary)
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 32)
+                .padding(.vertical, Spacing.xxxl)
             } else if filteredEntries.isEmpty {
                 Text("No matching transcripts")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .font(OType.body)
+                    .foregroundStyle(Color.textSecondary)
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 32)
+                    .padding(.vertical, Spacing.xxxl)
             } else {
                 ScrollView {
-                    LazyVStack(spacing: 6) {
+                    LazyVStack(spacing: Spacing.xxs) {
                         ForEach(filteredEntries) { entry in
                             TranscriptEntryRow(
                                 entry: entry,
@@ -113,8 +128,8 @@ struct MenuBarView: View {
                             )
                         }
                     }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 8)
+                    .padding(.horizontal, Spacing.sm)
+                    .padding(.vertical, Spacing.sm)
                 }
                 .frame(maxHeight: 320)
             }
@@ -127,14 +142,16 @@ struct MenuBarView: View {
                 openWindow(id: "main")
                 NSApp.activate(ignoringOtherApps: true)
             }
+            .buttonStyle(GhostButtonStyle())
             Spacer()
             Button("Quit") {
                 NSApplication.shared.terminate(nil)
             }
+            .buttonStyle(GhostButtonStyle())
             .keyboardShortcut("q")
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
+        .padding(.horizontal, Spacing.lg)
+        .padding(.vertical, Spacing.sm)
     }
 }
 
@@ -148,72 +165,67 @@ struct TranscriptEntryRow: View {
     @State private var showCopied = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
+        VStack(alignment: .leading, spacing: Spacing.xxs) {
+            HStack(spacing: Spacing.xs) {
                 appIconAndName
                 Spacer()
                 metadata
             }
 
             Text(highlightedText)
-                .font(.system(.callout))
-                .lineLimit(3)
+                .font(OType.callout)
+                .foregroundStyle(Color.textPrimary)
+                .lineLimit(2)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .textSelection(.enabled)
 
             actionBar
         }
-        .padding(10)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(isHovered ? Color.primary.opacity(0.08) : Color.primary.opacity(0.04))
+        .padding(.horizontal, Spacing.sm)
+        .padding(.vertical, Spacing.xs)
+        .overlay(
+            RoundedRectangle(cornerRadius: Radius.md)
+                .stroke(isHovered ? Color.borderDefault : .clear, lineWidth: 0.5)
         )
+        .contentShape(Rectangle())
         .onHover { isHovered = $0 }
+        .animation(.easeInOut(duration: 0.15), value: isHovered)
     }
 
     private var highlightedText: AttributedString {
-        var result = AttributedString(entry.text)
-        let query = searchText.trimmingCharacters(in: .whitespaces)
-        guard !query.isEmpty else { return result }
-        var searchRange = result.startIndex..<result.endIndex
-        while let range = result[searchRange].range(of: query, options: [.caseInsensitive, .diacriticInsensitive]) {
-            result[range].backgroundColor = .yellow.opacity(0.7)
-            searchRange = range.upperBound..<result.endIndex
-        }
-        return result
+        TextHighlighter.highlight(entry.text, query: searchText)
     }
 
     @ViewBuilder
     private var appIconAndName: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: Spacing.xs) {
             if let bundleID = entry.targetAppBundleID,
                let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
                 Image(nsImage: NSWorkspace.shared.icon(forFile: appURL.path()))
                     .resizable()
-                    .frame(width: 16, height: 16)
+                    .frame(width: 14, height: 14)
             }
             if let appName = entry.targetAppName {
                 Text(appName)
-                    .font(.caption)
-                    .fontWeight(.medium)
-                    .foregroundStyle(.secondary)
+                    .font(OType.captionMedium)
+                    .foregroundStyle(Color.textSecondary)
             }
         }
     }
 
     private var metadata: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: Spacing.xxs) {
             let seconds = Int(entry.durationSeconds)
             Text("\(seconds)s")
             Text("\u{2022}")
             Text("\(entry.wordCount) words")
         }
-        .font(.caption2)
-        .foregroundStyle(.tertiary)
+        .font(OType.micro)
+        .foregroundStyle(Color.textTertiary)
     }
 
     private var actionBar: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: Spacing.sm) {
             Spacer()
 
             rowButton(showCopied ? "checkmark" : "doc.on.doc", help: "Copy text") {
@@ -247,8 +259,8 @@ struct TranscriptEntryRow: View {
                 }
             } label: {
                 Image(systemName: "ellipsis.circle")
-                    .font(.system(size: 13))
-                    .foregroundStyle(.secondary)
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color.textSecondary)
             }
             .buttonStyle(.plain)
             .menuIndicator(.hidden)
@@ -258,12 +270,9 @@ struct TranscriptEntryRow: View {
     private func rowButton(_ icon: String, help: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: icon)
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
-                .frame(width: 22, height: 22)
-                .contentShape(Rectangle())
+                .font(.system(size: 11))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(IconButtonStyle(size: 22))
         .help(help)
     }
 
@@ -300,13 +309,13 @@ struct AudioLevelView: View {
     var body: some View {
         GeometryReader { geometry in
             RoundedRectangle(cornerRadius: 2)
-                .fill(.green.gradient)
+                .fill(Color.brand.gradient)
                 .frame(width: geometry.size.width * CGFloat(level))
                 .animation(.easeOut(duration: 0.05), value: level)
         }
         .background(
             RoundedRectangle(cornerRadius: 2)
-                .fill(.secondary.opacity(0.2))
+                .fill(Color.textTertiary.opacity(0.2))
         )
     }
 }

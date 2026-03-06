@@ -48,10 +48,10 @@ struct RecordingOverlayView: View {
     @State private var isPulsing = false
 
     var body: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: Spacing.sm) {
             Circle()
-                .fill(.red)
-                .frame(width: 8, height: 8)
+                .fill(Color.recording)
+                .frame(width: 6, height: 6)
                 .opacity(isPulsing ? 0.3 : 1.0)
                 .animation(
                     .easeInOut(duration: 0.8).repeatForever(autoreverses: true),
@@ -60,20 +60,30 @@ struct RecordingOverlayView: View {
                 .onAppear { isPulsing = true }
 
             Text("Recording")
-                .font(.system(.callout, weight: .medium))
+                .font(OType.callout)
+                .fontWeight(.medium)
+                .foregroundStyle(Color.textPrimary)
 
             if viewModel.recordingMode == .clipboard {
                 Image(systemName: "doc.on.clipboard")
-                    .font(.system(.caption, weight: .medium))
-                    .foregroundStyle(.secondary)
+                    .font(OType.caption)
+                    .fontWeight(.medium)
+                    .foregroundStyle(Color.textTertiary)
             }
 
             OverlayLevelBars(level: viewModel.currentAudioLevel)
                 .frame(width: 50, height: 16)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 12))
+        .padding(.horizontal, Spacing.lg)
+        .padding(.vertical, Spacing.sm)
+        .background {
+            RoundedRectangle(cornerRadius: Radius.xl)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: Radius.xl)
+                        .stroke(Color.borderSubtle, lineWidth: 0.5)
+                )
+        }
     }
 }
 
@@ -85,7 +95,7 @@ private struct OverlayLevelBars: View {
         HStack(spacing: 2) {
             ForEach(0..<barCount, id: \.self) { index in
                 RoundedRectangle(cornerRadius: 1)
-                    .fill(isActive(index) ? .green : .secondary.opacity(0.3))
+                    .fill(isActive(index) ? Color.brand : Color.textTertiary.opacity(0.3))
                     .frame(width: 2, height: isActive(index) ? max(3, CGFloat(level) * 16) : 3)
             }
         }

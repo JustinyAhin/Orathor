@@ -25,6 +25,7 @@ Native macOS voice dictation app — speak instead of type, anywhere on your sys
 Product spec and research are in the `kb/` folder.
 
 @kb/orathor-brief.md
+@kb/design.md
 
 ## Documentation
 

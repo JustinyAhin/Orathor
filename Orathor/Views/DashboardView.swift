@@ -33,28 +33,24 @@ struct DashboardView: View {
             .map { $0 }
     }
 
-    // Activity grid: last 4 weeks of daily word counts
     private var activityData: ActivityGrid {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
 
-        // Build a map of date -> word count
         var dailyCounts: [Date: Int] = [:]
         for entry in entries {
             let day = calendar.startOfDay(for: entry.timestamp)
             dailyCounts[day, default: 0] += entry.wordCount
         }
 
-        // Generate last 4 weeks (28 days), starting from Monday
-        let todayWeekday = calendar.component(.weekday, from: today) // 1=Sun ... 7=Sat
-        // Days since last Monday (weekday 2)
-        let daysSinceMonday = (todayWeekday + 5) % 7 // 0=Mon, 1=Tue, ...
+        let todayWeekday = calendar.component(.weekday, from: today)
+        let daysSinceMonday = (todayWeekday + 5) % 7
         let weeksToShow = 4
-        let totalDays = weeksToShow * 7
-        let gridStart = calendar.date(byAdding: .day, value: -(totalDays - 1 - (6 - daysSinceMonday)), to: today)!
+        let totalDayCount = weeksToShow * 7
+        let gridStart = calendar.date(byAdding: .day, value: -(totalDayCount - 1 - (6 - daysSinceMonday)), to: today)!
 
         var days: [ActivityDay] = []
-        for i in 0..<totalDays {
+        for i in 0..<totalDayCount {
             let date = calendar.date(byAdding: .day, value: i, to: gridStart)!
             let count = dailyCounts[date] ?? 0
             let isFuture = date > today
@@ -69,15 +65,15 @@ struct DashboardView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: Spacing.xxl) {
                 statsSection
-                HStack(alignment: .top, spacing: 24) {
+                HStack(alignment: .top, spacing: Spacing.xxl) {
                     topSourcesSection
                     activitySection
                 }
                 recentTranscriptsSection
             }
-            .padding(32)
+            .padding(Spacing.xxxl)
         }
         .navigationTitle("Dashboard")
     }
@@ -85,59 +81,52 @@ struct DashboardView: View {
     // MARK: - Stats Row
 
     private var statsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Your stats")
-                .font(.title3)
-                .fontWeight(.semibold)
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            Text("Stats")
+                .sectionHeaderStyle()
 
-            HStack(spacing: 0) {
+            HStack(spacing: Spacing.lg) {
                 StatCell(label: "Total words", value: formattedCount(totalWords))
-                Divider().frame(height: 50)
                 StatCell(label: "Time saved", value: formattedDuration(totalDuration))
-                Divider().frame(height: 50)
                 StatCell(label: "Average WPM", value: String(format: "%.0f", averageWPM))
             }
-            .padding(20)
-            .frame(maxWidth: .infinity)
-            .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 12))
         }
     }
 
     // MARK: - Top Sources
 
     private var topSourcesSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Spacing.md) {
             Text("Top sources")
-                .font(.title3)
-                .fontWeight(.semibold)
+                .sectionHeaderStyle()
 
             if topSources.isEmpty {
                 Text("No data yet")
-                    .foregroundStyle(.secondary)
-                    .font(.subheadline)
+                    .font(OType.body)
+                    .foregroundStyle(Color.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(16)
-                    .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 12))
+                    .cardStyle()
             } else {
                 VStack(spacing: 0) {
                     ForEach(Array(topSources.enumerated()), id: \.offset) { index, source in
                         if index > 0 {
-                            Divider().padding(.horizontal, 16)
+                            SubtleDivider(leadingInset: 42)
                         }
-                        HStack(spacing: 10) {
+                        HStack(spacing: Spacing.sm) {
                             appIcon(for: source.bundleID)
                             Text(source.name)
-                                .font(.subheadline)
+                                .font(OType.body)
+                                .foregroundStyle(Color.textPrimary)
                             Spacer()
                             Text("\(formattedCount(source.wordCount)) words")
-                                .font(.subheadline)
-                                .foregroundStyle(.secondary)
+                                .font(OType.caption)
+                                .foregroundStyle(Color.textTertiary)
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
+                        .padding(.horizontal, Spacing.lg)
+                        .padding(.vertical, Spacing.sm)
                     }
                 }
-                .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 12))
+                .cardStyle(padding: 0)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -149,30 +138,26 @@ struct DashboardView: View {
         let grid = activityData
         let weekdays = ["M", "T", "W", "T", "F", "S", "S"]
 
-        return VStack(alignment: .leading, spacing: 12) {
+        return VStack(alignment: .leading, spacing: Spacing.md) {
             Text("Monthly activity")
-                .font(.title3)
-                .fontWeight(.semibold)
+                .sectionHeaderStyle()
 
-            VStack(alignment: .trailing, spacing: 4) {
-                // Day labels + grid
-                HStack(alignment: .top, spacing: 4) {
-                    // Weekday labels
-                    VStack(spacing: 4) {
+            VStack(alignment: .trailing, spacing: Spacing.xxs) {
+                HStack(alignment: .top, spacing: Spacing.xxs) {
+                    VStack(spacing: Spacing.xxs) {
                         ForEach(0..<7, id: \.self) { row in
                             Text(weekdays[row])
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
+                                .font(OType.micro)
+                                .foregroundStyle(Color.textTertiary)
                                 .frame(width: 14, height: 14)
                         }
                     }
 
-                    // Weeks as columns
                     let weeks = stride(from: 0, to: grid.days.count, by: 7).map {
                         Array(grid.days[$0..<min($0 + 7, grid.days.count)])
                     }
                     ForEach(Array(weeks.enumerated()), id: \.offset) { _, week in
-                        VStack(spacing: 4) {
+                        VStack(spacing: Spacing.xxs) {
                             ForEach(week, id: \.date) { day in
                                 activityCell(day: day, maxCount: grid.maxCount)
                             }
@@ -180,22 +165,19 @@ struct DashboardView: View {
                     }
                 }
 
-                HStack(spacing: 4) {
-                    Text("\(grid.activeDays) active days")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.top, 4)
+                Text("\(grid.activeDays) active days")
+                    .font(OType.micro)
+                    .foregroundStyle(Color.textTertiary)
+                    .padding(.top, Spacing.xxs)
             }
-            .padding(16)
-            .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 12))
+            .cardStyle()
         }
     }
 
     private func activityCell(day: ActivityDay, maxCount: Int) -> some View {
         let intensity: Double
         if day.isFuture {
-            intensity = -1 // will render as empty/invisible
+            intensity = -1
         } else if day.wordCount == 0 {
             intensity = 0
         } else if maxCount > 0 {
@@ -204,63 +186,62 @@ struct DashboardView: View {
             intensity = 0
         }
 
-        return RoundedRectangle(cornerRadius: 3)
-            .fill(intensity < 0 ? Color.clear : (intensity == 0 ? Color.primary.opacity(0.08) : Color.accentColor.opacity(intensity)))
+        return RoundedRectangle(cornerRadius: Radius.xs)
+            .fill(intensity < 0 ? Color.clear : (intensity == 0 ? Color.surfaceSecondary : Color.brand.opacity(intensity)))
             .frame(width: 14, height: 14)
     }
 
     // MARK: - Recent Transcripts
 
     private var recentTranscriptsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Spacing.md) {
             Text("Recent transcripts")
-                .font(.title3)
-                .fontWeight(.semibold)
+                .sectionHeaderStyle()
 
             if entries.isEmpty {
                 Text("No transcripts yet")
-                    .foregroundStyle(.secondary)
-                    .font(.subheadline)
-                    .padding(16)
+                    .font(OType.body)
+                    .foregroundStyle(Color.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 12))
+                    .cardStyle()
             } else {
                 VStack(spacing: 0) {
                     ForEach(Array(entries.prefix(5).enumerated()), id: \.element.id) { index, entry in
                         if index > 0 {
-                            Divider().padding(.horizontal, 16)
+                            SubtleDivider(leadingInset: 56)
                         }
-                        HStack(spacing: 12) {
+                        HStack(spacing: Spacing.md) {
                             Text(entry.timestamp, format: .dateTime.hour().minute())
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
+                                .font(OType.caption)
+                                .foregroundStyle(Color.textTertiary)
                                 .frame(width: 40, alignment: .trailing)
 
-                            VStack(alignment: .leading, spacing: 4) {
+                            VStack(alignment: .leading, spacing: Spacing.xxs) {
                                 if let appName = entry.targetAppName {
-                                    HStack(spacing: 6) {
+                                    HStack(spacing: Spacing.xs) {
                                         appIcon(for: entry.targetAppBundleID)
                                         Text(appName)
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
+                                            .font(OType.captionMedium)
+                                            .foregroundStyle(Color.textSecondary)
                                     }
                                 }
                                 Text(entry.text)
-                                    .font(.subheadline)
+                                    .font(OType.body)
+                                    .foregroundStyle(Color.textPrimary)
                                     .lineLimit(2)
                             }
 
                             Spacer()
 
                             Text("\(entry.wordCount) words")
-                                .font(.caption2)
-                                .foregroundStyle(.tertiary)
+                                .font(OType.micro)
+                                .foregroundStyle(Color.textTertiary)
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 10)
+                        .padding(.horizontal, Spacing.lg)
+                        .padding(.vertical, Spacing.sm)
                     }
                 }
-                .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 12))
+                .cardStyle(padding: 0)
             }
         }
     }
@@ -320,14 +301,15 @@ private struct StatCell: View {
     let value: String
 
     var body: some View {
-        VStack(spacing: 6) {
+        VStack(alignment: .leading, spacing: Spacing.xxs) {
             Text(label)
-                .font(.caption)
-                .foregroundStyle(.secondary)
+                .font(OType.caption)
+                .foregroundStyle(Color.textTertiary)
             Text(value)
-                .font(.title)
-                .fontWeight(.semibold)
+                .font(OType.stat)
+                .foregroundStyle(Color.textPrimary)
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .cardStyle()
     }
 }

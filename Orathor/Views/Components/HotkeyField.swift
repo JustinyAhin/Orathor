@@ -60,7 +60,7 @@ struct OptionalHotkeyField: View {
 
     var body: some View {
         LabeledContent(label) {
-            HStack(spacing: 6) {
+            HStack(spacing: Spacing.xs) {
                 Button {
                     if isListening { stopListening() } else { startListening() }
                 } label: {
@@ -70,8 +70,8 @@ struct OptionalHotkeyField: View {
                         keyCaps(hotkey.keySymbols)
                     } else {
                         Text("Not set")
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
+                            .font(OType.caption)
+                            .foregroundStyle(Color.textTertiary)
                     }
                 }
                 .buttonStyle(.plain)
@@ -83,7 +83,7 @@ struct OptionalHotkeyField: View {
                     } label: {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 12))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(Color.textTertiary)
                     }
                     .buttonStyle(.plain)
                     .help("Remove hotkey")
@@ -123,24 +123,25 @@ struct OptionalHotkeyField: View {
 
 private var listeningLabel: some View {
     Text("Press a key...")
-        .font(.caption)
-        .foregroundStyle(.secondary)
+        .font(OType.caption)
+        .foregroundStyle(Color.textSecondary)
 }
 
 private func keyCaps(_ symbols: [String]) -> some View {
-    HStack(spacing: 4) {
+    HStack(spacing: Spacing.xxs) {
         ForEach(symbols, id: \.self) { symbol in
             Text(symbol)
-                .font(.system(size: 12, weight: .medium))
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
+                .font(OType.captionMedium)
+                .foregroundStyle(Color.textPrimary)
+                .padding(.horizontal, Spacing.sm)
+                .padding(.vertical, Spacing.xxs)
                 .background(
-                    RoundedRectangle(cornerRadius: 5)
-                        .fill(.primary.opacity(0.08))
+                    RoundedRectangle(cornerRadius: Radius.xs)
+                        .fill(Color.surfaceSecondary)
                 )
                 .overlay(
-                    RoundedRectangle(cornerRadius: 5)
-                        .stroke(.primary.opacity(0.15), lineWidth: 0.5)
+                    RoundedRectangle(cornerRadius: Radius.xs)
+                        .stroke(Color.borderDefault, lineWidth: 0.5)
                 )
         }
     }
@@ -149,15 +150,15 @@ private func keyCaps(_ symbols: [String]) -> some View {
 private extension View {
     func hotkeyFieldStyle(isListening: Bool) -> some View {
         self
-            .padding(.horizontal, 6)
+            .padding(.horizontal, Spacing.xs)
             .padding(.vertical, 3)
             .background(
-                RoundedRectangle(cornerRadius: 7)
-                    .fill(isListening ? Color.accentColor.opacity(0.1) : .clear)
+                RoundedRectangle(cornerRadius: Radius.sm)
+                    .fill(isListening ? Color.brand.opacity(0.08) : .clear)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 7)
-                    .stroke(isListening ? Color.accentColor.opacity(0.5) : .clear, lineWidth: 1)
+                RoundedRectangle(cornerRadius: Radius.sm)
+                    .stroke(isListening ? Color.brand.opacity(0.4) : .clear, lineWidth: 1)
             )
     }
 }

@@ -17,11 +17,11 @@ struct MainWindowView: View {
                 SettingsView(viewModel: viewModel.settingsViewModel)
                     .navigationTitle("Settings")
                     .frame(maxWidth: 500, alignment: .leading)
-                    .padding(32)
+                    .padding(Spacing.xxxl)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             case nil:
                 Text("Select a section")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(Color.textSecondary)
             }
         }
         .frame(minWidth: 800, minHeight: 600)
@@ -29,22 +29,12 @@ struct MainWindowView: View {
 
     private var sidebar: some View {
         VStack(spacing: 0) {
-            // App branding
-            VStack(spacing: 4) {
-                Image(systemName: "waveform")
-                    .font(.system(size: 28))
-                    .foregroundStyle(.tint)
-                Text("Orathor")
-                    .font(.title2)
-                    .fontWeight(.bold)
-            }
-            .padding(.vertical, 20)
-            .frame(maxWidth: .infinity)
+            Text("Orathor")
+                .font(OType.captionMedium)
+                .foregroundStyle(Color.textTertiary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, Spacing.md)
 
-            Divider()
-                .padding(.horizontal, 16)
-
-            // Main nav
             List(selection: $selectedSection) {
                 ForEach(AppSection.allCases.filter { $0 != .settings }) { section in
                     Label(section.title, systemImage: section.icon)
@@ -58,6 +48,6 @@ struct MainWindowView: View {
             }
             .listStyle(.sidebar)
         }
-        .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 260)
+        .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 240)
     }
 }

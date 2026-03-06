@@ -7,7 +7,7 @@ enum TextHighlighter {
         guard !trimmed.isEmpty else { return result }
         var searchRange = result.startIndex..<result.endIndex
         while let range = result[searchRange].range(of: trimmed, options: [.caseInsensitive, .diacriticInsensitive]) {
-            result[range].backgroundColor = .yellow.opacity(0.7)
+            result[range].backgroundColor = Color.brand.opacity(0.2)
             searchRange = range.upperBound..<result.endIndex
         }
         return result

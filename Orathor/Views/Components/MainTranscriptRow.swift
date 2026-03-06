@@ -10,34 +10,32 @@ struct MainTranscriptRow: View {
     @State private var showCopied = false
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            // Time column
+        HStack(alignment: .top, spacing: Spacing.md) {
             Text(entry.timestamp, format: .dateTime.hour().minute())
-                .font(.caption)
-                .foregroundStyle(.tertiary)
-                .frame(width: 40, alignment: .trailing)
+                .font(OType.caption)
+                .foregroundStyle(Color.textTertiary)
+                .frame(width: 44, alignment: .trailing)
                 .padding(.top, 2)
 
-            // Content
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 6) {
+            VStack(alignment: .leading, spacing: Spacing.xxs) {
+                HStack(spacing: Spacing.xs) {
                     appIcon
                     if let appName = entry.targetAppName {
                         Text(appName)
-                            .font(.caption)
-                            .fontWeight(.medium)
-                            .foregroundStyle(.secondary)
+                            .font(OType.captionMedium)
+                            .foregroundStyle(Color.textSecondary)
                     }
                     Text("\u{2022}")
-                        .foregroundStyle(.quaternary)
-                        .font(.caption2)
+                        .foregroundStyle(Color.borderDefault)
+                        .font(OType.micro)
                     Text("\(entry.wordCount) words")
-                        .font(.caption2)
-                        .foregroundStyle(.tertiary)
+                        .font(OType.micro)
+                        .foregroundStyle(Color.textTertiary)
                 }
 
                 Text(TextHighlighter.highlight(entry.text, query: searchText))
-                    .font(.subheadline)
+                    .font(OType.body)
+                    .foregroundStyle(Color.textPrimary)
                     .lineLimit(3)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .textSelection(.enabled)
@@ -45,14 +43,17 @@ struct MainTranscriptRow: View {
 
             Spacer(minLength: 0)
 
-            // Actions — hover only
             if isHovered {
                 actionButtons
                     .transition(.opacity)
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+        .padding(.horizontal, Spacing.lg)
+        .padding(.vertical, Spacing.sm)
+        .background(
+            RoundedRectangle(cornerRadius: Radius.md)
+                .fill(isHovered ? Color.surfaceSecondary : .clear)
+        )
         .contentShape(Rectangle())
         .onHover { isHovered = $0 }
         .animation(.easeInOut(duration: 0.15), value: isHovered)
@@ -69,7 +70,7 @@ struct MainTranscriptRow: View {
     }
 
     private var actionButtons: some View {
-        HStack(spacing: 2) {
+        HStack(spacing: Spacing.xxxs) {
             iconButton(showCopied ? "checkmark" : "doc.on.doc", help: "Copy") {
                 copyText()
             }
@@ -94,11 +95,8 @@ struct MainTranscriptRow: View {
         Button(action: action) {
             Image(systemName: icon)
                 .font(.system(size: 11))
-                .foregroundStyle(.secondary)
-                .frame(width: 24, height: 24)
-                .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+        .buttonStyle(IconButtonStyle())
         .help(help)
     }
 

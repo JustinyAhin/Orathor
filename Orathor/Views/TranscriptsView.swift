@@ -36,18 +36,17 @@ struct TranscriptsView: View {
                 ContentUnavailableView.search(text: searchText)
             } else {
                 ScrollView {
-                    LazyVStack(alignment: .leading, spacing: 24, pinnedViews: .sectionHeaders) {
+                    LazyVStack(alignment: .leading, spacing: Spacing.xxl, pinnedViews: .sectionHeaders) {
                         Text("\(filteredEntries.count) transcripts")
-                            .font(.subheadline)
-                            .foregroundStyle(.tertiary)
+                            .font(OType.caption)
+                            .foregroundStyle(Color.textTertiary)
 
                         ForEach(groupedByDate, id: \.date) { group in
                             Section {
                                 VStack(spacing: 0) {
                                     ForEach(Array(group.entries.enumerated()), id: \.element.id) { index, entry in
                                         if index > 0 {
-                                            Divider()
-                                                .padding(.leading, 56)
+                                            SubtleDivider(leadingInset: 56)
                                         }
                                         MainTranscriptRow(
                                             entry: entry,
@@ -57,20 +56,18 @@ struct TranscriptsView: View {
                                         )
                                     }
                                 }
-                                .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
+                                .cardStyle(padding: 0)
                             } header: {
                                 Text(group.date)
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
-                                    .foregroundStyle(.secondary)
-                                    .padding(.vertical, 4)
-                                    .padding(.horizontal, 4)
+                                    .sectionHeaderStyle()
+                                    .padding(.vertical, Spacing.xxs)
+                                    .padding(.horizontal, Spacing.xxs)
                                     .frame(maxWidth: .infinity, alignment: .leading)
-                                    .background(.background)
+                                    .background(Color.surfacePrimary)
                             }
                         }
                     }
-                    .padding(24)
+                    .padding(Spacing.xxl)
                 }
             }
         }

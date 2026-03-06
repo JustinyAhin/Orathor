@@ -101,6 +101,19 @@
 - Shared `@Observable` ViewModel between MenuBarExtra and Window scenes
 - TextHighlighter utility extracted for shared search-highlight logic
 
+### Step 13: UI Redesign — Design System
+- Design token system: Theme.swift (Spacing, Radius, OType) + ViewModifiers.swift (CardModifier, SectionHeaderModifier, GhostButtonStyle, IconButtonStyle, SubtleDivider)
+- 13 custom colorsets in asset catalog with light/dark variants: AccentColor (muted indigo), BrandSubtle, SurfacePrimary, SurfaceSecondary, SurfaceElevated, BorderSubtle, BorderDefault, TextPrimary, TextSecondary, TextTertiary, Recording, Success, Warning
+- All views updated to use design tokens: consistent typography (OType), spacing (Spacing), corner radii (Radius), and themed colors
+- Menu bar popover: 340pt wide, "RECENTS" section header, inline REC badge (capsule), search bar with surfaceSecondary bg + border, border-only hover on rows
+- Dashboard: 3 individual stat cards with rounded stat numbers, sectionHeaderStyle, activity grid with brand color
+- Transcripts: date headers with sectionHeaderStyle, SubtleDivider, cardStyle containers, hover bg on rows
+- Settings: grouped sections in cards (engine card, hotkeys card), descriptions below cards
+- Recording overlay: brand-colored audio bars (replaced green), 0.5pt border on material bg
+- Sidebar: subtle "Orathor" wordmark replacing large branding block
+- AudioLevelView: brand gradient fill replacing green
+- Search highlight: brand-tinted (replaced yellow)
+
 ## Remaining
 
 ### Core Features
