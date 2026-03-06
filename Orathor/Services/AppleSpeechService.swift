@@ -8,6 +8,7 @@ final class AppleSpeechService: TranscriptionService {
     private var recognizer: SFSpeechRecognizer?
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
+    private var finalContinuation: CheckedContinuation<Void, Never>?
 
     init(locale: Locale = .current) {
         recognizer = SFSpeechRecognizer(locale: locale)
@@ -21,7 +22,7 @@ final class AppleSpeechService: TranscriptionService {
         }
     }
 
-    func startTranscribing(audioFormat: AVAudioFormat) throws {
+    func startTranscribing(audioFormat: AVAudioFormat) async throws {
         guard let recognizer, recognizer.isAvailable else {
             throw SpeechError.recognizerUnavailable
         }
@@ -38,10 +39,15 @@ final class AppleSpeechService: TranscriptionService {
                 Task { @MainActor in
                     self.transcribedText = result.bestTranscription.formattedString
                 }
+                if result.isFinal {
+                    Task { @MainActor in
+                        self.resolveFinal()
+                    }
+                }
             }
-            if error != nil || (result?.isFinal ?? false) {
+            if error != nil {
                 Task { @MainActor in
-                    self.isTranscribing = false
+                    self.resolveFinal()
                 }
             }
         }
@@ -54,12 +60,31 @@ final class AppleSpeechService: TranscriptionService {
         recognitionRequest?.append(buffer)
     }
 
-    func stopTranscribing() {
+    func processAudioData(_ data: Data) {
+        // Not used by Apple Speech — buffers are passed directly
+    }
+
+    func stopTranscribing() async {
         recognitionRequest?.endAudio()
+
+        // Wait for the final result or timeout after 2 seconds
+        await withCheckedContinuation { continuation in
+            finalContinuation = continuation
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+                self?.resolveFinal()
+            }
+        }
+
         recognitionTask?.cancel()
         recognitionRequest = nil
         recognitionTask = nil
         isTranscribing = false
+    }
+
+    private func resolveFinal() {
+        finalContinuation?.resume()
+        finalContinuation = nil
     }
 
     enum SpeechError: LocalizedError {

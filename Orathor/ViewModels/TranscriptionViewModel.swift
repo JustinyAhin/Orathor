@@ -9,16 +9,27 @@ final class TranscriptionViewModel {
     var hasPermission = false
     var hasAccessibility = false
 
+    let settingsViewModel = SettingsViewModel()
+
     private let audioService = AudioService()
-    private let speechService = AppleSpeechService()
+    private var speechService: any TranscriptionService
     private let keyboardService = KeyboardService()
     private var shouldAutoInsert = false
 
     private var isSetUp = false
 
+    init() {
+        speechService = TranscriptionViewModel.makeSpeechService(for: settingsViewModel.selectedEngine, apiKey: settingsViewModel.deepgramApiKey)
+    }
+
     func setUp() {
         guard !isSetUp else { return }
         isSetUp = true
+
+        settingsViewModel.onEngineChanged = { [weak self] engine in
+            guard let self, !self.isRecording else { return }
+            self.speechService = TranscriptionViewModel.makeSpeechService(for: engine, apiKey: self.settingsViewModel.deepgramApiKey)
+        }
 
         keyboardService.onAction = { [weak self] action in
             guard let self else { return }
@@ -28,47 +39,65 @@ final class TranscriptionViewModel {
                 self.startRecording()
                 RecordingOverlay.show(viewModel: self)
             case .stopRecording:
-                self.stopRecording()
-                RecordingOverlay.hide()
+                Task {
+                    await self.stopRecording()
+                    RecordingOverlay.hide()
+                }
             case .cancelRecording:
                 self.shouldAutoInsert = false
-                self.stopRecording()
-                RecordingOverlay.hide()
+                Task {
+                    await self.stopRecording()
+                    RecordingOverlay.hide()
+                }
             }
         }
         keyboardService.start()
     }
 
     func checkPermissions() async {
-        hasPermission = await AppleSpeechService.requestPermission()
+        if settingsViewModel.selectedEngine == .apple {
+            hasPermission = await AppleSpeechService.requestPermission()
+        } else {
+            hasPermission = settingsViewModel.isDeepgramConfigured
+        }
         hasAccessibility = TextInsertionService.hasAccessibilityPermission
     }
 
     func toggleRecording() {
         if isRecording {
             shouldAutoInsert = false
-            stopRecording()
+            Task { await stopRecording() }
         } else {
             startRecording()
         }
     }
 
     private func startRecording() {
-        // Check permission synchronously if not yet resolved
-        if !hasPermission {
-            let status = SFSpeechRecognizer.authorizationStatus()
-            if status == .authorized {
-                hasPermission = true
-            } else if status == .notDetermined {
-                Task {
-                    hasPermission = await AppleSpeechService.requestPermission()
-                    if hasPermission { startRecording() }
+        let engine = settingsViewModel.selectedEngine
+
+        if engine == .apple {
+            if !hasPermission {
+                let status = SFSpeechRecognizer.authorizationStatus()
+                if status == .authorized {
+                    hasPermission = true
+                } else if status == .notDetermined {
+                    Task {
+                        hasPermission = await AppleSpeechService.requestPermission()
+                        if hasPermission { startRecording() }
+                    }
+                    return
+                } else {
+                    errorMessage = "Speech recognition permission is required."
+                    return
                 }
-                return
-            } else {
-                errorMessage = "Speech recognition permission is required."
+            }
+        } else if engine == .deepgram {
+            guard settingsViewModel.isDeepgramConfigured else {
+                errorMessage = "Deepgram API key is required. Add it in Settings."
                 return
             }
+            // Recreate service with current API key in case it changed
+            speechService = TranscriptionViewModel.makeSpeechService(for: .deepgram, apiKey: settingsViewModel.deepgramApiKey)
         }
 
         do {
@@ -77,7 +106,16 @@ final class TranscriptionViewModel {
             audioService.onAudioBuffer = { [weak self] buffer, format in
                 guard let self else { return }
                 if !self.speechService.isTranscribing {
-                    try? self.speechService.startTranscribing(audioFormat: format)
+                    Task {
+                        do {
+                            try await self.speechService.startTranscribing(audioFormat: format)
+                        } catch {
+                            Task { @MainActor in
+                                self.errorMessage = error.localizedDescription
+                                await self.stopRecording()
+                            }
+                        }
+                    }
                 }
                 self.speechService.processAudioBuffer(buffer)
             }
@@ -89,9 +127,11 @@ final class TranscriptionViewModel {
         }
     }
 
-    private func stopRecording() {
+    private func stopRecording() async {
         audioService.stopRecording()
-        speechService.stopTranscribing()
+        // Let in-flight audio buffers reach Deepgram before sending Finalize
+        try? await Task.sleep(for: .milliseconds(300))
+        await speechService.stopTranscribing()
         isRecording = false
 
         if shouldAutoInsert {
@@ -110,6 +150,15 @@ final class TranscriptionViewModel {
         speechService.transcribedText
     }
 
+    private static func makeSpeechService(for engine: SpeechEngine, apiKey: String) -> any TranscriptionService {
+        switch engine {
+        case .apple:
+            AppleSpeechService()
+        case .deepgram:
+            DeepgramService(apiKey: apiKey)
+        }
+    }
+
     func insertAtCursor() {
         let text = currentTranscription
         guard !text.isEmpty else { return }
@@ -122,7 +171,14 @@ final class TranscriptionViewModel {
 
         if isRecording {
             shouldAutoInsert = false
-            stopRecording()
+            Task {
+                await stopRecording()
+                NSApp.deactivate()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                    TextInsertionService.insertText(text)
+                }
+            }
+            return
         }
 
         NSApp.deactivate()

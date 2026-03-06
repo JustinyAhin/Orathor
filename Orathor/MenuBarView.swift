@@ -45,13 +45,20 @@ struct MenuBarView: View {
 
             Divider()
 
+            DisclosureGroup("Settings") {
+                SettingsView(viewModel: viewModel.settingsViewModel)
+                    .padding(.top, 4)
+            }
+
+            Divider()
+
             Button("Quit") {
                 NSApplication.shared.terminate(nil)
             }
             .keyboardShortcut("q")
         }
         .padding()
-        .frame(width: 250)
+        .frame(width: 280)
         .task {
             viewModel.setUp()
             await viewModel.checkPermissions()
