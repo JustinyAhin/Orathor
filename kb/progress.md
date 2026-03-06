@@ -53,14 +53,30 @@
 - Both engines wait for final results before text insertion (prevents word loss)
 - ViewModel supports swappable speech service based on settings
 
+### Step 8: Transcript History + Menu Bar Redesign
+- TranscriptEntry model (text, timestamp, duration, word count, target app)
+- TranscriptHistoryService (in-memory store)
+- Frontmost app detection on recording start (name + bundle ID)
+- Menu bar popover redesigned: scrollable list of recent transcripts
+- Each entry shows app icon/name, text preview, duration, word count
+- Click to copy transcript text
+
+## In Progress
+
+### Persistence
+- [ ] Persist transcript entries to JSON on disk
+- [ ] Save audio recordings as .m4a files
+- [ ] Storage at ~/Library/Application Support/segbedji.Orathor/
+
 ## Remaining
 
 ### Core Features
 - [ ] Smart formatting (auto-punctuation, capitalization)
 - [ ] Clipboard mode (dictate to clipboard instead of active field)
 - [ ] Command mode ("new line", "select all", "delete that" voice commands)
-- [ ] History (searchable log of past dictations)
+- [ ] Searchable history
 - [ ] Change hotkey setting
+- [ ] Main app window (beyond menu bar)
 
 ### Polish
 - [ ] Error handling with user-facing alerts
