@@ -34,6 +34,21 @@ struct MenuBarView: View {
                         .textSelection(.enabled)
                 }
                 .frame(maxHeight: 150)
+
+                HStack {
+                    Button {
+                        viewModel.insertAtCursor()
+                    } label: {
+                        Label("Insert at Cursor", systemImage: "text.insert")
+                    }
+
+                    Button {
+                        viewModel.copyToClipboard()
+                    } label: {
+                        Label("Copy", systemImage: "doc.on.doc")
+                    }
+                }
+                .controlSize(.small)
             }
 
             if let error = viewModel.errorMessage {

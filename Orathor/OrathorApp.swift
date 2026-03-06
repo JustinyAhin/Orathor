@@ -10,7 +10,7 @@ import SwiftUI
 @main
 struct OrathorApp: App {
     var body: some Scene {
-        MenuBarExtra("Orathor", systemImage: "mic.fill") {
+        MenuBarExtra("Orathor", systemImage: "waveform") {
             MenuBarView()
         }
         .menuBarExtraStyle(.window)

@@ -1,3 +1,4 @@
+import AppKit
 import AVFoundation
 
 @Observable
@@ -7,12 +8,14 @@ final class TranscriptionViewModel {
     var audioLevel: Float = 0
     var errorMessage: String?
     var hasPermission = false
+    var hasAccessibility = false
 
     private let audioService = AudioService()
     private let speechService = AppleSpeechService()
 
     func checkPermissions() async {
         hasPermission = await AppleSpeechService.requestPermission()
+        hasAccessibility = TextInsertionService.hasAccessibilityPermission
     }
 
     func toggleRecording() {
@@ -61,5 +64,33 @@ final class TranscriptionViewModel {
 
     var currentTranscription: String {
         speechService.transcribedText
+    }
+
+    func insertAtCursor() {
+        let text = currentTranscription
+        guard !text.isEmpty else { return }
+
+        if !hasAccessibility {
+            TextInsertionService.requestAccessibilityPermission()
+            hasAccessibility = TextInsertionService.hasAccessibilityPermission
+            return
+        }
+
+        if isRecording {
+            stopRecording()
+        }
+
+        NSApp.deactivate()
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            TextInsertionService.insertText(text)
+        }
+    }
+
+    func copyToClipboard() {
+        let text = currentTranscription
+        guard !text.isEmpty else { return }
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(text, forType: .string)
     }
 }
