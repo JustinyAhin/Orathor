@@ -13,6 +13,11 @@ struct DashboardView: View {
         entries.reduce(0) { $0 + $1.durationSeconds }
     }
 
+    private var timeSaved: TimeInterval {
+        let estimatedTypingSeconds = Double(totalWords) / 60.0 * 60.0
+        return max(0, estimatedTypingSeconds - totalDuration)
+    }
+
     private var averageWPM: Double {
         let totalMinutes = totalDuration / 60
         guard totalMinutes > 0 else { return 0 }
@@ -55,7 +60,7 @@ struct DashboardView: View {
     private var statsStrip: some View {
         HStack(spacing: 0) {
             HomeStatItem(value: formattedCount(totalWords), label: "words", isHero: true)
-            HomeStatItem(value: formattedDuration(totalDuration), label: "saved")
+            HomeStatItem(value: formattedDuration(timeSaved), label: "saved")
             HomeStatItem(value: String(format: "%.0f", averageWPM), label: "avg wpm")
         }
         .gradientAccentCard()
