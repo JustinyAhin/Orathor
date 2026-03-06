@@ -25,7 +25,9 @@ struct TranscriptsView: View {
     }
 
     var body: some View {
-        Group {
+        VStack(spacing: 0) {
+            searchBar
+
             if historyService.entries.isEmpty {
                 ContentUnavailableView(
                     "No transcripts yet",
@@ -37,9 +39,12 @@ struct TranscriptsView: View {
             } else {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: Spacing.xxl, pinnedViews: .sectionHeaders) {
-                        Text("\(filteredEntries.count) transcripts")
-                            .font(OType.caption)
-                            .foregroundStyle(Color.textTertiary)
+                        HStack {
+                            Text("\(filteredEntries.count) transcripts")
+                                .font(OType.caption)
+                                .foregroundStyle(Color.textTertiary)
+                            Spacer()
+                        }
 
                         ForEach(groupedByDate, id: \.date) { group in
                             Section {
@@ -56,7 +61,7 @@ struct TranscriptsView: View {
                                         )
                                     }
                                 }
-                                .cardStyle(padding: 0)
+                                .leftAccentCard(padding: 0)
                             } header: {
                                 Text(group.date)
                                     .sectionHeaderStyle()
@@ -71,8 +76,36 @@ struct TranscriptsView: View {
                 }
             }
         }
-        .navigationTitle("Transcripts")
-        .searchable(text: $searchText, prompt: "Search transcripts...")
+    }
+
+    private var searchBar: some View {
+        HStack(spacing: Spacing.sm) {
+            Image(systemName: "magnifyingglass")
+                .font(OType.caption)
+                .foregroundStyle(Color.textTertiary)
+            TextField("Search transcripts...", text: $searchText)
+                .textFieldStyle(.plain)
+                .font(OType.body)
+            if !searchText.isEmpty {
+                Button {
+                    searchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(OType.caption)
+                        .foregroundStyle(Color.textTertiary)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, Spacing.md)
+        .padding(.vertical, Spacing.xs)
+        .background(Color.surfaceSecondary, in: RoundedRectangle(cornerRadius: Radius.sm))
+        .overlay(
+            RoundedRectangle(cornerRadius: Radius.sm)
+                .stroke(Color.borderSubtle, lineWidth: 0.5)
+        )
+        .padding(.horizontal, Spacing.xxl)
+        .padding(.vertical, Spacing.md)
     }
 
     private func formatDateHeader(_ date: Date) -> String {

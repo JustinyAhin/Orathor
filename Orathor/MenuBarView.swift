@@ -52,21 +52,27 @@ struct MenuBarView: View {
 
     private var header: some View {
         VStack(spacing: 0) {
-            HStack {
-                Text("Recents")
-                    .sectionHeaderStyle()
-                Spacer()
-                if viewModel.isRecording {
-                    recordingBadge
-                }
-            }
-            .padding(.horizontal, Spacing.lg)
-            .padding(.vertical, Spacing.sm)
-
             if viewModel.isRecording {
+                HStack(spacing: Spacing.sm) {
+                    recordingBadge
+                    Spacer()
+                    AudioLevelView(level: viewModel.currentAudioLevel)
+                        .frame(width: 60, height: 4)
+                }
+                .padding(.horizontal, Spacing.lg)
+                .padding(.vertical, Spacing.sm)
+
                 WaveformAccent(amplitude: 2, wavelength: 8, lineWidth: 1, animated: true)
                     .padding(.horizontal, Spacing.lg)
                     .padding(.bottom, Spacing.xs)
+            } else {
+                HStack {
+                    Text("Recents")
+                        .sectionHeaderStyle()
+                    Spacer()
+                }
+                .padding(.horizontal, Spacing.lg)
+                .padding(.vertical, Spacing.sm)
             }
         }
     }
@@ -112,7 +118,7 @@ struct MenuBarView: View {
                     WaveformAccent(amplitude: 3, wavelength: 12, lineWidth: 1.5)
                         .frame(width: 80)
                         .opacity(0.3)
-                    Text("Your voice, captured")
+                    Text("Ready to go")
                         .font(OType.body)
                         .foregroundStyle(Color.textSecondary)
                     Text("Press \(viewModel.settingsViewModel.insertHotkey.displayName) to start")
@@ -129,7 +135,7 @@ struct MenuBarView: View {
                     .padding(.vertical, Spacing.xxxl)
             } else {
                 ScrollView {
-                    LazyVStack(spacing: Spacing.xxs) {
+                    LazyVStack(spacing: Spacing.xxxs) {
                         ForEach(filteredEntries) { entry in
                             TranscriptEntryRow(
                                 entry: entry,
@@ -176,27 +182,38 @@ struct TranscriptEntryRow: View {
     @State private var showCopied = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.xxs) {
-            HStack(spacing: Spacing.xs) {
-                appIconAndName
-                Spacer()
-                metadata
+        HStack(alignment: .top, spacing: 0) {
+            RoundedRectangle(cornerRadius: 1)
+                .fill(Color.brand)
+                .frame(width: 2)
+                .padding(.vertical, Spacing.xs)
+
+            VStack(alignment: .leading, spacing: Spacing.xxs) {
+                HStack(spacing: Spacing.xs) {
+                    appIconAndName
+                    Spacer()
+                    metadata
+                }
+
+                Text(highlightedText)
+                    .font(OType.callout)
+                    .foregroundStyle(Color.textPrimary)
+                    .lineLimit(2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .textSelection(.enabled)
+
+                if isHovered {
+                    actionBar
+                        .transition(.opacity)
+                }
             }
-
-            Text(highlightedText)
-                .font(OType.callout)
-                .foregroundStyle(Color.textPrimary)
-                .lineLimit(2)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .textSelection(.enabled)
-
-            actionBar
+            .padding(.leading, Spacing.sm)
         }
         .padding(.horizontal, Spacing.sm)
         .padding(.vertical, Spacing.xs)
-        .overlay(
+        .background(
             RoundedRectangle(cornerRadius: Radius.md)
-                .stroke(isHovered ? Color.borderDefault : .clear, lineWidth: 0.5)
+                .fill(isHovered ? Color.surfaceSecondary : .clear)
         )
         .contentShape(Rectangle())
         .onHover { isHovered = $0 }

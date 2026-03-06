@@ -60,6 +60,45 @@ extension View {
     }
 }
 
+// MARK: - Left Accent Card (left border accent)
+
+struct LeftAccentCardModifier: ViewModifier {
+    var radius: CGFloat = Radius.xl
+    var padding: CGFloat = Spacing.lg
+
+    func body(content: Content) -> some View {
+        content
+            .padding(padding)
+            .background(Color.surfaceElevated)
+            .clipShape(RoundedRectangle(cornerRadius: radius))
+            .overlay(
+                RoundedRectangle(cornerRadius: radius)
+                    .stroke(Color.borderSubtle, lineWidth: 0.5)
+            )
+            .overlay(alignment: .leading) {
+                LinearGradient(
+                    colors: [.brand, .brandGradientEnd],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(width: 2.5)
+                .clipShape(
+                    UnevenRoundedRectangle(
+                        topLeadingRadius: radius,
+                        bottomLeadingRadius: radius
+                    )
+                )
+            }
+            .shadow(color: .black.opacity(0.04), radius: 8, y: 2)
+    }
+}
+
+extension View {
+    func leftAccentCard(radius: CGFloat = Radius.xl, padding: CGFloat = Spacing.lg) -> some View {
+        modifier(LeftAccentCardModifier(radius: radius, padding: padding))
+    }
+}
+
 // MARK: - Section Header
 
 struct SectionHeaderModifier: ViewModifier {

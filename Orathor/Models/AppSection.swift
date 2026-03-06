@@ -9,7 +9,7 @@ enum AppSection: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .dashboard: "Dashboard"
+        case .dashboard: "Home"
         case .transcripts: "Transcripts"
         case .settings: "Settings"
         }
@@ -17,7 +17,7 @@ enum AppSection: String, CaseIterable, Identifiable {
 
     var icon: String {
         switch self {
-        case .dashboard: "square.grid.2x2"
+        case .dashboard: "waveform"
         case .transcripts: "text.quote"
         case .settings: "gearshape"
         }

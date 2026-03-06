@@ -103,16 +103,20 @@
 
 ### Step 13: UI Redesign — Design System
 - Design token system: Theme.swift (Spacing, Radius, OType) + ViewModifiers.swift (CardModifier, SectionHeaderModifier, GhostButtonStyle, IconButtonStyle, SubtleDivider)
-- 13 custom colorsets in asset catalog with light/dark variants: AccentColor (muted indigo), BrandSubtle, SurfacePrimary, SurfaceSecondary, SurfaceElevated, BorderSubtle, BorderDefault, TextPrimary, TextSecondary, TextTertiary, Recording, Success, Warning
+- 13 custom colorsets in asset catalog with light/dark variants
 - All views updated to use design tokens: consistent typography (OType), spacing (Spacing), corner radii (Radius), and themed colors
-- Menu bar popover: 340pt wide, "RECENTS" section header, inline REC badge (capsule), search bar with surfaceSecondary bg + border, border-only hover on rows
-- Dashboard: 3 individual stat cards with rounded stat numbers, sectionHeaderStyle, activity grid with brand color
-- Transcripts: date headers with sectionHeaderStyle, SubtleDivider, cardStyle containers, hover bg on rows
-- Settings: grouped sections in cards (engine card, hotkeys card), descriptions below cards
-- Recording overlay: brand-colored audio bars (replaced green), 0.5pt border on material bg
-- Sidebar: subtle "Orathor" wordmark replacing large branding block
-- AudioLevelView: brand gradient fill replacing green
-- Search highlight: brand-tinted (replaced yellow)
+
+### Step 14: Visual Redesign — Amber Palette + Structural Overhaul
+- New brand palette: rich amber (#D97706) → warm gold (#F59E0B) gradient, replacing teal-blue
+- Warm stone neutrals (Tailwind stone scale) for surfaces, borders, text — replaces cool gray
+- Warning color shifted to red-orange (#EA580C) to differentiate from amber brand
+- Dark mode hero: deep warm blacks (#0C0A09), warm elevated surfaces
+- Main window: replaced NavigationSplitView sidebar with centered segmented tab bar (Home/Transcripts/Settings)
+- Dashboard → Home: stripped to compact stats strip (one gradientAccentCard) + recent transcripts; killed activity grid, top sources
+- New leftAccentCard modifier: amber left border accent on transcript cards (signature element)
+- TranscriptsView: inline search bar replacing .searchable modifier; left-accent cards per date group
+- MenuBarView: amber accent bars on transcript rows; tighter header with audio level bar when recording
+- Updated design context (kb/design.md): "Bold, warm, confident" personality; Raycast reference
 
 ## Remaining
 

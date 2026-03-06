@@ -19,274 +19,68 @@ struct DashboardView: View {
         return Double(totalWords) / totalMinutes
     }
 
-    private var topSources: [(name: String, bundleID: String?, wordCount: Int)] {
-        var byApp: [String: (bundleID: String?, words: Int)] = [:]
-        for entry in entries {
-            let name = entry.targetAppName ?? "Unknown"
-            let existing = byApp[name, default: (bundleID: entry.targetAppBundleID, words: 0)]
-            byApp[name] = (bundleID: existing.bundleID ?? entry.targetAppBundleID, words: existing.words + entry.wordCount)
-        }
-        return byApp
-            .map { (name: $0.key, bundleID: $0.value.bundleID, wordCount: $0.value.words) }
-            .sorted { $0.wordCount > $1.wordCount }
-            .prefix(5)
-            .map { $0 }
-    }
-
-    private var activityData: ActivityGrid {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-
-        var dailyCounts: [Date: Int] = [:]
-        for entry in entries {
-            let day = calendar.startOfDay(for: entry.timestamp)
-            dailyCounts[day, default: 0] += entry.wordCount
-        }
-
-        let todayWeekday = calendar.component(.weekday, from: today)
-        let daysSinceMonday = (todayWeekday + 5) % 7
-        let weeksToShow = 4
-        let totalDayCount = weeksToShow * 7
-        let gridStart = calendar.date(byAdding: .day, value: -(totalDayCount - 1 - (6 - daysSinceMonday)), to: today)!
-
-        var days: [ActivityDay] = []
-        for i in 0..<totalDayCount {
-            let date = calendar.date(byAdding: .day, value: i, to: gridStart)!
-            let count = dailyCounts[date] ?? 0
-            let isFuture = date > today
-            days.append(ActivityDay(date: date, wordCount: count, isFuture: isFuture))
-        }
-
-        let maxCount = days.map(\.wordCount).max() ?? 0
-        let activeDays = dailyCounts.keys.count
-
-        return ActivityGrid(days: days, maxCount: maxCount, activeDays: activeDays)
-    }
-
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: Spacing.xxl) {
-                statsSection
-
-                WaveformAccent(amplitude: 2, wavelength: 14, lineWidth: 1)
-                    .opacity(0.2)
-                    .padding(.horizontal, Spacing.xxl)
-
-                HStack(alignment: .top, spacing: Spacing.xxl) {
-                    topSourcesSection
-                    activitySection
-                }
-                recentTranscriptsSection
-            }
-            .padding(Spacing.xxxl)
-        }
-        .navigationTitle("Dashboard")
-    }
-
-    // MARK: - Stats Row (Hero)
-
-    private var statsSection: some View {
-        VStack(alignment: .leading, spacing: Spacing.md) {
-            Text("Stats")
-                .sectionHeaderStyle()
-
-            HStack(spacing: Spacing.lg) {
-                StatCell(label: "Total words", value: formattedCount(totalWords), isHero: true)
-                StatCell(label: "Time saved", value: formattedDuration(totalDuration))
-                StatCell(label: "Avg WPM", value: String(format: "%.0f", averageWPM))
-            }
-        }
-    }
-
-    // MARK: - Top Sources
-
-    private var topSourcesSection: some View {
-        VStack(alignment: .leading, spacing: Spacing.md) {
-            Text("Top sources")
-                .sectionHeaderStyle()
-
-            if topSources.isEmpty {
-                VStack(spacing: Spacing.sm) {
-                    Image(systemName: "waveform.badge.mic")
-                        .font(.system(size: 20))
-                        .foregroundStyle(Color.textTertiary)
-                    Text("Speak to fill this space")
-                        .font(OType.caption)
-                        .foregroundStyle(Color.textTertiary)
-                }
-                .frame(maxWidth: .infinity)
-                .cardStyle(padding: Spacing.xxl)
-            } else {
-                VStack(spacing: 0) {
-                    ForEach(Array(topSources.enumerated()), id: \.offset) { index, source in
-                        if index > 0 {
-                            SubtleDivider(leadingInset: 42)
-                        }
-                        HStack(spacing: Spacing.sm) {
-                            appIcon(for: source.bundleID)
-                            Text(source.name)
-                                .font(OType.body)
-                                .foregroundStyle(Color.textPrimary)
-                            Spacer()
-                            Text("\(formattedCount(source.wordCount))")
-                                .font(OType.monoSmall)
-                                .foregroundStyle(Color.textTertiary)
-                        }
-                        .padding(.horizontal, Spacing.lg)
-                        .padding(.vertical, Spacing.sm)
-                    }
-                }
-                .cardStyle(padding: 0)
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    // MARK: - Activity Grid
-
-    private var activitySection: some View {
-        let grid = activityData
-        let weekdays = ["M", "T", "W", "T", "F", "S", "S"]
-
-        return VStack(alignment: .leading, spacing: Spacing.md) {
-            Text("Activity")
-                .sectionHeaderStyle()
-
-            VStack(alignment: .trailing, spacing: Spacing.xxs) {
-                HStack(alignment: .top, spacing: Spacing.xxs) {
-                    VStack(spacing: Spacing.xxs) {
-                        ForEach(0..<7, id: \.self) { row in
-                            Text(weekdays[row])
-                                .font(OType.monoMicro)
-                                .foregroundStyle(Color.textTertiary)
-                                .frame(width: 16, height: 16)
-                        }
-                    }
-
-                    let weeks = stride(from: 0, to: grid.days.count, by: 7).map {
-                        Array(grid.days[$0..<min($0 + 7, grid.days.count)])
-                    }
-                    ForEach(Array(weeks.enumerated()), id: \.offset) { _, week in
-                        VStack(spacing: Spacing.xxs) {
-                            ForEach(week, id: \.date) { day in
-                                activityCell(day: day, maxCount: grid.maxCount)
-                            }
-                        }
-                    }
-                }
-
-                Text("\(grid.activeDays) active days")
-                    .font(OType.monoMicro)
-                    .foregroundStyle(Color.textTertiary)
-                    .padding(.top, Spacing.xxs)
-            }
-            .cardStyle()
-        }
-    }
-
-    private func activityCell(day: ActivityDay, maxCount: Int) -> some View {
-        let intensity: Double
-        if day.isFuture {
-            intensity = -1
-        } else if day.wordCount == 0 {
-            intensity = 0
-        } else if maxCount > 0 {
-            intensity = max(0.2, Double(day.wordCount) / Double(maxCount))
+        if entries.isEmpty {
+            emptyState
         } else {
-            intensity = 0
+            ScrollView {
+                VStack(alignment: .leading, spacing: Spacing.xxl) {
+                    statsStrip
+                    recentSection
+                }
+                .padding(Spacing.xxxl)
+            }
         }
+    }
 
-        return RoundedRectangle(cornerRadius: Radius.xs)
-            .fill(
-                intensity < 0
-                    ? AnyShapeStyle(Color.clear)
-                    : intensity == 0
-                        ? AnyShapeStyle(Color.surfaceSecondary)
-                        : AnyShapeStyle(
-                            LinearGradient(
-                                colors: [
-                                    Color.brand.opacity(intensity),
-                                    Color.brandGradientEnd.opacity(intensity)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                          )
-            )
-            .frame(width: 16, height: 16)
+    // MARK: - Empty State
+
+    private var emptyState: some View {
+        VStack(spacing: Spacing.lg) {
+            WaveformAccent(amplitude: 3, wavelength: 12, lineWidth: 1.5)
+                .frame(width: 100)
+                .opacity(0.4)
+            Text("Ready to go")
+                .font(OType.title)
+                .foregroundStyle(Color.textPrimary)
+            Text("Press your hotkey to start dictating")
+                .font(OType.body)
+                .foregroundStyle(Color.textTertiary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    // MARK: - Stats
+
+    private var statsStrip: some View {
+        HStack(spacing: 0) {
+            HomeStatItem(value: formattedCount(totalWords), label: "words", isHero: true)
+            HomeStatItem(value: formattedDuration(totalDuration), label: "saved")
+            HomeStatItem(value: String(format: "%.0f", averageWPM), label: "avg wpm")
+        }
+        .gradientAccentCard()
     }
 
     // MARK: - Recent Transcripts
 
-    private var recentTranscriptsSection: some View {
+    private var recentSection: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
             Text("Recent")
                 .sectionHeaderStyle()
 
-            if entries.isEmpty {
-                VStack(spacing: Spacing.sm) {
-                    Image(systemName: "text.word.spacing")
-                        .font(.system(size: 20))
-                        .foregroundStyle(Color.textTertiary)
-                    Text("Your voice, captured")
-                        .font(OType.caption)
-                        .foregroundStyle(Color.textTertiary)
-                }
-                .frame(maxWidth: .infinity)
-                .cardStyle(padding: Spacing.xxl)
-            } else {
-                VStack(spacing: 0) {
-                    ForEach(Array(entries.prefix(5).enumerated()), id: \.element.id) { index, entry in
-                        if index > 0 {
-                            SubtleDivider(leadingInset: 56)
-                        }
-                        HStack(spacing: Spacing.md) {
-                            Text(entry.timestamp, format: .dateTime.hour().minute())
-                                .font(OType.monoSmall)
-                                .foregroundStyle(Color.textTertiary)
-                                .frame(width: 44, alignment: .trailing)
-
-                            VStack(alignment: .leading, spacing: Spacing.xxs) {
-                                if let appName = entry.targetAppName {
-                                    HStack(spacing: Spacing.xs) {
-                                        appIcon(for: entry.targetAppBundleID)
-                                        Text(appName)
-                                            .font(OType.captionMedium)
-                                            .foregroundStyle(Color.textSecondary)
-                                    }
-                                }
-                                Text(entry.text)
-                                    .font(OType.body)
-                                    .foregroundStyle(Color.textPrimary)
-                                    .lineLimit(2)
-                            }
-
-                            Spacer()
-
-                            Text("\(entry.wordCount)w")
-                                .font(OType.monoMicro)
-                                .foregroundStyle(Color.textTertiary)
-                        }
-                        .padding(.horizontal, Spacing.lg)
-                        .padding(.vertical, Spacing.sm)
+            VStack(spacing: 0) {
+                ForEach(Array(entries.prefix(8).enumerated()), id: \.element.id) { index, entry in
+                    if index > 0 {
+                        SubtleDivider(leadingInset: Spacing.lg)
                     }
+                    HomeTranscriptRow(entry: entry)
                 }
-                .cardStyle(padding: 0)
             }
+            .leftAccentCard(padding: 0)
         }
     }
 
     // MARK: - Helpers
-
-    @ViewBuilder
-    private func appIcon(for bundleID: String?) -> some View {
-        if let bundleID,
-           let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
-            Image(nsImage: NSWorkspace.shared.icon(forFile: appURL.path()))
-                .resizable()
-                .frame(width: 16, height: 16)
-        }
-    }
 
     private func formattedCount(_ count: Int) -> String {
         if count >= 1000 {
@@ -312,35 +106,71 @@ struct DashboardView: View {
     }
 }
 
-// MARK: - Supporting Types
+// MARK: - Supporting Views
 
-private struct ActivityDay {
-    let date: Date
-    let wordCount: Int
-    let isFuture: Bool
-}
-
-private struct ActivityGrid {
-    let days: [ActivityDay]
-    let maxCount: Int
-    let activeDays: Int
-}
-
-private struct StatCell: View {
-    let label: String
+private struct HomeStatItem: View {
     let value: String
+    let label: String
     var isHero: Bool = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.xs) {
+        VStack(alignment: .leading, spacing: Spacing.xxxs) {
+            Text(value)
+                .font(OType.stat)
+                .foregroundStyle(
+                    isHero
+                        ? AnyShapeStyle(LinearGradient.brand)
+                        : AnyShapeStyle(Color.textPrimary)
+                )
             Text(label)
                 .font(OType.captionMedium)
                 .foregroundStyle(Color.textTertiary)
-            Text(value)
-                .font(OType.stat)
-                .foregroundStyle(isHero ? AnyShapeStyle(LinearGradient.brand) : AnyShapeStyle(Color.textPrimary))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .gradientAccentCard()
+    }
+}
+
+private struct HomeTranscriptRow: View {
+    let entry: TranscriptEntry
+
+    var body: some View {
+        HStack(alignment: .top, spacing: Spacing.md) {
+            appIcon
+
+            VStack(alignment: .leading, spacing: Spacing.xxs) {
+                HStack(spacing: Spacing.xs) {
+                    if let appName = entry.targetAppName {
+                        Text(appName)
+                            .font(OType.captionMedium)
+                            .foregroundStyle(Color.textSecondary)
+                    }
+                    Spacer()
+                    Text(entry.timestamp, format: .dateTime.hour().minute())
+                        .font(OType.monoSmall)
+                        .foregroundStyle(Color.textTertiary)
+                    Text("\(entry.wordCount)w")
+                        .font(OType.monoMicro)
+                        .foregroundStyle(Color.textTertiary)
+                }
+                Text(entry.text)
+                    .font(OType.body)
+                    .foregroundStyle(Color.textPrimary)
+                    .lineLimit(2)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .padding(.horizontal, Spacing.lg)
+        .padding(.vertical, Spacing.sm)
+    }
+
+    @ViewBuilder
+    private var appIcon: some View {
+        if let bundleID = entry.targetAppBundleID,
+           let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
+            Image(nsImage: NSWorkspace.shared.icon(forFile: appURL.path()))
+                .resizable()
+                .frame(width: 16, height: 16)
+                .padding(.top, 2)
+        }
     }
 }
