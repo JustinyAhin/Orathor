@@ -2,6 +2,17 @@ import AppKit
 import Carbon.HIToolbox
 
 struct TextInsertionService {
+    struct FrontmostApp {
+        let name: String
+        let bundleIdentifier: String?
+    }
+
+    static func getFrontmostApp() -> FrontmostApp? {
+        guard let app = NSWorkspace.shared.frontmostApplication else { return nil }
+        let name = app.localizedName ?? "Unknown"
+        return FrontmostApp(name: name, bundleIdentifier: app.bundleIdentifier)
+    }
+
     static func insertText(_ text: String) {
         let pasteboard = NSPasteboard.general
         let previousContents = pasteboard.string(forType: .string)

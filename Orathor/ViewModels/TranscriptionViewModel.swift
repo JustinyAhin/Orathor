@@ -10,11 +10,14 @@ final class TranscriptionViewModel {
     var hasAccessibility = false
 
     let settingsViewModel = SettingsViewModel()
+    let historyService = TranscriptHistoryService()
 
     private let audioService = AudioService()
     private var speechService: any TranscriptionService
     private let keyboardService = KeyboardService()
     private var shouldAutoInsert = false
+    private var recordingStartTime: Date?
+    private var targetApp: TextInsertionService.FrontmostApp?
 
     private var isSetUp = false
 
@@ -102,6 +105,8 @@ final class TranscriptionViewModel {
 
         do {
             errorMessage = nil
+            recordingStartTime = Date()
+            targetApp = TextInsertionService.getFrontmostApp()
 
             audioService.onAudioBuffer = { [weak self] buffer, format in
                 guard let self else { return }
@@ -134,12 +139,29 @@ final class TranscriptionViewModel {
         await speechService.stopTranscribing()
         isRecording = false
 
+        let text = currentTranscription
+        let duration = recordingStartTime.map { Date().timeIntervalSince($0) } ?? 0
+
         if shouldAutoInsert {
             shouldAutoInsert = false
-            let text = currentTranscription
             guard !text.isEmpty else { return }
             TextInsertionService.insertText(text)
         }
+
+        if !text.isEmpty {
+            let entry = TranscriptEntry(
+                text: text,
+                timestamp: Date(),
+                durationSeconds: duration,
+                wordCount: text.split(separator: " ").count,
+                targetAppName: targetApp?.name,
+                targetAppBundleID: targetApp?.bundleIdentifier
+            )
+            historyService.add(entry)
+        }
+
+        recordingStartTime = nil
+        targetApp = nil
     }
 
     var currentAudioLevel: Float {
