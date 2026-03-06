@@ -149,6 +149,7 @@ cd /Users/iamsegbedji/work/projects/Orathor && xcodebuild -scheme Orathor -confi
 ```
 
 2. If there are build errors, fix them before moving on.
+3. **Update `kb/progress.md`** after every meaningful change (new feature, bug fix, architectural change). Move completed items from Remaining to Completed, add new items as needed.
 
 ## Commands
 
