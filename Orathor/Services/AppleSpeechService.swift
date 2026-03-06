@@ -26,6 +26,8 @@ final class AppleSpeechService: TranscriptionService {
             throw SpeechError.recognizerUnavailable
         }
 
+        transcribedText = ""
+
         let request = SFSpeechAudioBufferRecognitionRequest()
         request.shouldReportPartialResults = true
         request.addsPunctuation = true
