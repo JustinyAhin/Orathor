@@ -85,7 +85,7 @@ struct MenuBarView: View {
                     Text("No transcripts yet")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                    Text("Press Right \u{2318} to start dictating")
+                    Text("Press \(viewModel.settingsViewModel.insertHotkey.displayName) to start dictating")
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                 }

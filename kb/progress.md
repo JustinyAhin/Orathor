@@ -77,13 +77,23 @@
 - Search text resets when popover closes (`@State` lifecycle)
 - Escape key closes menu bar popover (NSEvent local monitor)
 
+### Step 11: Customizable Hotkeys + Clipboard Mode
+- HotkeyModifier enum (rightCommand, rightOption, rightControl, rightShift, fn)
+- KeyboardService supports two configurable hotkeys with RecordingMode (insertAtCursor/clipboard)
+- Hold and double-tap work the same for both hotkeys
+- Clipboard hotkey copies text to clipboard instead of simulating Cmd+V paste
+- Hotkey settings persisted in UserDefaults with auto-swap on conflict
+- "Press to record" hotkey capture UI with key cap display (HotkeyField/OptionalHotkeyField)
+- Clipboard hotkey is optional (can be cleared with X button)
+- Recording overlay shows clipboard icon when in clipboard mode
+- Menu bar hint text updates dynamically based on configured insert hotkey
+- Defaults: Right Command (insert), Right Option (clipboard)
+
 ## Remaining
 
 ### Core Features
 - [ ] Smart formatting (auto-punctuation, capitalization)
-- [ ] Clipboard mode (dictate to clipboard instead of active field)
 - [ ] Command mode ("new line", "select all", "delete that" voice commands)
-- [ ] Change hotkey setting
 - [ ] Main app window (beyond menu bar)
 
 ### Polish

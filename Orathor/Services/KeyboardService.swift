@@ -3,13 +3,20 @@ import Carbon.HIToolbox
 
 @Observable
 final class KeyboardService {
+    enum RecordingMode {
+        case insertAtCursor
+        case clipboard
+    }
+
     enum Action {
-        case startRecording
+        case startRecording(RecordingMode)
         case stopRecording
         case cancelRecording
     }
 
     var onAction: ((Action) -> Void)?
+    var insertHotkey: HotkeyModifier = .rightCommand
+    var clipboardHotkey: HotkeyModifier?
 
     private var globalMonitor: Any?
     private var localMonitor: Any?
@@ -21,6 +28,7 @@ final class KeyboardService {
     private var isToggled = false
     private var justToggledOn = false
     private var holdCheckTask: Task<Void, Never>?
+    private var activeHotkey: HotkeyModifier?
 
     private let holdThreshold: UInt64 = 300_000_000 // 300ms
     private let doubleTapWindow: TimeInterval = 0.4
@@ -70,16 +78,32 @@ final class KeyboardService {
     }
 
     private func handleFlags(_ event: NSEvent) {
-        guard event.keyCode == UInt16(kVK_RightCommand) else { return }
-        let cmdDown = event.modifierFlags.contains(.command)
+        let matchedHotkey: HotkeyModifier
+        if event.keyCode == insertHotkey.keyCode {
+            matchedHotkey = insertHotkey
+        } else if let ch = clipboardHotkey, event.keyCode == ch.keyCode {
+            matchedHotkey = ch
+        } else {
+            return
+        }
 
-        if cmdDown && !isModifierDown {
+        let isDown = event.modifierFlags.contains(matchedHotkey.modifierFlag)
+
+        if isDown && !isModifierDown {
             isModifierDown = true
+            activeHotkey = matchedHotkey
             onKeyDown()
-        } else if !cmdDown && isModifierDown {
+        } else if !isDown && isModifierDown {
             isModifierDown = false
             onKeyUp()
         }
+    }
+
+    private var activeMode: RecordingMode {
+        if let activeHotkey, let ch = clipboardHotkey, activeHotkey == ch {
+            return .clipboard
+        }
+        return .insertAtCursor
     }
 
     private func onKeyDown() {
@@ -94,7 +118,7 @@ final class KeyboardService {
             isToggled = true
             justToggledOn = true
             SoundService.playStart()
-            onAction?(.startRecording)
+            onAction?(.startRecording(activeMode))
             return
         }
 
@@ -105,7 +129,7 @@ final class KeyboardService {
             guard !Task.isCancelled, isModifierDown else { return }
             isHolding = true
             SoundService.playStart()
-            onAction?(.startRecording)
+            onAction?(.startRecording(activeMode))
         }
     }
 

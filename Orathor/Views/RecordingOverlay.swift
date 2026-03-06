@@ -62,6 +62,12 @@ struct RecordingOverlayView: View {
             Text("Recording")
                 .font(.system(.callout, weight: .medium))
 
+            if viewModel.recordingMode == .clipboard {
+                Image(systemName: "doc.on.clipboard")
+                    .font(.system(.caption, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
+
             OverlayLevelBars(level: viewModel.currentAudioLevel)
                 .frame(width: 50, height: 16)
         }

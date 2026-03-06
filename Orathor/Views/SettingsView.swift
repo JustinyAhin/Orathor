@@ -38,6 +38,15 @@ struct SettingsView: View {
                 }
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
+            Divider()
+                .padding(.vertical, 4)
+
+            Text("Hotkeys")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            HotkeyField(label: "Insert at cursor", hotkey: $viewModel.insertHotkey)
+            OptionalHotkeyField(label: "Copy to clipboard", hotkey: $viewModel.clipboardHotkey)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .animation(.easeInOut(duration: 0.2), value: viewModel.selectedEngine)

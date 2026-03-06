@@ -16,6 +16,7 @@ final class TranscriptionViewModel {
     private var speechService: any TranscriptionService
     private let keyboardService = KeyboardService()
     private var shouldAutoInsert = false
+    private(set) var recordingMode: KeyboardService.RecordingMode = .insertAtCursor
     private var recordingStartTime: Date?
     private var targetApp: TextInsertionService.FrontmostApp?
     private var currentRecordingURL: URL?
@@ -36,11 +37,21 @@ final class TranscriptionViewModel {
             self.speechService = TranscriptionViewModel.makeSpeechService(for: engine, apiKey: self.settingsViewModel.deepgramApiKey)
         }
 
+        keyboardService.insertHotkey = settingsViewModel.insertHotkey
+        keyboardService.clipboardHotkey = settingsViewModel.clipboardHotkey
+
+        settingsViewModel.onHotkeyChanged = { [weak self] in
+            guard let self else { return }
+            self.keyboardService.insertHotkey = self.settingsViewModel.insertHotkey
+            self.keyboardService.clipboardHotkey = self.settingsViewModel.clipboardHotkey
+        }
+
         keyboardService.onAction = { [weak self] action in
             guard let self else { return }
             switch action {
-            case .startRecording:
-                self.shouldAutoInsert = true
+            case .startRecording(let mode):
+                self.recordingMode = mode
+                self.shouldAutoInsert = (mode == .insertAtCursor)
                 self.startRecording()
                 RecordingOverlay.show(viewModel: self)
             case .stopRecording:
@@ -160,11 +171,18 @@ final class TranscriptionViewModel {
         let text = currentTranscription
         let duration = recordingStartTime.map { Date().timeIntervalSince($0) } ?? 0
 
-        if shouldAutoInsert {
-            shouldAutoInsert = false
-            guard !text.isEmpty else { return }
-            TextInsertionService.insertText(text)
+        if !text.isEmpty {
+            switch recordingMode {
+            case .insertAtCursor:
+                if shouldAutoInsert {
+                    TextInsertionService.insertText(text)
+                }
+            case .clipboard:
+                TextInsertionService.copyToClipboard(text)
+            }
         }
+        shouldAutoInsert = false
+        recordingMode = .insertAtCursor
 
         if !text.isEmpty {
             let entry = TranscriptEntry(

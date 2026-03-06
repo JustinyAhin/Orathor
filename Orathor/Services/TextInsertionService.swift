@@ -13,6 +13,12 @@ struct TextInsertionService {
         return FrontmostApp(name: name, bundleIdentifier: app.bundleIdentifier)
     }
 
+    static func copyToClipboard(_ text: String) {
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(text, forType: .string)
+    }
+
     static func insertText(_ text: String) {
         let pasteboard = NSPasteboard.general
         let previousContents = pasteboard.string(forType: .string)
