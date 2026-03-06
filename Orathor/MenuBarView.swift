@@ -167,13 +167,6 @@ struct TranscriptEntryRow: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .textSelection(.enabled)
 
-            if showCopied {
-                Text("Copied!")
-                    .font(.caption2)
-                    .foregroundStyle(.green)
-                    .transition(.opacity)
-            }
-
             actionBar
         }
         .padding(10)
@@ -229,7 +222,7 @@ struct TranscriptEntryRow: View {
         HStack(spacing: 8) {
             Spacer()
 
-            rowButton("doc.on.doc", help: "Copy text") {
+            rowButton(showCopied ? "checkmark" : "doc.on.doc", help: "Copy text") {
                 copyText()
             }
 

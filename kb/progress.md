@@ -60,6 +60,7 @@
 - Menu bar popover redesigned: scrollable list of recent transcripts
 - Each entry shows app icon/name, text preview, duration, word count
 - Click to copy transcript text
+- Copy button swaps to checkmark icon briefly as feedback instead of "Copied!" text
 
 ### Step 9: Persistence + Transcript Actions
 - Transcript entries persisted to JSON at ~/Library/Application Support/segbedji.Orathor/
