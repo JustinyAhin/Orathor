@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MenuBarView: View {
     var viewModel: TranscriptionViewModel
+    @State private var playbackService = AudioPlaybackService()
 
     var body: some View {
         VStack(spacing: 0) {
@@ -55,7 +56,11 @@ struct MenuBarView: View {
                 ScrollView {
                     LazyVStack(spacing: 6) {
                         ForEach(viewModel.historyService.entries) { entry in
-                            TranscriptEntryRow(entry: entry)
+                            TranscriptEntryRow(
+                                entry: entry,
+                                historyService: viewModel.historyService,
+                                playbackService: playbackService
+                            )
                         }
                     }
                     .padding(.horizontal, 10)
@@ -95,39 +100,40 @@ struct MenuBarView: View {
 
 struct TranscriptEntryRow: View {
     let entry: TranscriptEntry
+    let historyService: TranscriptHistoryService
+    let playbackService: AudioPlaybackService
+
     @State private var isHovered = false
     @State private var showCopied = false
 
     var body: some View {
-        Button {
-            copyText()
-        } label: {
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    appIconAndName
-                    Spacer()
-                    metadata
-                }
-
-                Text(entry.text)
-                    .font(.system(.callout))
-                    .lineLimit(3)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-
-                if showCopied {
-                    Text("Copied!")
-                        .font(.caption2)
-                        .foregroundStyle(.green)
-                        .transition(.opacity)
-                }
+        VStack(alignment: .leading, spacing: 6) {
+            HStack {
+                appIconAndName
+                Spacer()
+                metadata
             }
-            .padding(10)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(isHovered ? Color.primary.opacity(0.08) : Color.primary.opacity(0.04))
-            )
+
+            Text(entry.text)
+                .font(.system(.callout))
+                .lineLimit(3)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .textSelection(.enabled)
+
+            if showCopied {
+                Text("Copied!")
+                    .font(.caption2)
+                    .foregroundStyle(.green)
+                    .transition(.opacity)
+            }
+
+            actionBar
         }
-        .buttonStyle(.plain)
+        .padding(10)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(isHovered ? Color.primary.opacity(0.08) : Color.primary.opacity(0.04))
+        )
         .onHover { isHovered = $0 }
     }
 
@@ -160,6 +166,61 @@ struct TranscriptEntryRow: View {
         .foregroundStyle(.tertiary)
     }
 
+    private var actionBar: some View {
+        HStack(spacing: 8) {
+            Spacer()
+
+            rowButton("doc.on.doc", help: "Copy text") {
+                copyText()
+            }
+
+            Menu {
+                if historyService.audioFileURL(for: entry) != nil {
+                    Button {
+                        togglePlayback()
+                    } label: {
+                        Label(
+                            playbackService.isPlaying ? "Stop" : "Play",
+                            systemImage: playbackService.isPlaying ? "stop.fill" : "play.fill"
+                        )
+                    }
+
+                    Button {
+                        showInFinder()
+                    } label: {
+                        Label("Show in Finder", systemImage: "folder")
+                    }
+                }
+
+                Divider()
+
+                Button(role: .destructive) {
+                    historyService.delete(entry)
+                } label: {
+                    Label("Delete", systemImage: "trash")
+                }
+            } label: {
+                Image(systemName: "ellipsis.circle")
+                    .font(.system(size: 13))
+                    .foregroundStyle(.secondary)
+            }
+            .buttonStyle(.plain)
+            .menuIndicator(.hidden)
+        }
+    }
+
+    private func rowButton(_ icon: String, help: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+                .frame(width: 22, height: 22)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(help)
+    }
+
     private func copyText() {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(entry.text, forType: .string)
@@ -171,6 +232,19 @@ struct TranscriptEntryRow: View {
                 showCopied = false
             }
         }
+    }
+
+    private func togglePlayback() {
+        if playbackService.isPlaying {
+            playbackService.stop()
+        } else if let url = historyService.audioFileURL(for: entry) {
+            playbackService.play(url: url)
+        }
+    }
+
+    private func showInFinder() {
+        guard let url = historyService.audioFileURL(for: entry) else { return }
+        NSWorkspace.shared.selectFile(url.path(), inFileViewerRootedAtPath: "")
     }
 }
 

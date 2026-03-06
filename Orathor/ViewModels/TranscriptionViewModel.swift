@@ -18,6 +18,8 @@ final class TranscriptionViewModel {
     private var shouldAutoInsert = false
     private var recordingStartTime: Date?
     private var targetApp: TextInsertionService.FrontmostApp?
+    private var currentRecordingURL: URL?
+    private var wasCancelled = false
 
     private var isSetUp = false
 
@@ -48,6 +50,7 @@ final class TranscriptionViewModel {
                 }
             case .cancelRecording:
                 self.shouldAutoInsert = false
+                self.wasCancelled = true
                 Task {
                     await self.stopRecording()
                     RecordingOverlay.hide()
@@ -125,7 +128,8 @@ final class TranscriptionViewModel {
                 self.speechService.processAudioBuffer(buffer)
             }
 
-            try audioService.startRecording()
+            currentRecordingURL = historyService.newRecordingURL()
+            try audioService.startRecording(saveTo: currentRecordingURL)
             isRecording = true
         } catch {
             errorMessage = error.localizedDescription
@@ -138,6 +142,20 @@ final class TranscriptionViewModel {
         try? await Task.sleep(for: .milliseconds(300))
         await speechService.stopTranscribing()
         isRecording = false
+
+        let cancelled = wasCancelled
+        wasCancelled = false
+
+        // On cancel, discard audio and skip saving
+        if cancelled {
+            if let url = currentRecordingURL {
+                try? FileManager.default.removeItem(at: url)
+            }
+            recordingStartTime = nil
+            targetApp = nil
+            currentRecordingURL = nil
+            return
+        }
 
         let text = currentTranscription
         let duration = recordingStartTime.map { Date().timeIntervalSince($0) } ?? 0
@@ -155,13 +173,17 @@ final class TranscriptionViewModel {
                 durationSeconds: duration,
                 wordCount: text.split(separator: " ").count,
                 targetAppName: targetApp?.name,
-                targetAppBundleID: targetApp?.bundleIdentifier
+                targetAppBundleID: targetApp?.bundleIdentifier,
+                audioFileName: currentRecordingURL?.lastPathComponent
             )
             historyService.add(entry)
+        } else if let url = currentRecordingURL {
+            try? FileManager.default.removeItem(at: url)
         }
 
         recordingStartTime = nil
         targetApp = nil
+        currentRecordingURL = nil
     }
 
     var currentAudioLevel: Float {

@@ -6,12 +6,23 @@ final class AudioService {
     var audioLevel: Float = 0
 
     private var audioEngine: AVAudioEngine?
+    private var audioFile: AVAudioFile?
     var onAudioBuffer: ((AVAudioPCMBuffer, AVAudioFormat) -> Void)?
 
-    func startRecording() throws {
+    func startRecording(saveTo fileURL: URL? = nil) throws {
         let engine = AVAudioEngine()
         let inputNode = engine.inputNode
         let format = inputNode.outputFormat(forBus: 0)
+
+        if let fileURL {
+            let outputSettings: [String: Any] = [
+                AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
+                AVSampleRateKey: format.sampleRate,
+                AVNumberOfChannelsKey: 1,
+                AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
+            ]
+            audioFile = try AVAudioFile(forWriting: fileURL, settings: outputSettings)
+        }
 
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
             guard let self else { return }
@@ -19,6 +30,7 @@ final class AudioService {
             Task { @MainActor in
                 self.audioLevel = level
             }
+            try? self.audioFile?.write(from: buffer)
             self.onAudioBuffer?(buffer, format)
         }
 
@@ -32,6 +44,7 @@ final class AudioService {
         audioEngine?.inputNode.removeTap(onBus: 0)
         audioEngine?.stop()
         audioEngine = nil
+        audioFile = nil
         isRecording = false
         audioLevel = 0
     }
