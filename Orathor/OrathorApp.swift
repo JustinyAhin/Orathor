@@ -9,9 +9,11 @@ import SwiftUI
 
 @main
 struct OrathorApp: App {
+    @State private var viewModel = TranscriptionViewModel()
+
     var body: some Scene {
         MenuBarExtra("Orathor", systemImage: "waveform") {
-            MenuBarView()
+            MenuBarView(viewModel: viewModel)
         }
         .menuBarExtraStyle(.window)
     }

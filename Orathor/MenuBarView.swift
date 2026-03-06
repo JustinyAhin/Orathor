@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct MenuBarView: View {
-    @State private var viewModel = TranscriptionViewModel()
+    var viewModel: TranscriptionViewModel
 
     var body: some View {
         VStack(spacing: 12) {
@@ -67,6 +67,7 @@ struct MenuBarView: View {
         .padding()
         .frame(width: 250)
         .task {
+            viewModel.setUp()
             await viewModel.checkPermissions()
         }
     }
@@ -90,5 +91,5 @@ struct AudioLevelView: View {
 }
 
 #Preview {
-    MenuBarView()
+    MenuBarView(viewModel: TranscriptionViewModel())
 }

@@ -1,17 +1,39 @@
 import AppKit
 import AVFoundation
+import Speech
 
 @Observable
 final class TranscriptionViewModel {
-    var transcribedText = ""
     var isRecording = false
-    var audioLevel: Float = 0
     var errorMessage: String?
     var hasPermission = false
     var hasAccessibility = false
 
     private let audioService = AudioService()
     private let speechService = AppleSpeechService()
+    private let keyboardService = KeyboardService()
+    private var shouldAutoInsert = false
+
+    private var isSetUp = false
+
+    func setUp() {
+        guard !isSetUp else { return }
+        isSetUp = true
+
+        keyboardService.onAction = { [weak self] action in
+            guard let self else { return }
+            switch action {
+            case .startRecording:
+                self.shouldAutoInsert = true
+                self.startRecording()
+                RecordingOverlay.show(viewModel: self)
+            case .stopRecording:
+                self.stopRecording()
+                RecordingOverlay.hide()
+            }
+        }
+        keyboardService.start()
+    }
 
     func checkPermissions() async {
         hasPermission = await AppleSpeechService.requestPermission()
@@ -20,6 +42,7 @@ final class TranscriptionViewModel {
 
     func toggleRecording() {
         if isRecording {
+            shouldAutoInsert = false
             stopRecording()
         } else {
             startRecording()
@@ -27,13 +50,24 @@ final class TranscriptionViewModel {
     }
 
     private func startRecording() {
-        guard hasPermission else {
-            errorMessage = "Speech recognition permission is required."
-            return
+        // Check permission synchronously if not yet resolved
+        if !hasPermission {
+            let status = SFSpeechRecognizer.authorizationStatus()
+            if status == .authorized {
+                hasPermission = true
+            } else if status == .notDetermined {
+                Task {
+                    hasPermission = await AppleSpeechService.requestPermission()
+                    if hasPermission { startRecording() }
+                }
+                return
+            } else {
+                errorMessage = "Speech recognition permission is required."
+                return
+            }
         }
 
         do {
-            transcribedText = ""
             errorMessage = nil
 
             audioService.onAudioBuffer = { [weak self] buffer, format in
@@ -55,7 +89,13 @@ final class TranscriptionViewModel {
         audioService.stopRecording()
         speechService.stopTranscribing()
         isRecording = false
-        audioLevel = 0
+
+        if shouldAutoInsert {
+            shouldAutoInsert = false
+            let text = currentTranscription
+            guard !text.isEmpty else { return }
+            TextInsertionService.insertText(text)
+        }
     }
 
     var currentAudioLevel: Float {
@@ -77,11 +117,11 @@ final class TranscriptionViewModel {
         }
 
         if isRecording {
+            shouldAutoInsert = false
             stopRecording()
         }
 
         NSApp.deactivate()
-
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
             TextInsertionService.insertText(text)
         }
