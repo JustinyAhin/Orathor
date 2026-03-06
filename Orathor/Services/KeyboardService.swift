@@ -65,7 +65,7 @@ final class KeyboardService {
         guard event.keyCode == UInt16(kVK_Escape), isToggled else { return }
         isToggled = false
         justToggledOn = false
-        SoundService.playStop()
+        SoundService.playCancel()
         onAction?(.cancelRecording)
     }
 

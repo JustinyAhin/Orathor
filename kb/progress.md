@@ -33,7 +33,7 @@
 - Auto-insert at cursor when recording stops via hotkey
 
 ### Step 6: UX Polish
-- Audio feedback sounds (Tink/Pop) on recording start/stop via AudioServicesPlaySystemSound
+- Audio feedback sounds (Tink/Pop/Funk) on recording start/stop/cancel via AudioServicesPlaySystemSound
 - Sounds fire from KeyboardService before audio engine setup for instant feedback
 - Removed Insert at Cursor / Copy buttons from popover
 - Fixed transcription not clearing between sessions
@@ -69,13 +69,18 @@
 - Fixed .path() vs .path bug (percent-encoded path broke FileManager lookup)
 - Cancel via Escape discards audio file and skips saving entry
 
+### Step 10: Searchable History
+- Search bar in menu bar popover filters transcripts by text content and app name
+- Case-insensitive local filtering via `localizedCaseInsensitiveContains`
+- "No matching transcripts" empty state when search yields no results
+- Search text resets when popover closes (`@State` lifecycle)
+
 ## Remaining
 
 ### Core Features
 - [ ] Smart formatting (auto-punctuation, capitalization)
 - [ ] Clipboard mode (dictate to clipboard instead of active field)
 - [ ] Command mode ("new line", "select all", "delete that" voice commands)
-- [ ] Searchable history
 - [ ] Change hotkey setting
 - [ ] Main app window (beyond menu bar)
 

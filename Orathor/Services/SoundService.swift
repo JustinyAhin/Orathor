@@ -3,6 +3,7 @@ import AudioToolbox
 enum SoundService {
     private static let startSoundID: SystemSoundID = loadSound("Tink")
     private static let stopSoundID: SystemSoundID = loadSound("Pop")
+    private static let cancelSoundID: SystemSoundID = loadSound("Funk")
 
     private static func loadSound(_ name: String) -> SystemSoundID {
         var soundID: SystemSoundID = 0
@@ -17,5 +18,9 @@ enum SoundService {
 
     static func playStop() {
         AudioServicesPlaySystemSound(stopSoundID)
+    }
+
+    static func playCancel() {
+        AudioServicesPlaySystemSound(cancelSoundID)
     }
 }
