@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.0.4 — 2026-03-08
+
+### New
+
+- **Dashboard: activity streak grid** — GitHub-style heatmap showing daily dictation activity with streak counter
+- **Dashboard: top apps section** — ranked bar chart of most-used apps with icons
+- **Speech engine tracking** — each transcription records which engine (Apple/Deepgram) was used
+
+### Improvements
+
+- **Diagnostic logging** — debug logger for text insertion issues with export from Settings
+
 ## 0.0.3 — 2026-03-08
 
 ### Improvements
