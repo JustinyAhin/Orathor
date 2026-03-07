@@ -60,8 +60,6 @@ final class SettingsViewModel {
 
         if let storedClipboard = UserDefaults.standard.string(forKey: "clipboardHotkey") {
             clipboardHotkey = HotkeyModifier(rawValue: storedClipboard)
-        } else {
-            clipboardHotkey = .rightOption
         }
     }
 }
