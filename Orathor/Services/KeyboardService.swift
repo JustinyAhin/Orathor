@@ -15,7 +15,7 @@ final class KeyboardService {
     }
 
     var onAction: ((Action) -> Void)?
-    var insertHotkey: HotkeyModifier = .rightCommand
+    var insertHotkey: HotkeyModifier = .rightOption
     var clipboardHotkey: HotkeyModifier?
 
     private var globalMonitor: Any?

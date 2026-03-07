@@ -32,7 +32,7 @@ final class SettingsViewModel {
     var clipboardHotkey: HotkeyModifier? {
         didSet {
             if let clipboardHotkey, clipboardHotkey == insertHotkey {
-                insertHotkey = oldValue ?? .rightCommand
+                insertHotkey = oldValue ?? .rightOption
             }
             if let clipboardHotkey {
                 UserDefaults.standard.set(clipboardHotkey.rawValue, forKey: "clipboardHotkey")
@@ -55,8 +55,8 @@ final class SettingsViewModel {
         selectedEngine = SpeechEngine(rawValue: stored) ?? .apple
         deepgramApiKey = KeychainService.load(key: "deepgramApiKey") ?? ""
 
-        let storedInsert = UserDefaults.standard.string(forKey: "insertHotkey") ?? HotkeyModifier.rightCommand.rawValue
-        insertHotkey = HotkeyModifier(rawValue: storedInsert) ?? .rightCommand
+        let storedInsert = UserDefaults.standard.string(forKey: "insertHotkey") ?? HotkeyModifier.rightOption.rawValue
+        insertHotkey = HotkeyModifier(rawValue: storedInsert) ?? .rightOption
 
         if let storedClipboard = UserDefaults.standard.string(forKey: "clipboardHotkey") {
             clipboardHotkey = HotkeyModifier(rawValue: storedClipboard)
