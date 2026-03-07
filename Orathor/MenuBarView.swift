@@ -182,6 +182,7 @@ struct MenuBarView: View {
     private var footer: some View {
         HStack {
             Button("Open Orathor") {
+                NSApp.keyWindow?.close()
                 openWindow(id: "main")
                 NSApp.activate(ignoringOtherApps: true)
             }
