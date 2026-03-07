@@ -186,15 +186,41 @@ func drawIcon(size: CGFloat) -> NSImage {
 // MARK: - Export
 
 func savePNG(_ image: NSImage, to path: String, pixelSize: Int) {
-    let resizedImage = NSImage(size: NSSize(width: pixelSize, height: pixelSize))
-    resizedImage.lockFocus()
-    NSGraphicsContext.current?.imageInterpolation = .high
-    image.draw(in: NSRect(x: 0, y: 0, width: pixelSize, height: pixelSize))
-    resizedImage.unlockFocus()
+    // Use NSBitmapImageRep directly to control exact pixel dimensions
+    // (NSImage + lockFocus doubles pixels on Retina displays)
+    guard let bitmapRep = NSBitmapImageRep(
+        bitmapDataPlanes: nil,
+        pixelsWide: pixelSize,
+        pixelsHigh: pixelSize,
+        bitsPerSample: 8,
+        samplesPerPixel: 4,
+        hasAlpha: true,
+        isPlanar: false,
+        colorSpaceName: .deviceRGB,
+        bytesPerRow: 0,
+        bitsPerPixel: 0
+    ) else {
+        print("Failed to create bitmap for size \(pixelSize)")
+        return
+    }
 
-    guard let tiffData = resizedImage.tiffRepresentation,
-          let bitmap = NSBitmapImageRep(data: tiffData),
-          let pngData = bitmap.representation(using: .png, properties: [:]) else {
+    bitmapRep.size = NSSize(width: pixelSize, height: pixelSize)
+
+    NSGraphicsContext.saveGraphicsState()
+    let context = NSGraphicsContext(bitmapImageRep: bitmapRep)!
+    NSGraphicsContext.current = context
+    context.imageInterpolation = .high
+
+    image.draw(
+        in: NSRect(x: 0, y: 0, width: pixelSize, height: pixelSize),
+        from: NSRect(x: 0, y: 0, width: image.size.width, height: image.size.height),
+        operation: .copy,
+        fraction: 1.0
+    )
+
+    NSGraphicsContext.restoreGraphicsState()
+
+    guard let pngData = bitmapRep.representation(using: .png, properties: [:]) else {
         print("Failed to create PNG for size \(pixelSize)")
         return
     }
