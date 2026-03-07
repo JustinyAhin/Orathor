@@ -1,6 +1,6 @@
 import Foundation
 
-enum SpeechEngine: String, CaseIterable, Identifiable {
+enum SpeechEngine: String, CaseIterable, Identifiable, Codable {
     case apple = "apple"
     case deepgram = "deepgram"
 

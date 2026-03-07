@@ -9,6 +9,7 @@ struct TranscriptEntry: Identifiable, Codable {
     let targetAppName: String?
     let targetAppBundleID: String?
     let audioFileName: String?
+    let engine: SpeechEngine?
 
     init(
         text: String,
@@ -17,7 +18,8 @@ struct TranscriptEntry: Identifiable, Codable {
         wordCount: Int,
         targetAppName: String?,
         targetAppBundleID: String?,
-        audioFileName: String? = nil
+        audioFileName: String? = nil,
+        engine: SpeechEngine? = nil
     ) {
         self.id = UUID()
         self.text = text
@@ -27,5 +29,6 @@ struct TranscriptEntry: Identifiable, Codable {
         self.targetAppName = targetAppName
         self.targetAppBundleID = targetAppBundleID
         self.audioFileName = audioFileName
+        self.engine = engine
     }
 }

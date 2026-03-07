@@ -225,7 +225,8 @@ final class TranscriptionViewModel {
                 wordCount: text.split(separator: " ").count,
                 targetAppName: targetApp?.name,
                 targetAppBundleID: targetApp?.bundleIdentifier,
-                audioFileName: currentRecordingURL?.lastPathComponent
+                audioFileName: currentRecordingURL?.lastPathComponent,
+                engine: settingsViewModel.selectedEngine
             )
             historyService.add(entry)
         } else if let url = currentRecordingURL {
