@@ -85,7 +85,7 @@ final class SettingsViewModel {
             clipboardHotkey = HotkeyModifier(rawValue: storedClipboard)
         }
 
-        showInDock = UserDefaults.standard.object(forKey: "showInDock") as? Bool ?? true
+        showInDock = UserDefaults.standard.object(forKey: "showInDock") as? Bool ?? false
 
         startSound = UserDefaults.standard.string(forKey: "startSound") ?? SoundService.defaultStart
         stopSound = UserDefaults.standard.string(forKey: "stopSound") ?? SoundService.defaultStop

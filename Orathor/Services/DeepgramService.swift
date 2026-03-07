@@ -77,6 +77,7 @@ final class DeepgramService: NSObject, TranscriptionService, URLSessionWebSocket
     private func connect() async throws {
         var params = [
             "model=nova-3",
+            "language=multi",
             "encoding=linear16",
             "channels=1",
             "punctuate=true",

@@ -19,7 +19,7 @@ private let sparkleController: SPUStandardUpdaterController = {
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var showInDock: Bool {
-        UserDefaults.standard.object(forKey: "showInDock") as? Bool ?? true
+        UserDefaults.standard.object(forKey: "showInDock") as? Bool ?? false
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
