@@ -112,7 +112,7 @@
 - Warning color shifted to red-orange (#EA580C) to differentiate from amber brand
 - Dark mode hero: deep warm blacks (#0C0A09), warm elevated surfaces
 - Main window: replaced NavigationSplitView sidebar with centered segmented tab bar (Home/Transcripts/Settings)
-- Dashboard → Home: stripped to compact stats strip (one gradientAccentCard) + recent transcripts; killed activity grid, top sources
+- Dashboard → Home: stats strip (gradientAccentCard), activity streak grid (GitHub-style heatmap with streak counter), top apps section (ranked bar chart with app icons), recent transcripts
 - New leftAccentCard modifier: amber left border accent on transcript cards (signature element)
 - TranscriptsView: inline search bar replacing .searchable modifier; left-accent cards per date group
 - MenuBarView: amber accent bars on transcript rows; tighter header with audio level bar when recording
