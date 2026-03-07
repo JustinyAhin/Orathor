@@ -67,23 +67,6 @@ git commit --allow-empty -m "v{version}"
 
 This makes it easy to see what changed between releases with `git log v{prev}..v{current}`.
 
-## One-time migration (before next release)
-
-Move existing zips into the `releases/` folder:
-
-```bash
-cd ../Orathor-releases
-mkdir -p releases
-mv Orathor-*.zip releases/
-git add -A
-git commit -m "Move zips to releases/ folder"
-git push
-```
-
-Then on the next release, `generate_appcast` with `--download-url-prefix` will regenerate all URLs to point to `releases/`.
-
-**Delete this section after completing the migration.**
-
 ## Versioning
 
 | Field | Build setting | Example | When to bump |
