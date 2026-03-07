@@ -21,9 +21,27 @@ private let sparkleController: SPUStandardUpdaterController = {
 struct OrathorApp: App {
     @State private var viewModel = TranscriptionViewModel()
 
+    #if DEBUG
+    private static let devMenuBarIcon: NSImage = {
+        let palette = NSImage.SymbolConfiguration(paletteColors: [.systemOrange])
+        let size = NSImage.SymbolConfiguration(pointSize: 14, weight: .regular)
+        let config = palette.applying(size)
+        let image = NSImage(systemSymbolName: "waveform.badge.exclamationmark", accessibilityDescription: "Orathor Dev")!
+            .withSymbolConfiguration(config)!
+        image.isTemplate = false
+        return image
+    }()
+    #endif
+
     var body: some Scene {
-        MenuBarExtra("Orathor", systemImage: "waveform") {
+        MenuBarExtra {
             MenuBarView(viewModel: viewModel)
+        } label: {
+            #if DEBUG
+            Image(nsImage: Self.devMenuBarIcon)
+            #else
+            Image(systemName: "waveform")
+            #endif
         }
         .menuBarExtraStyle(.window)
 
