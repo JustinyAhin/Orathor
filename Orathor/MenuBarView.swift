@@ -353,7 +353,7 @@ struct TranscriptEntryRow: View {
 
     private func showInFinder() {
         guard let url = historyService.audioFileURL(for: entry) else { return }
-        NSWorkspace.shared.selectFile(url.path(), inFileViewerRootedAtPath: "")
+        NSWorkspace.shared.selectFile(url.path, inFileViewerRootedAtPath: "")
     }
 }
 
