@@ -5,7 +5,17 @@
 //  Created by Justin Ahinon on 06/03/2026.
 //
 
+import Sparkle
 import SwiftUI
+
+private let sparkleController: SPUStandardUpdaterController = {
+    UserDefaults.standard.register(defaults: ["SUEnableAutomaticChecks": true])
+    return SPUStandardUpdaterController(
+        startingUpdater: true,
+        updaterDelegate: nil,
+        userDriverDelegate: nil
+    )
+}()
 
 @main
 struct OrathorApp: App {
@@ -21,5 +31,25 @@ struct OrathorApp: App {
             MainWindowView(viewModel: viewModel)
         }
         .defaultSize(width: 800, height: 600)
+        .commands {
+            CommandGroup(after: .appInfo) {
+                CheckForUpdatesView(
+                    viewModel: CheckForUpdatesViewModel(
+                        updater: sparkleController.updater
+                    ),
+                    updater: sparkleController.updater
+                )
+            }
+        }
+    }
+}
+
+struct CheckForUpdatesView: View {
+    @ObservedObject var viewModel: CheckForUpdatesViewModel
+    let updater: SPUUpdater
+
+    var body: some View {
+        Button("Check for Updates…", action: updater.checkForUpdates)
+            .disabled(!viewModel.canCheckForUpdates)
     }
 }
