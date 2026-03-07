@@ -23,6 +23,7 @@ final class TranscriptionViewModel {
     private var wasCancelled = false
 
     private var isSetUp = false
+    private let diag = DiagnosticLogger.shared
 
     init() {
         speechService = TranscriptionViewModel.makeSpeechService(for: settingsViewModel.selectedEngine, apiKey: settingsViewModel.deepgramApiKey)
@@ -153,6 +154,7 @@ final class TranscriptionViewModel {
             errorMessage = nil
             recordingStartTime = Date()
             targetApp = TextInsertionService.getFrontmostApp()
+            diag.log("START recording — engine: \(engine), mode: \(recordingMode), targetApp: \(targetApp?.name ?? "nil") (\(targetApp?.bundleIdentifier ?? "nil")), shouldAutoInsert: \(shouldAutoInsert), accessibility: \(TextInsertionService.hasAccessibilityPermission)")
 
             audioService.onAudioBuffer = { [weak self] buffer, format in
                 guard let self else { return }
@@ -181,6 +183,7 @@ final class TranscriptionViewModel {
     }
 
     private func stopRecording() async {
+        diag.log("STOP recording — wasCancelled: \(wasCancelled)")
         audioService.stopRecording()
         // Let in-flight audio buffers reach Deepgram before sending Finalize
         try? await Task.sleep(for: .milliseconds(300))
@@ -192,6 +195,7 @@ final class TranscriptionViewModel {
 
         // On cancel, discard audio and skip saving
         if cancelled {
+            diag.log("Recording cancelled, discarding")
             if let url = currentRecordingURL {
                 try? FileManager.default.removeItem(at: url)
             }
@@ -204,15 +208,23 @@ final class TranscriptionViewModel {
         let text = currentTranscription
         let duration = recordingStartTime.map { Date().timeIntervalSince($0) } ?? 0
 
+        diag.log("Transcription result — text length: \(text.count), mode: \(recordingMode), shouldAutoInsert: \(shouldAutoInsert), duration: \(String(format: "%.1f", duration))s")
+
         if !text.isEmpty {
             switch recordingMode {
             case .insertAtCursor:
                 if shouldAutoInsert {
+                    diag.log("Auto-inserting text at cursor")
                     TextInsertionService.insertText(text)
+                } else {
+                    diag.log("SKIPPED insertion — shouldAutoInsert is false")
                 }
             case .clipboard:
+                diag.log("Copying to clipboard")
                 TextInsertionService.copyToClipboard(text)
             }
+        } else {
+            diag.log("SKIPPED insertion — text is empty")
         }
         shouldAutoInsert = false
         recordingMode = .insertAtCursor

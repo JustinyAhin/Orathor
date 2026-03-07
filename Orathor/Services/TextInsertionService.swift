@@ -20,11 +20,18 @@ struct TextInsertionService {
     }
 
     static func insertText(_ text: String) {
+        let diag = DiagnosticLogger.shared
+        let frontApp = NSWorkspace.shared.frontmostApplication
+        diag.log("insertText called — text length: \(text.count), frontmost app: \(frontApp?.localizedName ?? "nil") (\(frontApp?.bundleIdentifier ?? "nil")), accessibility: \(AXIsProcessTrusted())")
+
         let pasteboard = NSPasteboard.general
         let previousContents = pasteboard.string(forType: .string)
 
         pasteboard.clearContents()
         pasteboard.setString(text, forType: .string)
+
+        let verifySet = pasteboard.string(forType: .string) == text
+        diag.log("Clipboard set: \(verifySet)")
 
         simulatePaste()
 
@@ -32,6 +39,7 @@ struct TextInsertionService {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                 pasteboard.clearContents()
                 pasteboard.setString(previousContents, forType: .string)
+                diag.log("Clipboard restored")
             }
         }
     }

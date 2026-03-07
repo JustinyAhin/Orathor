@@ -4,6 +4,7 @@ import SwiftUI
 struct SettingsView: View {
     @Bindable var viewModel: SettingsViewModel
     let updater: SPUUpdater
+    @State private var copiedDiagnostics = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xxl) {
@@ -12,6 +13,7 @@ struct SettingsView: View {
             soundsSection
             appearanceSection
             updatesSection
+            diagnosticsSection
             versionFooter
         }
         .animation(.easeInOut(duration: 0.2), value: viewModel.selectedEngine)
@@ -227,6 +229,68 @@ struct SettingsView: View {
                             .foregroundStyle(Color.textPrimary)
                         Spacer()
                         Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color.textTertiary)
+                    }
+                    .padding(.horizontal, Spacing.lg)
+                    .padding(.vertical, Spacing.md)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+            .cardStyle(padding: 0)
+        }
+    }
+
+    // MARK: - Diagnostics
+
+    private var diagnosticsSection: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            Text("Diagnostics")
+                .sectionHeaderStyle()
+
+            VStack(spacing: 0) {
+                Button {
+                    DiagnosticLogger.shared.copyToPasteboard()
+                    copiedDiagnostics = true
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                        copiedDiagnostics = false
+                    }
+                } label: {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Copy Diagnostic Log")
+                                .font(OType.body)
+                                .foregroundStyle(Color.textPrimary)
+                            Text(copiedDiagnostics ? "Copied to clipboard!" : "Share with the developer to help debug issues")
+                                .font(OType.caption)
+                                .foregroundStyle(copiedDiagnostics ? Color.success : Color.textTertiary)
+                        }
+                        Spacer()
+                        Image(systemName: copiedDiagnostics ? "checkmark" : "doc.on.doc")
+                            .font(.system(size: 14))
+                            .foregroundStyle(copiedDiagnostics ? Color.success : Color.textTertiary)
+                    }
+                    .padding(.horizontal, Spacing.lg)
+                    .padding(.vertical, Spacing.md)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+
+                SubtleDivider()
+
+                Button {
+                    NSWorkspace.shared.selectFile(
+                        DiagnosticLogger.shared.logFileURL().path,
+                        inFileViewerRootedAtPath: DiagnosticLogger.shared.logFileURL().deletingLastPathComponent().path
+                    )
+                } label: {
+                    HStack {
+                        Text("Reveal Log File in Finder")
+                            .font(OType.body)
+                            .foregroundStyle(Color.textPrimary)
+                        Spacer()
+                        Image(systemName: "folder")
                             .font(.system(size: 14))
                             .foregroundStyle(Color.textTertiary)
                     }
