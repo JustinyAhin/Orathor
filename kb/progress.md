@@ -139,6 +139,16 @@
 - [ ] App icon
 - [ ] Accessibility permission onboarding flow
 
+### Step 16: Distribution + Auto-Updates
+- Sparkle framework integrated via SPM for auto-update support
+- EdDSA (Ed25519) signing keys generated for update verification
+- Info.plist with SUFeedURL (appcast) and SUPublicEDKey
+- "Check for Updates..." menu item in app menu
+- CheckForUpdatesViewModel bridges Sparkle KVO to SwiftUI
+- Public release repo: github.com/JustinyAhin/Orathor-releases (hosts appcast.xml + zips)
+- `scripts/package.sh` builds Release .app and zips with ditto
+- Version set to 0.0.1, build 1
+- Release flow documented in kb/release.md
+
 ### Business/Distribution
 - [ ] Free tier with daily dictation limit
-- [ ] Mac App Store / direct download packaging
