@@ -10,9 +10,23 @@ struct SettingsView: View {
             engineSection
             hotkeySection
             soundsSection
+            appearanceSection
             updatesSection
+            versionFooter
         }
         .animation(.easeInOut(duration: 0.2), value: viewModel.selectedEngine)
+    }
+
+    // MARK: - Version
+
+    private var versionFooter: some View {
+        HStack {
+            Spacer()
+            Text("Orathor \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "")")
+                .font(OType.caption)
+                .foregroundStyle(Color.textTertiary)
+            Spacer()
+        }
     }
 
     // MARK: - Speech Engine
@@ -148,6 +162,35 @@ struct SettingsView: View {
         }
         .padding(.horizontal, Spacing.lg)
         .padding(.vertical, Spacing.md)
+    }
+
+    // MARK: - Appearance
+
+    private var appearanceSection: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            Text("Appearance")
+                .sectionHeaderStyle()
+
+            VStack(spacing: 0) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Show in Dock")
+                            .font(OType.body)
+                            .foregroundStyle(Color.textPrimary)
+                        Text("Also shows the menu bar when the window is open")
+                            .font(OType.caption)
+                            .foregroundStyle(Color.textTertiary)
+                    }
+                    Spacer()
+                    Toggle("", isOn: $viewModel.showInDock)
+                        .toggleStyle(.switch)
+                        .labelsHidden()
+                }
+                .padding(.horizontal, Spacing.lg)
+                .padding(.vertical, Spacing.md)
+            }
+            .cardStyle(padding: 0)
+        }
     }
 
     // MARK: - Updates

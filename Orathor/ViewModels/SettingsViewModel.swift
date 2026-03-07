@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 
 @Observable
@@ -55,6 +56,16 @@ final class SettingsViewModel {
         didSet { UserDefaults.standard.set(cancelSound, forKey: "cancelSound") }
     }
 
+    var showInDock: Bool {
+        didSet {
+            UserDefaults.standard.set(showInDock, forKey: "showInDock")
+            NSApp.setActivationPolicy(showInDock ? .regular : .accessory)
+            DispatchQueue.main.async {
+                NSApp.activate(ignoringOtherApps: true)
+            }
+        }
+    }
+
     var onEngineChanged: ((SpeechEngine) -> Void)?
     var onHotkeyChanged: (() -> Void)?
 
@@ -73,6 +84,8 @@ final class SettingsViewModel {
         if let storedClipboard = UserDefaults.standard.string(forKey: "clipboardHotkey") {
             clipboardHotkey = HotkeyModifier(rawValue: storedClipboard)
         }
+
+        showInDock = UserDefaults.standard.object(forKey: "showInDock") as? Bool ?? true
 
         startSound = UserDefaults.standard.string(forKey: "startSound") ?? SoundService.defaultStart
         stopSound = UserDefaults.standard.string(forKey: "stopSound") ?? SoundService.defaultStop

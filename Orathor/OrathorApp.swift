@@ -17,8 +17,60 @@ private let sparkleController: SPUStandardUpdaterController = {
     )
 }()
 
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    private var showInDock: Bool {
+        UserDefaults.standard.object(forKey: "showInDock") as? Bool ?? true
+    }
+
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        NSApp.setActivationPolicy(showInDock ? .regular : .accessory)
+        DispatchQueue.main.async {
+            NSApp.activate(ignoringOtherApps: true)
+        }
+
+        NotificationCenter.default.addObserver(
+            self,
+            selector: #selector(windowWillClose),
+            name: NSWindow.willCloseNotification,
+            object: nil
+        )
+    }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows: Bool) -> Bool {
+        if !hasVisibleWindows {
+            showMainWindow()
+        }
+        return true
+    }
+
+    private func showMainWindow() {
+        if showInDock {
+            NSApp.setActivationPolicy(.regular)
+        }
+        if let window = NSApp.windows.first(where: { $0.canBecomeMain && !($0 is NSPanel) }) {
+            window.makeKeyAndOrderFront(nil)
+        }
+        NSApp.activate(ignoringOtherApps: true)
+    }
+
+    @objc private func windowWillClose(_ notification: Notification) {
+        guard showInDock,
+              let window = notification.object as? NSWindow,
+              window.canBecomeMain, !(window is NSPanel) else { return }
+        DispatchQueue.main.async {
+            let hasMainWindows = NSApp.windows.contains {
+                $0.isVisible && $0.canBecomeMain && !($0 is NSPanel)
+            }
+            if !hasMainWindows {
+                NSApp.setActivationPolicy(.accessory)
+            }
+        }
+    }
+}
+
 @main
 struct OrathorApp: App {
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @State private var viewModel = TranscriptionViewModel()
 
     #if DEBUG
@@ -58,6 +110,7 @@ struct OrathorApp: App {
                     updater: sparkleController.updater
                 )
             }
+            CommandGroup(replacing: .help) {}
         }
     }
 }

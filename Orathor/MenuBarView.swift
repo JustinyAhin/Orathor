@@ -183,6 +183,9 @@ struct MenuBarView: View {
         HStack {
             Button("Open Orathor") {
                 NSApp.keyWindow?.close()
+                if viewModel.settingsViewModel.showInDock {
+                    NSApp.setActivationPolicy(.regular)
+                }
                 openWindow(id: "main")
                 NSApp.activate(ignoringOtherApps: true)
             }
