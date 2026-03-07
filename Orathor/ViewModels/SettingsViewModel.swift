@@ -43,6 +43,18 @@ final class SettingsViewModel {
         }
     }
 
+    var startSound: String {
+        didSet { UserDefaults.standard.set(startSound, forKey: "startSound") }
+    }
+
+    var stopSound: String {
+        didSet { UserDefaults.standard.set(stopSound, forKey: "stopSound") }
+    }
+
+    var cancelSound: String {
+        didSet { UserDefaults.standard.set(cancelSound, forKey: "cancelSound") }
+    }
+
     var onEngineChanged: ((SpeechEngine) -> Void)?
     var onHotkeyChanged: (() -> Void)?
 
@@ -61,5 +73,9 @@ final class SettingsViewModel {
         if let storedClipboard = UserDefaults.standard.string(forKey: "clipboardHotkey") {
             clipboardHotkey = HotkeyModifier(rawValue: storedClipboard)
         }
+
+        startSound = UserDefaults.standard.string(forKey: "startSound") ?? SoundService.defaultStart
+        stopSound = UserDefaults.standard.string(forKey: "stopSound") ?? SoundService.defaultStop
+        cancelSound = UserDefaults.standard.string(forKey: "cancelSound") ?? SoundService.defaultCancel
     }
 }

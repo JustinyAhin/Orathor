@@ -7,6 +7,7 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: Spacing.xxl) {
             engineSection
             hotkeySection
+            soundsSection
         }
         .animation(.easeInOut(duration: 0.2), value: viewModel.selectedEngine)
     }
@@ -78,6 +79,72 @@ struct SettingsView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: - Sounds
+
+    private var soundsSection: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            Text("Sounds")
+                .sectionHeaderStyle()
+
+            VStack(spacing: 0) {
+                soundRow(label: "Start recording", selection: $viewModel.startSound)
+                SubtleDivider()
+                soundRow(label: "Stop recording", selection: $viewModel.stopSound)
+                SubtleDivider()
+                soundRow(label: "Cancel recording", selection: $viewModel.cancelSound)
+            }
+            .cardStyle(padding: 0)
+
+            HStack {
+                Text("Sounds from /System/Library/Sounds")
+                    .font(OType.caption)
+                    .foregroundStyle(Color.textTertiary)
+                Spacer()
+                if viewModel.startSound != SoundService.defaultStart
+                    || viewModel.stopSound != SoundService.defaultStop
+                    || viewModel.cancelSound != SoundService.defaultCancel
+                {
+                    Button("Reset to defaults") {
+                        viewModel.startSound = SoundService.defaultStart
+                        viewModel.stopSound = SoundService.defaultStop
+                        viewModel.cancelSound = SoundService.defaultCancel
+                    }
+                    .font(OType.caption)
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Color.brand)
+                }
+            }
+        }
+    }
+
+    private func soundRow(label: String, selection: Binding<String>) -> some View {
+        HStack {
+            Text(label)
+                .font(OType.body)
+                .foregroundStyle(Color.textPrimary)
+            Spacer()
+            Button {
+                SoundService.preview(selection.wrappedValue)
+            } label: {
+                Image(systemName: "speaker.wave.2")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color.textTertiary)
+            }
+            .buttonStyle(.plain)
+            .help("Preview sound")
+
+            Picker("", selection: selection) {
+                ForEach(SoundService.availableSounds, id: \.self) { sound in
+                    Text(sound).tag(sound)
+                }
+            }
+            .labelsHidden()
+            .frame(width: 120)
+        }
+        .padding(.horizontal, Spacing.lg)
+        .padding(.vertical, Spacing.md)
     }
 
     // MARK: - Hotkeys
