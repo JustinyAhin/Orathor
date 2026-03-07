@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.5 — 2026-03-08
+
+### Improvements
+
+- **Accessibility permission fallback** — when accessibility permission is missing, text is copied to clipboard instead of silently failing; overlay prompts user to open Settings and grant permission
+
 ## 0.0.4 — 2026-03-08
 
 ### New
