@@ -12,6 +12,3 @@ DerivedData/
 ## Swift Package Manager
 .build/
 .swiftpm/
-
-## Distribution
-dist/
