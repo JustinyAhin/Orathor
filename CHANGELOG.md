@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.3 — 2026-03-08
+
+### Improvements
+
+- **Multilingual dictation** — Deepgram now uses `language=multi` for automatic language detection; speak in French, Spanish, German, and 40+ other languages without changing settings
+- **Window management** — proper main window lifecycle, dock icon toggle, version display, and menu bar polish
+- **Dock icon hidden by default** — new installs start as a menu-bar-only app; toggle in Settings
+
 ## 0.0.2 — 2026-03-08
 
 ### Branding
