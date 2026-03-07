@@ -54,7 +54,9 @@ struct RecordingOverlayView: View {
 
     var body: some View {
         Group {
-            if let error = viewModel.errorMessage, !viewModel.isRecording {
+            if viewModel.needsAccessibilityPrompt {
+                accessibilityPromptContent
+            } else if let error = viewModel.errorMessage, !viewModel.isRecording {
                 errorContent(error)
             } else {
                 recordingContent
@@ -71,6 +73,29 @@ struct RecordingOverlayView: View {
                 )
         }
         .fixedSize()
+    }
+
+    private var accessibilityPromptContent: some View {
+        HStack(spacing: Spacing.sm) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(Color.warning)
+                .font(.system(size: 11))
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Accessibility permission required")
+                    .font(OType.monoSmall)
+                    .foregroundStyle(Color.textPrimary)
+                Text("Text copied to clipboard instead")
+                    .font(OType.monoMicro)
+                    .foregroundStyle(Color.textTertiary)
+            }
+            Button("Open Settings") {
+                TextInsertionService.openAccessibilitySettings()
+                viewModel.dismissAccessibilityPrompt()
+            }
+            .font(OType.monoSmall)
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.brand)
+        }
     }
 
     private func errorContent(_ message: String) -> some View {

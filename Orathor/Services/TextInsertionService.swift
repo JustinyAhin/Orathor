@@ -53,6 +53,12 @@ struct TextInsertionService {
         AXIsProcessTrustedWithOptions(options)
     }
 
+    static func openAccessibilitySettings() {
+        if let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+
     private static func simulatePaste() {
         let source = CGEventSource(stateID: .hidSystemState)
 

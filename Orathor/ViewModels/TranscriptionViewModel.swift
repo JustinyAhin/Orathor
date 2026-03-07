@@ -8,6 +8,7 @@ final class TranscriptionViewModel {
     var errorMessage: String?
     var hasPermission = false
     var hasAccessibility = false
+    var needsAccessibilityPrompt = false
 
     let settingsViewModel = SettingsViewModel()
     let historyService = TranscriptHistoryService()
@@ -66,7 +67,11 @@ final class TranscriptionViewModel {
             case .stopRecording:
                 Task {
                     await self.stopRecording()
-                    RecordingOverlay.hide()
+                    if self.needsAccessibilityPrompt {
+                        self.scheduleAccessibilityPromptDismiss()
+                    } else {
+                        RecordingOverlay.hide()
+                    }
                 }
             case .cancelRecording:
                 self.shouldAutoInsert = false
@@ -98,6 +103,20 @@ final class TranscriptionViewModel {
                     await self.stopRecording()
                     self.scheduleErrorOverlayDismiss()
                 }
+            }
+        }
+    }
+
+    func dismissAccessibilityPrompt() {
+        needsAccessibilityPrompt = false
+        RecordingOverlay.hide()
+    }
+
+    private func scheduleAccessibilityPromptDismiss() {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(8))
+            if self.needsAccessibilityPrompt {
+                dismissAccessibilityPrompt()
             }
         }
     }
@@ -214,8 +233,14 @@ final class TranscriptionViewModel {
             switch recordingMode {
             case .insertAtCursor:
                 if shouldAutoInsert {
-                    diag.log("Auto-inserting text at cursor")
-                    TextInsertionService.insertText(text)
+                    if TextInsertionService.hasAccessibilityPermission {
+                        diag.log("Auto-inserting text at cursor")
+                        TextInsertionService.insertText(text)
+                    } else {
+                        diag.log("No accessibility permission — copying to clipboard as fallback")
+                        TextInsertionService.copyToClipboard(text)
+                        needsAccessibilityPrompt = true
+                    }
                 } else {
                     diag.log("SKIPPED insertion — shouldAutoInsert is false")
                 }
