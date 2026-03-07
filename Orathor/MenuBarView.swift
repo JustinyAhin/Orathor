@@ -33,7 +33,6 @@ struct MenuBarView: View {
         }
         .frame(width: 340)
         .task {
-            viewModel.setUp()
             await viewModel.checkPermissions()
         }
         .onAppear {

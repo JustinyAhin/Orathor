@@ -27,6 +27,7 @@ final class TranscriptionViewModel {
     init() {
         speechService = TranscriptionViewModel.makeSpeechService(for: settingsViewModel.selectedEngine, apiKey: settingsViewModel.deepgramApiKey)
         configureSpeechServiceErrorHandler()
+        setUp()
     }
 
     func setUp() {
