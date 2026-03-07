@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.0.2 — 2026-03-08
+
+### Branding
+
+- **App icon** — amber microphone on dark background, programmatically generated at all 10 macOS sizes
+- **Debug build icon** — distinct orange menu bar icon to tell debug and release apart
+- **Retina fix** — correct pixel sizes for app icon on HiDPI displays
+
+### Bug Fixes
+
+- **Show in Finder** — fix recording files not opening from transcript actions
+- **Popover dismiss** — close menu bar popover when opening the main window
+
 ## 0.0.1 — 2026-03-07
 
 First release of Orathor — voice dictation for macOS that just works.
