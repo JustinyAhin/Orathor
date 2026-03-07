@@ -28,7 +28,7 @@ struct OrathorApp: App {
         .menuBarExtraStyle(.window)
 
         Window("Orathor", id: "main") {
-            MainWindowView(viewModel: viewModel)
+            MainWindowView(viewModel: viewModel, updater: sparkleController.updater)
         }
         .defaultSize(width: 800, height: 600)
         .commands {

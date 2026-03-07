@@ -1,7 +1,9 @@
+import Sparkle
 import SwiftUI
 
 struct MainWindowView: View {
     var viewModel: TranscriptionViewModel
+    let updater: SPUUpdater
     @State private var selectedSection: AppSection = .dashboard
 
     var body: some View {
@@ -17,7 +19,7 @@ struct MainWindowView: View {
                     TranscriptsView(historyService: viewModel.historyService)
                 case .settings:
                     ScrollView {
-                        SettingsView(viewModel: viewModel.settingsViewModel)
+                        SettingsView(viewModel: viewModel.settingsViewModel, updater: updater)
                             .frame(maxWidth: 440)
                             .padding(.vertical, Spacing.xxxl)
                             .frame(maxWidth: .infinity)

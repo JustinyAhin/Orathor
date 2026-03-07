@@ -1,13 +1,16 @@
+import Sparkle
 import SwiftUI
 
 struct SettingsView: View {
     @Bindable var viewModel: SettingsViewModel
+    let updater: SPUUpdater
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xxl) {
             engineSection
             hotkeySection
             soundsSection
+            updatesSection
         }
         .animation(.easeInOut(duration: 0.2), value: viewModel.selectedEngine)
     }
@@ -145,6 +148,53 @@ struct SettingsView: View {
         }
         .padding(.horizontal, Spacing.lg)
         .padding(.vertical, Spacing.md)
+    }
+
+    // MARK: - Updates
+
+    private var updatesSection: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            Text("Updates")
+                .sectionHeaderStyle()
+
+            VStack(spacing: 0) {
+                HStack {
+                    Text("Check for updates automatically")
+                        .font(OType.body)
+                        .foregroundStyle(Color.textPrimary)
+                    Spacer()
+                    Toggle("", isOn: Binding(
+                        get: { updater.automaticallyChecksForUpdates },
+                        set: { updater.automaticallyChecksForUpdates = $0 }
+                    ))
+                    .toggleStyle(.switch)
+                    .labelsHidden()
+                }
+                .padding(.horizontal, Spacing.lg)
+                .padding(.vertical, Spacing.md)
+
+                SubtleDivider()
+
+                Button {
+                    updater.checkForUpdates()
+                } label: {
+                    HStack {
+                        Text("Check for Updates Now")
+                            .font(OType.body)
+                            .foregroundStyle(Color.textPrimary)
+                        Spacer()
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color.textTertiary)
+                    }
+                    .padding(.horizontal, Spacing.lg)
+                    .padding(.vertical, Spacing.md)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+            .cardStyle(padding: 0)
+        }
     }
 
     // MARK: - Hotkeys
