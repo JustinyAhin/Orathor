@@ -167,9 +167,23 @@ struct SettingsView: View {
             }
             .cardStyle(padding: 0)
 
-            Text("Available: \(HotkeyModifier.allCases.map(\.displayName).joined(separator: ", "))")
-                .font(OType.caption)
-                .foregroundStyle(Color.textTertiary)
+            HStack {
+                Text("Available: \(HotkeyModifier.allCases.map(\.displayName).joined(separator: ", "))")
+                    .font(OType.caption)
+                    .foregroundStyle(Color.textTertiary)
+                Spacer()
+                if viewModel.insertHotkey != .rightOption
+                    || viewModel.clipboardHotkey != nil
+                {
+                    Button("Reset to defaults") {
+                        viewModel.insertHotkey = .rightOption
+                        viewModel.clipboardHotkey = nil
+                    }
+                    .font(OType.caption)
+                    .buttonStyle(.plain)
+                    .foregroundStyle(Color.brand)
+                }
+            }
         }
     }
 }
