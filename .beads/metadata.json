@@ -1,0 +1,7 @@
+{
+  "database": "dolt",
+  "backend": "dolt",
+  "dolt_mode": "server",
+  "dolt_database": "Orathor",
+  "project_id": "b93ca364-f1e3-4969-92f6-0ec0a5fdc7b1"
+}
