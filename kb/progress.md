@@ -118,6 +118,19 @@
 - MenuBarView: amber accent bars on transcript rows; tighter header with audio level bar when recording
 - Updated design context (kb/design.md): "Bold, warm, confident" personality; Raycast reference
 
+### Step 17: UI Redesign — Readout-Inspired Overhaul
+- Dark-mode colors shifted from warm tints to cool neutral charcoals (Readout-style)
+- Multi-color indicator palette: blue (sessions), green (active), orange (tokens), red (errors), yellow (secondary), gray (inactive)
+- Replaced top tab bar with NavigationSplitView sidebar (grouped: Overview, Monitor, Settings)
+- Readout-style stat cards with centered numbers + colored dot indicators
+- Multi-colored horizontal bar charts for Top Apps
+- Transcript filter pills (Today / This Week / This Month / All Time)
+- Page titles on all views (Home, Transcripts, Settings)
+- Unified transcript row style: main window uses same TranscriptEntryRow as menu bar
+- Dark/Light/System theme switcher in Settings > Appearance (defaults to dark)
+- Settings page uses full-width layout matching other pages
+- Updated design.md with Readout as primary reference
+
 ### Diagnostics
 - Diagnostic clipboard export trimmed to session header + last 200 log lines (prevents full 512KB dump)
 - Full log still accessible via "Reveal in Finder"
