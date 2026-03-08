@@ -44,9 +44,43 @@ final class DiagnosticLogger {
     }
 
     func copyToPasteboard() {
-        let text = contents()
+        let text = shareableReport()
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
+    }
+
+    /// Builds a trimmed diagnostic report: current session info header + last 200 log lines.
+    func shareableReport(tailLineCount: Int = 200) -> String {
+        let full = contents()
+        let allLines = full.components(separatedBy: "\n")
+
+        // Find the last session header block
+        var sessionHeader: [String] = []
+        if let lastSessionIdx = allLines.lastIndex(where: { $0.contains("--- Session Start ---") }) {
+            // Grab from "--- Session Start ---" through "---------------------"
+            for i in lastSessionIdx..<allLines.count {
+                sessionHeader.append(allLines[i])
+                if allLines[i].contains("---------------------") { break }
+            }
+        }
+
+        // Tail the log
+        let tail = allLines.suffix(tailLineCount)
+
+        // If the session header is already within the tail, just return the tail
+        if let firstSessionLine = sessionHeader.first, tail.contains(where: { $0 == firstSessionLine }) {
+            return tail.joined(separator: "\n")
+        }
+
+        // Otherwise prepend the session header
+        var report = sessionHeader
+        if !sessionHeader.isEmpty {
+            report.append("") // blank separator
+            report.append("... (\(allLines.count - tailLineCount) earlier lines omitted)")
+            report.append("")
+        }
+        report.append(contentsOf: tail)
+        return report.joined(separator: "\n")
     }
 
     func logFileURL() -> URL { fileURL }
