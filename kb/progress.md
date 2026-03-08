@@ -118,6 +118,10 @@
 - MenuBarView: amber accent bars on transcript rows; tighter header with audio level bar when recording
 - Updated design context (kb/design.md): "Bold, warm, confident" personality; Raycast reference
 
+### Diagnostics
+- Diagnostic clipboard export trimmed to session header + last 200 log lines (prevents full 512KB dump)
+- Full log still accessible via "Reveal in Finder"
+
 ### Step 15: Error Handling
 - RecordingOverlayView shows error state (warning icon + message) when recording fails to start or transcription breaks mid-session
 - Error overlay auto-dismisses after 3 seconds via `scheduleErrorOverlayDismiss()`
