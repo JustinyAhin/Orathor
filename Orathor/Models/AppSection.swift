@@ -1,6 +1,28 @@
 import SwiftUI
 
-enum AppSection: String, CaseIterable, Identifiable {
+enum SidebarGroup: String, CaseIterable {
+    case overview
+    case monitor
+    case settings
+
+    var title: String {
+        switch self {
+        case .overview: "Overview"
+        case .monitor: "Monitor"
+        case .settings: "Settings"
+        }
+    }
+
+    var sections: [AppSection] {
+        switch self {
+        case .overview: [.dashboard]
+        case .monitor: [.transcripts]
+        case .settings: [.settings]
+        }
+    }
+}
+
+enum AppSection: String, CaseIterable, Identifiable, Hashable {
     case dashboard
     case transcripts
     case settings

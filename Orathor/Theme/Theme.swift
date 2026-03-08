@@ -5,6 +5,14 @@ import SwiftUI
 
 extension Color {
     static let brand = Color.accentColor
+
+    // Multi-color indicator palette (Readout-style)
+    static let indicatorBlue = Color(red: 0.231, green: 0.510, blue: 0.965)    // #3B82F6
+    static let indicatorGreen = Color(red: 0.133, green: 0.773, blue: 0.369)   // #22C55E
+    static let indicatorOrange = Color(red: 0.961, green: 0.620, blue: 0.043)  // #F59E0B
+    static let indicatorRed = Color(red: 0.937, green: 0.267, blue: 0.267)     // #EF4444
+    static let indicatorYellow = Color(red: 0.918, green: 0.702, blue: 0.031)  // #EAB308
+    static let indicatorGray = Color(red: 0.420, green: 0.447, blue: 0.502)    // #6B7280
 }
 
 // MARK: - Brand Gradient

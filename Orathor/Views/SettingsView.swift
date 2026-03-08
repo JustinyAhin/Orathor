@@ -8,6 +8,9 @@ struct SettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xxl) {
+            Text("Settings")
+                .font(OType.largeTitle)
+                .foregroundStyle(Color.textPrimary)
             engineSection
             hotkeySection
             soundsSection
@@ -174,6 +177,45 @@ struct SettingsView: View {
                 .sectionHeaderStyle()
 
             VStack(spacing: 0) {
+                HStack {
+                    Text("Theme")
+                        .font(OType.body)
+                        .foregroundStyle(Color.textPrimary)
+                    Spacer()
+                    HStack(spacing: Spacing.xxxs) {
+                        ForEach(AppearanceMode.allCases, id: \.self) { mode in
+                            Button {
+                                withAnimation(.easeInOut(duration: 0.15)) {
+                                    viewModel.appearanceMode = mode
+                                }
+                            } label: {
+                                Text(mode.displayName)
+                                    .font(OType.captionMedium)
+                                    .foregroundStyle(
+                                        viewModel.appearanceMode == mode
+                                            ? Color.textPrimary
+                                            : Color.textTertiary
+                                    )
+                                    .padding(.horizontal, Spacing.md)
+                                    .padding(.vertical, Spacing.xs)
+                                    .background(
+                                        viewModel.appearanceMode == mode
+                                            ? Color.surfaceSecondary
+                                            : Color.clear,
+                                        in: RoundedRectangle(cornerRadius: Radius.sm)
+                                    )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(Spacing.xxxs)
+                    .background(Color.surfaceElevated, in: RoundedRectangle(cornerRadius: Radius.md))
+                }
+                .padding(.horizontal, Spacing.lg)
+                .padding(.vertical, Spacing.md)
+
+                SubtleDivider()
+
                 HStack {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Show in Dock")

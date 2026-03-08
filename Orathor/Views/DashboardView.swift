@@ -30,6 +30,9 @@ struct DashboardView: View {
         } else {
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.xxl) {
+                    Text("Home")
+                        .font(OType.largeTitle)
+                        .foregroundStyle(Color.textPrimary)
                     statsStrip
                     activitySection
                     topAppsSection
@@ -60,12 +63,12 @@ struct DashboardView: View {
     // MARK: - Stats
 
     private var statsStrip: some View {
-        HStack(spacing: 0) {
-            HomeStatItem(value: formattedCount(totalWords), label: "words", isHero: true)
-            HomeStatItem(value: formattedDuration(timeSaved), label: "saved")
-            HomeStatItem(value: String(format: "%.0f", averageWPM), label: "avg wpm")
+        HStack(spacing: Spacing.md) {
+            StatCard(value: formattedCount(totalWords), label: "Words", dotColor: .indicatorBlue)
+            StatCard(value: "\(entries.count)", label: "Sessions", dotColor: .indicatorGreen)
+            StatCard(value: formattedDuration(timeSaved), label: "Saved", dotColor: .indicatorOrange)
+            StatCard(value: String(format: "%.0f", averageWPM), label: "Avg WPM", dotColor: .indicatorYellow)
         }
-        .gradientAccentCard()
     }
 
     // MARK: - Activity Streak
@@ -155,7 +158,7 @@ struct DashboardView: View {
                         if index > 0 {
                             SubtleDivider(leadingInset: Spacing.lg)
                         }
-                        TopAppRow(rank: index + 1, name: app.name, bundleID: app.bundleID, count: app.count, maxCount: apps.first?.count ?? 1)
+                        TopAppRow(rank: index + 1, name: app.name, bundleID: app.bundleID, count: app.count, maxCount: apps.first?.count ?? 1, barColor: TopAppRow.barColors[index % TopAppRow.barColors.count])
                     }
                 }
                 .leftAccentCard(padding: 0)
@@ -210,25 +213,27 @@ struct DashboardView: View {
 
 // MARK: - Supporting Views
 
-private struct HomeStatItem: View {
+private struct StatCard: View {
     let value: String
     let label: String
-    var isHero: Bool = false
+    let dotColor: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.xxxs) {
+        VStack(spacing: Spacing.sm) {
             Text(value)
                 .font(OType.stat)
-                .foregroundStyle(
-                    isHero
-                        ? AnyShapeStyle(Color.brand)
-                        : AnyShapeStyle(Color.textPrimary)
-                )
-            Text(label)
-                .font(OType.captionMedium)
-                .foregroundStyle(Color.textTertiary)
+                .foregroundStyle(Color.textPrimary)
+            HStack(spacing: Spacing.xs) {
+                Circle()
+                    .fill(dotColor)
+                    .frame(width: 6, height: 6)
+                Text(label)
+                    .font(OType.captionMedium)
+                    .foregroundStyle(Color.textTertiary)
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity)
+        .cardStyle()
     }
 }
 
@@ -354,7 +359,7 @@ private struct ActivityGrid: View {
                             .frame(width: 8, height: 8)
                         ForEach([0.3, 0.55, 0.8, 1.0], id: \.self) { level in
                             RoundedRectangle(cornerRadius: 2)
-                                .fill(Color.brand.opacity(level))
+                                .fill(Color.indicatorBlue.opacity(level))
                                 .frame(width: 8, height: 8)
                         }
                     }
@@ -385,7 +390,7 @@ private struct ActivityCell: View {
 
     var body: some View {
         RoundedRectangle(cornerRadius: 2)
-            .fill(level > 0 ? Color.brand.opacity(level) : Color.borderSubtle.opacity(0.4))
+            .fill(level > 0 ? Color.indicatorBlue.opacity(level) : Color.borderSubtle.opacity(0.4))
             .frame(width: cellSize, height: cellSize)
             .overlay(
                 RoundedRectangle(cornerRadius: 2)
@@ -464,19 +469,17 @@ private struct DetailChip: View {
 // MARK: - Top App Row
 
 private struct TopAppRow: View {
+    static let barColors: [Color] = [.indicatorBlue, .indicatorGreen, .indicatorOrange, .indicatorYellow, .indicatorGray]
+
     let rank: Int
     let name: String
     let bundleID: String
     let count: Int
     let maxCount: Int
+    var barColor: Color = .indicatorBlue
 
     private var barFraction: CGFloat {
         CGFloat(count) / CGFloat(max(maxCount, 1))
-    }
-
-    private var barOpacity: Double {
-        // Gradient from 1.0 (rank 1) down to 0.35 (rank 5)
-        max(0.35, 1.0 - Double(rank - 1) * 0.15)
     }
 
     var body: some View {
@@ -491,7 +494,7 @@ private struct TopAppRow: View {
 
             GeometryReader { geo in
                 RoundedRectangle(cornerRadius: 2)
-                    .fill(Color.brand.opacity(barOpacity))
+                    .fill(barColor)
                     .frame(width: max(4, geo.size.width * barFraction), height: 6)
                     .frame(maxHeight: .infinity, alignment: .center)
             }

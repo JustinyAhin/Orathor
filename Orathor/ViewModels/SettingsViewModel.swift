@@ -1,6 +1,28 @@
 import AppKit
 import Foundation
 
+enum AppearanceMode: String, CaseIterable {
+    case system
+    case light
+    case dark
+
+    var displayName: String {
+        switch self {
+        case .system: "System"
+        case .light: "Light"
+        case .dark: "Dark"
+        }
+    }
+
+    var appAppearance: NSAppearance? {
+        switch self {
+        case .system: nil
+        case .light: NSAppearance(named: .aqua)
+        case .dark: NSAppearance(named: .darkAqua)
+        }
+    }
+}
+
 @Observable
 final class SettingsViewModel {
     var selectedEngine: SpeechEngine {
@@ -66,6 +88,13 @@ final class SettingsViewModel {
         }
     }
 
+    var appearanceMode: AppearanceMode {
+        didSet {
+            UserDefaults.standard.set(appearanceMode.rawValue, forKey: "appearanceMode")
+            NSApp.appearance = appearanceMode.appAppearance
+        }
+    }
+
     var onEngineChanged: ((SpeechEngine) -> Void)?
     var onHotkeyChanged: (() -> Void)?
 
@@ -87,8 +116,17 @@ final class SettingsViewModel {
 
         showInDock = UserDefaults.standard.object(forKey: "showInDock") as? Bool ?? false
 
+        let storedAppearance = UserDefaults.standard.string(forKey: "appearanceMode") ?? AppearanceMode.dark.rawValue
+        appearanceMode = AppearanceMode(rawValue: storedAppearance) ?? .dark
+
         startSound = UserDefaults.standard.string(forKey: "startSound") ?? SoundService.defaultStart
         stopSound = UserDefaults.standard.string(forKey: "stopSound") ?? SoundService.defaultStop
         cancelSound = UserDefaults.standard.string(forKey: "cancelSound") ?? SoundService.defaultCancel
+
+        // Defer appearance so it doesn't interfere with MenuBarExtra setup
+        let mode = appearanceMode
+        DispatchQueue.main.async {
+            NSApp.appearance = mode.appAppearance
+        }
     }
 }

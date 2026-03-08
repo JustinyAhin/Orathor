@@ -7,66 +7,50 @@ struct MainWindowView: View {
     @State private var selectedSection: AppSection = .dashboard
 
     var body: some View {
-        VStack(spacing: 0) {
-            tabBar
-            SubtleDivider()
-
-            Group {
-                switch selectedSection {
-                case .dashboard:
-                    DashboardView(historyService: viewModel.historyService)
-                case .transcripts:
-                    TranscriptsView(historyService: viewModel.historyService)
-                case .settings:
-                    ScrollView {
-                        SettingsView(viewModel: viewModel.settingsViewModel, updater: updater)
-                            .frame(maxWidth: 440)
-                            .padding(.vertical, Spacing.xxxl)
-                            .frame(maxWidth: .infinity)
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        NavigationSplitView {
+            sidebar
+                .navigationSplitViewColumnWidth(min: 180, ideal: 200, max: 240)
+        } detail: {
+            detail
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.surfacePrimary)
         }
+        .navigationSplitViewStyle(.balanced)
         .frame(minWidth: 700, minHeight: 500)
     }
 
-    private var tabBar: some View {
-        HStack {
-            Spacer()
+    // MARK: - Sidebar
 
-            HStack(spacing: Spacing.xxxs) {
-                ForEach(AppSection.allCases) { section in
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.15)) {
-                            selectedSection = section
-                        }
-                    } label: {
+    private var sidebar: some View {
+        List(selection: $selectedSection) {
+            ForEach(SidebarGroup.allCases, id: \.self) { group in
+                Section {
+                    ForEach(group.sections) { section in
                         Label(section.title, systemImage: section.icon)
-                            .font(OType.captionMedium)
-                            .foregroundStyle(
-                                selectedSection == section
-                                    ? Color.textPrimary
-                                    : Color.textTertiary
-                            )
-                            .padding(.horizontal, Spacing.md)
-                            .padding(.vertical, Spacing.xs)
-                            .contentShape(Rectangle())
-                            .background(
-                                selectedSection == section
-                                    ? Color.surfaceElevated
-                                    : Color.clear,
-                                in: RoundedRectangle(cornerRadius: Radius.sm)
-                            )
+                            .tag(section)
                     }
-                    .buttonStyle(.plain)
+                } header: {
+                    Text(group.title)
                 }
             }
-            .padding(Spacing.xxxs)
-            .background(Color.surfaceSecondary, in: RoundedRectangle(cornerRadius: Radius.md))
-
-            Spacer()
         }
-        .padding(.vertical, Spacing.sm)
+        .listStyle(.sidebar)
+    }
+
+    // MARK: - Detail
+
+    @ViewBuilder
+    private var detail: some View {
+        switch selectedSection {
+        case .dashboard:
+            DashboardView(historyService: viewModel.historyService)
+        case .transcripts:
+            TranscriptsView(historyService: viewModel.historyService)
+        case .settings:
+            ScrollView {
+                SettingsView(viewModel: viewModel.settingsViewModel, updater: updater)
+                    .padding(Spacing.xxxl)
+            }
+        }
     }
 }

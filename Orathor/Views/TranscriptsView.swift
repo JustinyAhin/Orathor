@@ -1,17 +1,42 @@
 import SwiftUI
 
+enum TranscriptFilter: String, CaseIterable {
+    case today = "Today"
+    case thisWeek = "This Week"
+    case thisMonth = "This Month"
+    case allTime = "All Time"
+
+    func matches(_ date: Date) -> Bool {
+        let calendar = Calendar.current
+        switch self {
+        case .today:
+            return calendar.isDateInToday(date)
+        case .thisWeek:
+            return calendar.isDate(date, equalTo: Date(), toGranularity: .weekOfYear)
+        case .thisMonth:
+            return calendar.isDate(date, equalTo: Date(), toGranularity: .month)
+        case .allTime:
+            return true
+        }
+    }
+}
+
 struct TranscriptsView: View {
     let historyService: TranscriptHistoryService
     @State private var playbackService = AudioPlaybackService()
     @State private var searchText = ""
+    @State private var selectedFilter: TranscriptFilter = .allTime
 
     private var filteredEntries: [TranscriptEntry] {
         let query = searchText.trimmingCharacters(in: .whitespaces)
-        guard !query.isEmpty else { return historyService.entries }
-        return historyService.entries.filter { entry in
-            entry.text.localizedCaseInsensitiveContains(query)
-            || (entry.targetAppName?.localizedCaseInsensitiveContains(query) ?? false)
+        var results = historyService.entries.filter { selectedFilter.matches($0.timestamp) }
+        if !query.isEmpty {
+            results = results.filter { entry in
+                entry.text.localizedCaseInsensitiveContains(query)
+                || (entry.targetAppName?.localizedCaseInsensitiveContains(query) ?? false)
+            }
         }
+        return results
     }
 
     private var groupedByDate: [(date: String, entries: [TranscriptEntry])] {
@@ -26,7 +51,16 @@ struct TranscriptsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            searchBar
+            VStack(alignment: .leading, spacing: Spacing.md) {
+                Text("Transcripts")
+                    .font(OType.largeTitle)
+                    .foregroundStyle(Color.textPrimary)
+                searchBar
+                filterPills
+            }
+            .padding(.horizontal, Spacing.xxl)
+            .padding(.top, Spacing.xxl)
+            .padding(.bottom, Spacing.md)
 
             if historyService.entries.isEmpty {
                 ContentUnavailableView(
@@ -48,12 +82,9 @@ struct TranscriptsView: View {
 
                         ForEach(groupedByDate, id: \.date) { group in
                             Section {
-                                VStack(spacing: 0) {
-                                    ForEach(Array(group.entries.enumerated()), id: \.element.id) { index, entry in
-                                        if index > 0 {
-                                            SubtleDivider(leadingInset: 56)
-                                        }
-                                        MainTranscriptRow(
+                                LazyVStack(spacing: Spacing.xxxs) {
+                                    ForEach(group.entries) { entry in
+                                        TranscriptEntryRow(
                                             entry: entry,
                                             searchText: searchText,
                                             historyService: historyService,
@@ -61,7 +92,6 @@ struct TranscriptsView: View {
                                         )
                                     }
                                 }
-                                .leftAccentCard(padding: 0)
                             } header: {
                                 Text(group.date)
                                     .sectionHeaderStyle()
@@ -104,8 +134,37 @@ struct TranscriptsView: View {
             RoundedRectangle(cornerRadius: Radius.sm)
                 .stroke(Color.borderSubtle, lineWidth: 0.5)
         )
-        .padding(.horizontal, Spacing.xxl)
-        .padding(.vertical, Spacing.md)
+    }
+
+    private var filterPills: some View {
+        HStack(spacing: Spacing.xxs) {
+            ForEach(TranscriptFilter.allCases, id: \.self) { filter in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.15)) {
+                        selectedFilter = filter
+                    }
+                } label: {
+                    Text(filter.rawValue)
+                        .font(OType.captionMedium)
+                        .foregroundStyle(
+                            selectedFilter == filter
+                                ? Color.textPrimary
+                                : Color.textTertiary
+                        )
+                        .padding(.horizontal, Spacing.md)
+                        .padding(.vertical, Spacing.xs)
+                        .background(
+                            selectedFilter == filter
+                                ? Color.surfaceElevated
+                                : Color.clear,
+                            in: RoundedRectangle(cornerRadius: Radius.sm)
+                        )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(Spacing.xxxs)
+        .background(Color.surfaceSecondary, in: RoundedRectangle(cornerRadius: Radius.md))
     }
 
     private func formatDateHeader(_ date: Date) -> String {
