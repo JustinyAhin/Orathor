@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.6 — 2026-03-08
+
+### Improvements
+
+- **Readout-inspired UI overhaul** — sidebar navigation with grouped sections, cool neutral color palette, multi-color indicator system for data types and status
+- **Diagnostic clipboard export** — trimmed to session header + last 200 lines for manageable size
+- **Session-start diagnostic logging** — captures system and settings info at launch for debugging
+
 ## 0.0.5 — 2026-03-08
 
 ### Improvements
