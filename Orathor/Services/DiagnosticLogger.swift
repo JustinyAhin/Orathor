@@ -51,6 +51,42 @@ final class DiagnosticLogger {
 
     func logFileURL() -> URL { fileURL }
 
+    func logSessionStart() {
+        let bundle = Bundle.main
+        let appVersion = bundle.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "?"
+        let buildNumber = bundle.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "?"
+        let osVersion = ProcessInfo.processInfo.operatingSystemVersion
+        let osString = "macOS \(osVersion.majorVersion).\(osVersion.minorVersion).\(osVersion.patchVersion)"
+
+        var hw = "unknown"
+        var size = 0
+        sysctlbyname("hw.model", nil, &size, nil, 0)
+        if size > 0 {
+            var model = [CChar](repeating: 0, count: size)
+            sysctlbyname("hw.model", &model, &size, nil, 0)
+            hw = String(cString: model)
+        }
+
+        let defaults = UserDefaults.standard
+        let engine = defaults.string(forKey: "speechEngine") ?? "apple"
+        let insertKey = defaults.string(forKey: "insertHotkey") ?? "rightOption"
+        let clipboardKey = defaults.string(forKey: "clipboardHotkey") ?? "none"
+        let dock = (defaults.object(forKey: "showInDock") as? Bool ?? false) ? "yes" : "no"
+
+        let lines = [
+            "--- Session Start ---",
+            "App: \(appVersion) (\(buildNumber))",
+            "OS: \(osString)",
+            "Hardware: \(hw)",
+            "Engine: \(engine)",
+            "Insert hotkey: \(insertKey)",
+            "Clipboard hotkey: \(clipboardKey)",
+            "Show in dock: \(dock)",
+            "---------------------",
+        ]
+        for line in lines { log(line) }
+    }
+
     func clear() {
         queue.async { [self] in
             try? FileManager.default.removeItem(at: fileURL)

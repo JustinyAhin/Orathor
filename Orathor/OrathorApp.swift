@@ -23,6 +23,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        DiagnosticLogger.shared.logSessionStart()
+
         NSApp.setActivationPolicy(showInDock ? .regular : .accessory)
         DispatchQueue.main.async {
             NSApp.activate(ignoringOtherApps: true)
