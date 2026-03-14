@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.7 — 2026-03-14
+
+### New
+
+- **Language preference** — pick a primary language for Deepgram transcription (20 options) instead of always using auto-detect; single-language mode dramatically improves accuracy
+- **Quick language switch** — globe pill in menu bar footer lets you change language without opening settings
+
 ## 0.0.6 — 2026-03-08
 
 ### Improvements
