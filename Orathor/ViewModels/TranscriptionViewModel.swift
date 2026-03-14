@@ -27,7 +27,7 @@ final class TranscriptionViewModel {
     private let diag = DiagnosticLogger.shared
 
     init() {
-        speechService = TranscriptionViewModel.makeSpeechService(for: settingsViewModel.selectedEngine, apiKey: settingsViewModel.deepgramApiKey)
+        speechService = TranscriptionViewModel.makeSpeechService(for: settingsViewModel.selectedEngine, apiKey: settingsViewModel.deepgramApiKey, language: settingsViewModel.transcriptionLanguage)
         configureSpeechServiceErrorHandler()
         DispatchQueue.main.async { [self] in
             self.setUp()
@@ -40,7 +40,7 @@ final class TranscriptionViewModel {
 
         settingsViewModel.onEngineChanged = { [weak self] engine in
             guard let self, !self.isRecording else { return }
-            self.speechService = TranscriptionViewModel.makeSpeechService(for: engine, apiKey: self.settingsViewModel.deepgramApiKey)
+            self.speechService = TranscriptionViewModel.makeSpeechService(for: engine, apiKey: self.settingsViewModel.deepgramApiKey, language: self.settingsViewModel.transcriptionLanguage)
             self.configureSpeechServiceErrorHandler()
         }
 
@@ -283,12 +283,12 @@ final class TranscriptionViewModel {
         speechService.transcribedText
     }
 
-    private static func makeSpeechService(for engine: SpeechEngine, apiKey: String) -> any TranscriptionService {
+    private static func makeSpeechService(for engine: SpeechEngine, apiKey: String, language: String = "multi") -> any TranscriptionService {
         switch engine {
         case .apple:
             AppleSpeechService()
         case .deepgram:
-            DeepgramService(apiKey: apiKey)
+            DeepgramService(apiKey: apiKey, language: language)
         }
     }
 

@@ -95,6 +95,12 @@ final class SettingsViewModel {
         }
     }
 
+    var transcriptionLanguage: String {
+        didSet {
+            UserDefaults.standard.set(transcriptionLanguage, forKey: "transcriptionLanguage")
+        }
+    }
+
     var onEngineChanged: ((SpeechEngine) -> Void)?
     var onHotkeyChanged: (() -> Void)?
 
@@ -118,6 +124,8 @@ final class SettingsViewModel {
 
         let storedAppearance = UserDefaults.standard.string(forKey: "appearanceMode") ?? AppearanceMode.dark.rawValue
         appearanceMode = AppearanceMode(rawValue: storedAppearance) ?? .dark
+
+        transcriptionLanguage = UserDefaults.standard.string(forKey: "transcriptionLanguage") ?? "multi"
 
         startSound = UserDefaults.standard.string(forKey: "startSound") ?? SoundService.defaultStart
         stopSound = UserDefaults.standard.string(forKey: "stopSound") ?? SoundService.defaultStop

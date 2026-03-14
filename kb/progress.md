@@ -144,6 +144,12 @@
 - Errors shown for: mic access denied, speech permission denied, missing API key, Deepgram connection failure, speech engine unavailable
 - Replaced `print()` with `os.Logger` in TranscriptHistoryService (save failures) and AudioPlaybackService (playback failures)
 
+### Language Preference
+- Language setting in Settings (under Deepgram section) with picker for 20 languages
+- Defaults to "multi" (auto-detect), single-language selection improves accuracy
+- Language passed through SettingsViewModel → TranscriptionViewModel → DeepgramService → WebSocket URL
+- Persisted in UserDefaults
+
 ## Remaining
 
 ### Core Features

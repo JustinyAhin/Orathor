@@ -541,7 +541,7 @@ private struct HomeTranscriptRow: View {
                     Text(entry.timestamp, format: .dateTime.hour().minute())
                         .font(OType.monoSmall)
                         .foregroundStyle(Color.textTertiary)
-                    Text("\(entry.wordCount)w")
+                    Text("\(entry.wordCount) words")
                         .font(OType.monoMicro)
                         .foregroundStyle(Color.textTertiary)
                 }

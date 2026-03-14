@@ -28,7 +28,7 @@ struct MainTranscriptRow: View {
                     Text("\u{2022}")
                         .foregroundStyle(Color.borderDefault)
                         .font(OType.micro)
-                    Text("\(entry.wordCount)w")
+                    Text("\(entry.wordCount) words")
                         .font(OType.monoMicro)
                         .foregroundStyle(Color.textTertiary)
                 }

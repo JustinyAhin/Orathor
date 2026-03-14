@@ -7,6 +7,7 @@ final class DeepgramService: NSObject, TranscriptionService, URLSessionWebSocket
     var onError: ((String) -> Void)?
 
     private let apiKey: String
+    private let language: String
     private var webSocketTask: URLSessionWebSocketTask?
     private var urlSession: URLSession?
     private var audioConverter: AVAudioConverter?
@@ -17,8 +18,9 @@ final class DeepgramService: NSObject, TranscriptionService, URLSessionWebSocket
     private var lastAudioFormat: AVAudioFormat?
     private var finalizeContinuation: CheckedContinuation<Void, Never>?
 
-    init(apiKey: String) {
+    init(apiKey: String, language: String = "multi") {
         self.apiKey = apiKey
+        self.language = language
     }
 
     func startTranscribing(audioFormat: AVAudioFormat) async throws {
@@ -77,7 +79,7 @@ final class DeepgramService: NSObject, TranscriptionService, URLSessionWebSocket
     private func connect() async throws {
         var params = [
             "model=nova-3",
-            "language=multi",
+            "language=\(language)",
             "encoding=linear16",
             "channels=1",
             "punctuate=true",

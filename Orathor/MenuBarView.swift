@@ -276,7 +276,9 @@ struct TranscriptEntryRow: View {
             let seconds = Int(entry.durationSeconds)
             Text("\(seconds)s")
             Text("\u{2022}")
-            Text("\(entry.wordCount)w")
+            Text("\(entry.wordCount) words")
+            Text("\u{2022}")
+            Text(entry.timestamp, style: .relative)
         }
         .font(OType.monoMicro)
         .foregroundStyle(Color.textTertiary)

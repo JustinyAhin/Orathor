@@ -66,6 +66,30 @@ struct SettingsView: View {
                     .padding(.horizontal, Spacing.lg)
                     .padding(.vertical, Spacing.md)
                     .transition(.opacity.combined(with: .move(edge: .top)))
+
+                    SubtleDivider()
+
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Language")
+                                .font(OType.body)
+                                .foregroundStyle(Color.textPrimary)
+                            Text("Single language is more accurate than auto-detect")
+                                .font(OType.caption)
+                                .foregroundStyle(Color.textTertiary)
+                        }
+                        Spacer()
+                        Picker("", selection: $viewModel.transcriptionLanguage) {
+                            ForEach(DeepgramLanguage.allOptions, id: \.code) { lang in
+                                Text(lang.label).tag(lang.code)
+                            }
+                        }
+                        .labelsHidden()
+                        .frame(width: 160)
+                    }
+                    .padding(.horizontal, Spacing.lg)
+                    .padding(.vertical, Spacing.md)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
                 }
             }
             .cardStyle(padding: 0)
