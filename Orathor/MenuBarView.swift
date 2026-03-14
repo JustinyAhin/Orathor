@@ -191,6 +191,10 @@ struct MenuBarView: View {
             }
             .buttonStyle(GhostButtonStyle())
             Spacer()
+            if viewModel.settingsViewModel.selectedEngine == .deepgram {
+                languagePicker
+            }
+            Spacer()
             Button("Quit") {
                 NSApplication.shared.terminate(nil)
             }
@@ -199,6 +203,35 @@ struct MenuBarView: View {
         }
         .padding(.horizontal, Spacing.lg)
         .padding(.vertical, Spacing.sm)
+    }
+
+    private var languagePicker: some View {
+        Menu {
+            ForEach(DeepgramLanguage.allOptions, id: \.code) { lang in
+                Toggle(lang.label, isOn: Binding(
+                    get: { viewModel.settingsViewModel.transcriptionLanguage == lang.code },
+                    set: { if $0 { viewModel.settingsViewModel.transcriptionLanguage = lang.code } }
+                ))
+            }
+        } label: {
+            HStack(spacing: Spacing.xxs) {
+                Image(systemName: "globe")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Color.brand)
+                Text(currentLanguageLabel)
+                    .font(OType.captionMedium)
+            }
+            .foregroundStyle(Color.textSecondary)
+            .padding(.horizontal, Spacing.sm)
+            .padding(.vertical, Spacing.xxs)
+            .background(Color.surfaceSecondary, in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+    }
+
+    private var currentLanguageLabel: String {
+        DeepgramLanguage.allOptions.first { $0.code == viewModel.settingsViewModel.transcriptionLanguage }?.label ?? "Auto-detect"
     }
 }
 
