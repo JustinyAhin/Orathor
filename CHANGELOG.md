@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.0.8 — 2026-05-13
+
+### New
+
+- **OpenAI Whisper engine** — new cloud transcription option using OpenAI's realtime `gpt-realtime-whisper` model over WebSocket
+- **OpenAI API key setting** — store your OpenAI key securely in Keychain and switch engines from Settings
+
+### Fixes
+
+- **OpenAI realtime session setup** — use transcription sessions and disable unsupported turn detection for `gpt-realtime-whisper`
+- **OpenAI transcript finalization** — prevent interim and completed transcript events from being joined as duplicate text
+
 ## 0.0.7 — 2026-03-14
 
 ### New
