@@ -27,7 +27,12 @@ final class TranscriptionViewModel {
     private let diag = DiagnosticLogger.shared
 
     init() {
-        speechService = TranscriptionViewModel.makeSpeechService(for: settingsViewModel.selectedEngine, apiKey: settingsViewModel.deepgramApiKey, language: settingsViewModel.transcriptionLanguage)
+        speechService = TranscriptionViewModel.makeSpeechService(
+            for: settingsViewModel.selectedEngine,
+            deepgramApiKey: settingsViewModel.deepgramApiKey,
+            openAIApiKey: settingsViewModel.openAIApiKey,
+            language: settingsViewModel.transcriptionLanguage
+        )
         configureSpeechServiceErrorHandler()
         DispatchQueue.main.async { [self] in
             self.setUp()
@@ -40,7 +45,12 @@ final class TranscriptionViewModel {
 
         settingsViewModel.onEngineChanged = { [weak self] engine in
             guard let self, !self.isRecording else { return }
-            self.speechService = TranscriptionViewModel.makeSpeechService(for: engine, apiKey: self.settingsViewModel.deepgramApiKey, language: self.settingsViewModel.transcriptionLanguage)
+            self.speechService = TranscriptionViewModel.makeSpeechService(
+                for: engine,
+                deepgramApiKey: self.settingsViewModel.deepgramApiKey,
+                openAIApiKey: self.settingsViewModel.openAIApiKey,
+                language: self.settingsViewModel.transcriptionLanguage
+            )
             self.configureSpeechServiceErrorHandler()
         }
 
@@ -88,8 +98,10 @@ final class TranscriptionViewModel {
     func checkPermissions() async {
         if settingsViewModel.selectedEngine == .apple {
             hasPermission = await AppleSpeechService.requestPermission()
-        } else {
+        } else if settingsViewModel.selectedEngine == .deepgram {
             hasPermission = settingsViewModel.isDeepgramConfigured
+        } else {
+            hasPermission = settingsViewModel.isOpenAIConfigured
         }
         hasAccessibility = TextInsertionService.hasAccessibilityPermission
     }
@@ -97,6 +109,16 @@ final class TranscriptionViewModel {
     private func configureSpeechServiceErrorHandler() {
         if let deepgram = speechService as? DeepgramService {
             deepgram.onError = { [weak self] message in
+                Task { @MainActor in
+                    guard let self else { return }
+                    self.errorMessage = message
+                    await self.stopRecording()
+                    self.scheduleErrorOverlayDismiss()
+                }
+            }
+        }
+        if let openAI = speechService as? OpenAIRealtimeWhisperService {
+            openAI.onError = { [weak self] message in
                 Task { @MainActor in
                     guard let self else { return }
                     self.errorMessage = message
@@ -165,7 +187,25 @@ final class TranscriptionViewModel {
                 return
             }
             // Recreate service with current API key in case it changed
-            speechService = TranscriptionViewModel.makeSpeechService(for: .deepgram, apiKey: settingsViewModel.deepgramApiKey)
+            speechService = TranscriptionViewModel.makeSpeechService(
+                for: .deepgram,
+                deepgramApiKey: settingsViewModel.deepgramApiKey,
+                openAIApiKey: settingsViewModel.openAIApiKey,
+                language: settingsViewModel.transcriptionLanguage
+            )
+            configureSpeechServiceErrorHandler()
+        } else if engine == .openAIWhisper {
+            guard settingsViewModel.isOpenAIConfigured else {
+                errorMessage = "OpenAI API key is required. Add it in Settings."
+                return
+            }
+            // Recreate service with current API key in case it changed
+            speechService = TranscriptionViewModel.makeSpeechService(
+                for: .openAIWhisper,
+                deepgramApiKey: settingsViewModel.deepgramApiKey,
+                openAIApiKey: settingsViewModel.openAIApiKey,
+                language: settingsViewModel.transcriptionLanguage
+            )
             configureSpeechServiceErrorHandler()
         }
 
@@ -204,7 +244,7 @@ final class TranscriptionViewModel {
     private func stopRecording() async {
         diag.log("STOP recording — wasCancelled: \(wasCancelled)")
         audioService.stopRecording()
-        // Let in-flight audio buffers reach Deepgram before sending Finalize
+        // Let in-flight audio buffers reach cloud providers before finalizing
         try? await Task.sleep(for: .milliseconds(300))
         await speechService.stopTranscribing()
         isRecording = false
@@ -283,12 +323,19 @@ final class TranscriptionViewModel {
         speechService.transcribedText
     }
 
-    private static func makeSpeechService(for engine: SpeechEngine, apiKey: String, language: String = "multi") -> any TranscriptionService {
+    private static func makeSpeechService(
+        for engine: SpeechEngine,
+        deepgramApiKey: String,
+        openAIApiKey: String,
+        language: String = "multi"
+    ) -> any TranscriptionService {
         switch engine {
         case .apple:
             AppleSpeechService()
         case .deepgram:
-            DeepgramService(apiKey: apiKey, language: language)
+            DeepgramService(apiKey: deepgramApiKey, language: language)
+        case .openAIWhisper:
+            OpenAIRealtimeWhisperService(apiKey: openAIApiKey, language: language)
         }
     }
 

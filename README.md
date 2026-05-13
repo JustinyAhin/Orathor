@@ -20,6 +20,7 @@ You can also start/stop from the menu bar popover and copy the transcription to 
 |---|---|---|
 | **Apple Speech** | Local, on-device | None — works out of the box |
 | **Deepgram Nova** | Cloud, higher accuracy | Requires an API key (stored in Keychain) |
+| **OpenAI Whisper** | Cloud, low-latency streaming | Requires an API key (stored in Keychain) |
 
 Switch between engines in the Settings section of the menu bar popover.
 

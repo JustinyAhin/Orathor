@@ -42,6 +42,16 @@ final class SettingsViewModel {
         }
     }
 
+    var openAIApiKey: String {
+        didSet {
+            if openAIApiKey.isEmpty {
+                KeychainService.delete(key: "openaiApiKey")
+            } else {
+                KeychainService.save(key: "openaiApiKey", value: openAIApiKey)
+            }
+        }
+    }
+
     var insertHotkey: HotkeyModifier {
         didSet {
             if let clipboardHotkey, insertHotkey == clipboardHotkey {
@@ -108,10 +118,15 @@ final class SettingsViewModel {
         !deepgramApiKey.isEmpty
     }
 
+    var isOpenAIConfigured: Bool {
+        !openAIApiKey.isEmpty
+    }
+
     init() {
         let stored = UserDefaults.standard.string(forKey: "speechEngine") ?? SpeechEngine.apple.rawValue
         selectedEngine = SpeechEngine(rawValue: stored) ?? .apple
         deepgramApiKey = KeychainService.load(key: "deepgramApiKey") ?? ""
+        openAIApiKey = KeychainService.load(key: "openaiApiKey") ?? ""
 
         let storedInsert = UserDefaults.standard.string(forKey: "insertHotkey") ?? HotkeyModifier.rightOption.rawValue
         insertHotkey = HotkeyModifier(rawValue: storedInsert) ?? .rightOption

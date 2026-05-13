@@ -191,7 +191,7 @@ struct MenuBarView: View {
             }
             .buttonStyle(GhostButtonStyle())
             Spacer()
-            if viewModel.settingsViewModel.selectedEngine == .deepgram {
+            if viewModel.settingsViewModel.selectedEngine == .deepgram || viewModel.settingsViewModel.selectedEngine == .openAIWhisper {
                 languagePicker
             }
             Spacer()

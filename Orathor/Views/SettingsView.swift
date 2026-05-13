@@ -45,15 +45,22 @@ struct SettingsView: View {
                 engineRow(.apple)
                 SubtleDivider()
                 engineRow(.deepgram)
+                SubtleDivider()
+                engineRow(.openAIWhisper)
 
-                if viewModel.selectedEngine == .deepgram {
+                if viewModel.selectedEngine == .deepgram || viewModel.selectedEngine == .openAIWhisper {
                     SubtleDivider()
 
                     VStack(alignment: .leading, spacing: Spacing.sm) {
-                        SecureField("Deepgram API Key", text: $viewModel.deepgramApiKey)
-                            .textFieldStyle(.roundedBorder)
+                        if viewModel.selectedEngine == .deepgram {
+                            SecureField("Deepgram API Key", text: $viewModel.deepgramApiKey)
+                                .textFieldStyle(.roundedBorder)
+                        } else {
+                            SecureField("OpenAI API Key", text: $viewModel.openAIApiKey)
+                                .textFieldStyle(.roundedBorder)
+                        }
 
-                        if viewModel.isDeepgramConfigured {
+                        if selectedCloudEngineIsConfigured {
                             Label("API key saved", systemImage: "checkmark.circle.fill")
                                 .font(OType.caption)
                                 .foregroundStyle(Color.success)
@@ -109,7 +116,7 @@ struct SettingsView: View {
                     Text(engine.displayName)
                         .font(OType.body)
                         .foregroundStyle(Color.textPrimary)
-                    Text(engine == .apple ? "On-device, private" : "Cloud, higher accuracy")
+                    Text(engineSubtitle(engine))
                         .font(OType.caption)
                         .foregroundStyle(Color.textTertiary)
                 }
@@ -125,6 +132,28 @@ struct SettingsView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+
+    private var selectedCloudEngineIsConfigured: Bool {
+        switch viewModel.selectedEngine {
+        case .apple:
+            true
+        case .deepgram:
+            viewModel.isDeepgramConfigured
+        case .openAIWhisper:
+            viewModel.isOpenAIConfigured
+        }
+    }
+
+    private func engineSubtitle(_ engine: SpeechEngine) -> String {
+        switch engine {
+        case .apple:
+            "On-device, private"
+        case .deepgram:
+            "Cloud, higher accuracy"
+        case .openAIWhisper:
+            "Cloud, low-latency streaming"
+        }
     }
 
     // MARK: - Sounds
