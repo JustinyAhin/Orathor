@@ -148,17 +148,7 @@ private struct OverlayLevelBars: View {
             ForEach(0..<barCount, id: \.self) { index in
                 let active = isActive(index)
                 RoundedRectangle(cornerRadius: 1)
-                    .fill(
-                        active
-                            ? AnyShapeStyle(
-                                LinearGradient(
-                                    colors: [.brand, .brandGradientEnd],
-                                    startPoint: .bottom,
-                                    endPoint: .top
-                                )
-                              )
-                            : AnyShapeStyle(Color.textTertiary.opacity(0.3))
-                    )
+                    .fill(active ? Color.recording : Color.textTertiary.opacity(0.25))
                     .frame(width: 2, height: active ? max(3, CGFloat(level) * 16) : 3)
             }
         }

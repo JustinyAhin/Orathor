@@ -241,7 +241,7 @@ struct AudioLevelView: View {
     var body: some View {
         GeometryReader { geometry in
             RoundedRectangle(cornerRadius: 2)
-                .fill(LinearGradient.brand)
+                .fill(Color.recording)
                 .frame(width: geometry.size.width * CGFloat(level))
                 .animation(.easeOut(duration: 0.05), value: level)
         }
