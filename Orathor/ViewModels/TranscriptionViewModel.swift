@@ -30,11 +30,18 @@ final class TranscriptionViewModel {
     private let diag = DiagnosticLogger.shared
 
     init() {
-        speechService = TranscriptionViewModel.makeSpeechService(
-            for: settingsViewModel.selectedEngine,
+        let config = SpeechServiceConfig(
+            engine: settingsViewModel.selectedEngine,
             deepgramApiKey: settingsViewModel.deepgramApiKey,
             openAIApiKey: settingsViewModel.openAIApiKey,
             language: settingsViewModel.transcriptionLanguage
+        )
+        speechServiceConfig = config
+        speechService = TranscriptionViewModel.makeSpeechService(
+            for: config.engine,
+            deepgramApiKey: config.deepgramApiKey,
+            openAIApiKey: config.openAIApiKey,
+            language: config.language
         )
         configureSpeechServiceErrorHandler()
         DispatchQueue.main.async { [self] in
@@ -42,19 +49,43 @@ final class TranscriptionViewModel {
         }
     }
 
+    private struct SpeechServiceConfig: Equatable {
+        let engine: SpeechEngine
+        let deepgramApiKey: String
+        let openAIApiKey: String
+        let language: String
+    }
+
+    private var speechServiceConfig: SpeechServiceConfig
+
+    /// Keeps the cached service (and any warm connection it holds) unless
+    /// engine, API key, or language changed since it was built.
+    private func refreshSpeechServiceIfNeeded() {
+        let config = SpeechServiceConfig(
+            engine: settingsViewModel.selectedEngine,
+            deepgramApiKey: settingsViewModel.deepgramApiKey,
+            openAIApiKey: settingsViewModel.openAIApiKey,
+            language: settingsViewModel.transcriptionLanguage
+        )
+        guard config != speechServiceConfig else { return }
+        speechService.shutdown()
+        speechService = TranscriptionViewModel.makeSpeechService(
+            for: config.engine,
+            deepgramApiKey: config.deepgramApiKey,
+            openAIApiKey: config.openAIApiKey,
+            language: config.language
+        )
+        speechServiceConfig = config
+        configureSpeechServiceErrorHandler()
+    }
+
     func setUp() {
         guard !isSetUp else { return }
         isSetUp = true
 
-        settingsViewModel.onEngineChanged = { [weak self] engine in
+        settingsViewModel.onEngineChanged = { [weak self] _ in
             guard let self, !self.isRecording else { return }
-            self.speechService = TranscriptionViewModel.makeSpeechService(
-                for: engine,
-                deepgramApiKey: self.settingsViewModel.deepgramApiKey,
-                openAIApiKey: self.settingsViewModel.openAIApiKey,
-                language: self.settingsViewModel.transcriptionLanguage
-            )
-            self.configureSpeechServiceErrorHandler()
+            self.refreshSpeechServiceIfNeeded()
         }
 
         keyboardService.insertHotkey = settingsViewModel.insertHotkey
@@ -196,28 +227,14 @@ final class TranscriptionViewModel {
                 errorMessage = "Deepgram API key is required. Add it in Settings."
                 return
             }
-            // Recreate service with current API key in case it changed
-            speechService = TranscriptionViewModel.makeSpeechService(
-                for: .deepgram,
-                deepgramApiKey: settingsViewModel.deepgramApiKey,
-                openAIApiKey: settingsViewModel.openAIApiKey,
-                language: settingsViewModel.transcriptionLanguage
-            )
-            configureSpeechServiceErrorHandler()
         } else if engine == .openAIWhisper {
             guard settingsViewModel.isOpenAIConfigured else {
                 errorMessage = "OpenAI API key is required. Add it in Settings."
                 return
             }
-            // Recreate service with current API key in case it changed
-            speechService = TranscriptionViewModel.makeSpeechService(
-                for: .openAIWhisper,
-                deepgramApiKey: settingsViewModel.deepgramApiKey,
-                openAIApiKey: settingsViewModel.openAIApiKey,
-                language: settingsViewModel.transcriptionLanguage
-            )
-            configureSpeechServiceErrorHandler()
         }
+
+        refreshSpeechServiceIfNeeded()
 
         do {
             errorMessage = nil

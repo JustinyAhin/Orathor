@@ -27,6 +27,12 @@ final class DeepgramService: NSObject, TranscriptionService, URLSessionWebSocket
     private var connectStart: Date?
     private var didLogFirstTranscript = false
 
+    // Warm connection: the socket is held open between dictations with
+    // KeepAlive messages (Deepgram closes after ~10s of silence without them)
+    // so the next dictation skips the handshake entirely.
+    private var keepAliveTask: Task<Void, Never>?
+    private let warmIdleLimit: TimeInterval = 120
+
     init(apiKey: String, language: String = "multi") {
         self.apiKey = apiKey
         self.language = language
@@ -34,13 +40,24 @@ final class DeepgramService: NSObject, TranscriptionService, URLSessionWebSocket
 
     func startTranscribing() async throws {
         transcribedText = ""
+        finalText = ""
+        lastInterim = ""
         reconnectAttempts = 0
         didLogFirstTranscript = false
+        keepAliveTask?.cancel()
+        keepAliveTask = nil
+
+        if isSocketWarm() {
+            connectStart = Date()
+            isTranscribing = true
+            DiagnosticLogger.shared.log("Deepgram: reusing warm connection")
+            return
+        }
         try await connect()
     }
 
     func processAudioBuffer(_ buffer: AVAudioPCMBuffer) {
-        if audioConverter == nil {
+        if audioConverter == nil || audioConverter?.inputFormat != buffer.format {
             setupAudioConverter(sourceFormat: buffer.format)
         }
         guard let data = convertBufferToData(buffer) else { return }
@@ -67,12 +84,14 @@ final class DeepgramService: NSObject, TranscriptionService, URLSessionWebSocket
             }
         }
 
-        sendTextMessage(["type": "CloseStream"])
         isTranscribing = false
+        // No CloseStream — hold the socket open for the next dictation
+        startKeepAlive()
+    }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
-            self?.disconnect()
-        }
+    func shutdown() {
+        isTranscribing = false
+        disconnect()
     }
 
     private func resolveFinalize() {
@@ -123,14 +142,48 @@ final class DeepgramService: NSObject, TranscriptionService, URLSessionWebSocket
     }
 
     private func disconnect() {
+        keepAliveTask?.cancel()
+        keepAliveTask = nil
+        socketLock.lock()
+        isSocketOpen = false
+        pendingMessages = []
+        socketLock.unlock()
         webSocketTask?.cancel(with: .normalClosure, reason: nil)
         webSocketTask = nil
         urlSession?.invalidateAndCancel()
         urlSession = nil
     }
 
+    private func isSocketWarm() -> Bool {
+        socketLock.lock()
+        defer { socketLock.unlock() }
+        return isSocketOpen && webSocketTask != nil
+    }
+
+    private func startKeepAlive() {
+        keepAliveTask?.cancel()
+        keepAliveTask = Task { @MainActor [weak self] in
+            let idleStart = Date()
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(5))
+                guard let self, !Task.isCancelled else { return }
+                guard Date().timeIntervalSince(idleStart) < self.warmIdleLimit else {
+                    DiagnosticLogger.shared.log("Deepgram: warm connection idle limit reached, closing")
+                    self.disconnect()
+                    return
+                }
+                self.sendTextMessage(["type": "KeepAlive"])
+            }
+        }
+    }
+
     private func handleDisconnect() {
-        guard isTranscribing else { return }
+        markSocketClosed()
+        guard isTranscribing else {
+            // Warm connection died while idle — next start reconnects fresh
+            disconnect()
+            return
+        }
         guard reconnectAttempts < maxReconnectAttempts else {
             onError?("Connection to Deepgram lost. Transcription may be incomplete.")
             return

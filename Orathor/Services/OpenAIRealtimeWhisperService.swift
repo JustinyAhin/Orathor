@@ -29,6 +29,11 @@ final class OpenAIRealtimeWhisperService: NSObject, TranscriptionService, URLSes
     private var connectStart: Date?
     private var didLogFirstTranscript = false
 
+    // Warm connection: the socket is held open between dictations with WS pings
+    // so the next dictation skips the handshake entirely.
+    private var keepAliveTask: Task<Void, Never>?
+    private let warmIdleLimit: TimeInterval = 120
+
     init(apiKey: String, language: String = "multi") {
         self.apiKey = apiKey
         self.language = language
@@ -45,12 +50,20 @@ final class OpenAIRealtimeWhisperService: NSObject, TranscriptionService, URLSes
         activeDeltaItemID = nil
         activeDeltaText = ""
         didLogFirstTranscript = false
+        keepAliveTask?.cancel()
+        keepAliveTask = nil
 
+        if isSocketWarm() {
+            connectStart = Date()
+            isTranscribing = true
+            DiagnosticLogger.shared.log("OpenAI: reusing warm connection")
+            return
+        }
         try await connect()
     }
 
     func processAudioBuffer(_ buffer: AVAudioPCMBuffer) {
-        if audioConverter == nil {
+        if audioConverter == nil || audioConverter?.inputFormat != buffer.format {
             setupAudioConverter(sourceFormat: buffer.format)
         }
         guard let data = convertBufferToData(buffer) else { return }
@@ -85,6 +98,12 @@ final class OpenAIRealtimeWhisperService: NSObject, TranscriptionService, URLSes
             DispatchQueue.main.asyncAfter(deadline: .now() + 10.0, execute: timeout)
         }
 
+        isTranscribing = false
+        // Hold the socket open for the next dictation
+        startKeepAlive()
+    }
+
+    func shutdown() {
         isTranscribing = false
         disconnect()
     }
@@ -127,14 +146,53 @@ final class OpenAIRealtimeWhisperService: NSObject, TranscriptionService, URLSes
     }
 
     private func disconnect() {
+        keepAliveTask?.cancel()
+        keepAliveTask = nil
+        socketLock.lock()
+        isSocketOpen = false
+        pendingMessages = []
+        socketLock.unlock()
         webSocketTask?.cancel(with: .normalClosure, reason: nil)
         webSocketTask = nil
         urlSession?.invalidateAndCancel()
         urlSession = nil
     }
 
+    private func isSocketWarm() -> Bool {
+        socketLock.lock()
+        defer { socketLock.unlock() }
+        return isSocketOpen && webSocketTask != nil
+    }
+
+    private func startKeepAlive() {
+        keepAliveTask?.cancel()
+        keepAliveTask = Task { @MainActor [weak self] in
+            let idleStart = Date()
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(15))
+                guard let self, !Task.isCancelled else { return }
+                guard Date().timeIntervalSince(idleStart) < self.warmIdleLimit else {
+                    DiagnosticLogger.shared.log("OpenAI: warm connection idle limit reached, closing")
+                    self.disconnect()
+                    return
+                }
+                self.webSocketTask?.sendPing { [weak self] error in
+                    guard error != nil, let self else { return }
+                    Task { @MainActor in
+                        self.handleDisconnect()
+                    }
+                }
+            }
+        }
+    }
+
     private func handleDisconnect() {
-        guard isTranscribing else { return }
+        markSocketClosed()
+        guard isTranscribing else {
+            // Warm connection died while idle — next start reconnects fresh
+            disconnect()
+            return
+        }
         isTranscribing = false
         resolveStop()
         onError?("Connection to OpenAI lost. Transcription may be incomplete.")
