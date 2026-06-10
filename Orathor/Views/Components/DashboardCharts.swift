@@ -489,29 +489,6 @@ struct PeriodPicker: View {
     @Binding var selection: ActivityPeriod
 
     var body: some View {
-        HStack(spacing: 2) {
-            ForEach(ActivityPeriod.allCases) { period in
-                let isSelected = period == selection
-                Button {
-                    selection = period
-                } label: {
-                    Text(period.label)
-                        .font(OType.monoSmall)
-                        .foregroundStyle(isSelected ? Color.textPrimary : Color.textTertiary)
-                        .padding(.horizontal, Spacing.sm)
-                        .padding(.vertical, Spacing.xxs)
-                        .background(
-                            RoundedRectangle(cornerRadius: Radius.sm, style: .continuous)
-                                .fill(isSelected ? Color.borderSubtle : Color.clear)
-                        )
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(2)
-        .background(
-            RoundedRectangle(cornerRadius: Radius.md, style: .continuous)
-                .fill(Color.surfaceSecondary)
-        )
+        SegmentedControl(options: ActivityPeriod.allCases, selection: $selection) { $0.label }
     }
 }

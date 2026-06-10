@@ -140,34 +140,10 @@ struct TranscriptsView: View {
     }
 
     private var filterPills: some View {
-        HStack(spacing: Spacing.xxs) {
-            ForEach(TranscriptFilter.allCases, id: \.self) { filter in
-                Button {
-                    withAnimation(.easeInOut(duration: 0.15)) {
-                        selectedFilter = filter
-                    }
-                } label: {
-                    Text(filter.rawValue)
-                        .font(OType.captionMedium)
-                        .foregroundStyle(
-                            selectedFilter == filter
-                                ? Color.textPrimary
-                                : Color.textTertiary
-                        )
-                        .padding(.horizontal, Spacing.md)
-                        .padding(.vertical, Spacing.xs)
-                        .background(
-                            selectedFilter == filter
-                                ? Color.surfaceElevated
-                                : Color.clear,
-                            in: RoundedRectangle(cornerRadius: Radius.sm)
-                        )
-                }
-                .buttonStyle(.plain)
-            }
+        HStack {
+            SegmentedControl(options: TranscriptFilter.allCases, selection: $selectedFilter) { $0.rawValue }
+            Spacer()
         }
-        .padding(Spacing.xxxs)
-        .background(Color.surfaceSecondary, in: RoundedRectangle(cornerRadius: Radius.md))
     }
 
     private func formatDateHeader(_ date: Date) -> String {
