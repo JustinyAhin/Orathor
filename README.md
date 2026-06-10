@@ -6,27 +6,31 @@ Press a shortcut, speak, and your words appear wherever your cursor is. Orathor 
 
 ## How it works
 
-1. Trigger recording with the **Right Command** key (hold or double-tap)
-2. Speak — transcription happens in real time
+1. Trigger recording with the **Right Option** key (hold or double-tap — configurable in Settings)
+2. Speak — the floating overlay shows a live preview of your words as you talk
 3. Release or tap again to stop — the text is inserted at your cursor
 
-A floating overlay appears while recording. Press **Escape** to cancel without inserting text.
+Press **Escape** while recording to cancel without inserting text.
 
-You can also start/stop from the menu bar popover and copy the transcription to your clipboard.
+You can also start/stop from the menu bar popover and copy the transcription to your clipboard, or set a separate hotkey that dictates straight to the clipboard.
 
 ## Speech engines
 
 | Engine | Type | Setup |
 |---|---|---|
-| **Apple Speech** | Local, on-device | None — works out of the box |
+| **Apple Speech** (default) | Local, on-device (SpeechAnalyzer) | None — works out of the box |
 | **Deepgram Nova** | Cloud, higher accuracy | Requires an API key (stored in Keychain) |
-| **OpenAI Whisper** | Cloud, low-latency streaming | Requires an API key (stored in Keychain) |
+| **OpenAI Whisper** | Cloud, realtime streaming | Requires an API key (stored in Keychain) |
 
-Switch between engines in the Settings section of the menu bar popover.
+Switch engines from the pill in the menu bar popover header, or in Settings.
+
+## Smart formatting
+
+An optional on-device polish pass (Apple Foundation Models) fixes punctuation, removes filler words, and applies spoken commands like "new line". Opt in from Settings or the wand pill in the popover header — requires Apple Intelligence. The original transcript is always preserved.
 
 ## Requirements
 
-- macOS 14 Sonoma or later
+- macOS 26.2 or later (Apple Silicon)
 - Microphone permission
 - Accessibility permission (for inserting text at your cursor)
 - Speech Recognition permission (when using Apple Speech engine)
@@ -53,7 +57,10 @@ open Orathor.xcodeproj
 - `@Observable` (Observation framework) for reactive state
 - `async/await` for concurrency
 - `AVAudioEngine` for mic capture
+- `SpeechAnalyzer` / `SpeechTranscriber` for on-device transcription
+- `FoundationModels` for on-device smart formatting
 - macOS `CGEvent` APIs for text insertion
+- **Sparkle** for auto-updates
 
 ## License
 

@@ -16,8 +16,8 @@ Native macOS voice dictation app — speak instead of type, anywhere on your sys
 - **Language**: Swift 6
 - **UI**: SwiftUI (macOS 26+ — deployment target is 26.2; uses SpeechAnalyzer & FoundationModels)
 - **IDE**: Xcode (use `xcodebuild` for CLI builds)
-- **Speech (cloud)**: Deepgram Nova (default) — more providers later
-- **Speech (local)**: Apple Speech framework
+- **Speech (local, default)**: Apple SpeechAnalyzer/SpeechTranscriber
+- **Speech (cloud)**: Deepgram Nova, OpenAI Realtime Whisper
 - **Architecture**: MVVM
 
 ## Project Details

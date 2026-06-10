@@ -88,7 +88,7 @@
 - Clipboard hotkey is optional (can be cleared with X button)
 - Recording overlay shows clipboard icon when in clipboard mode
 - Menu bar hint text updates dynamically based on configured insert hotkey
-- Defaults: Right Command (insert), Right Option (clipboard)
+- Defaults: Right Option (insert), clipboard hotkey unset
 
 ### Step 12: Main App Window
 - NavigationSplitView with sidebar: Dashboard, Transcripts, Settings
