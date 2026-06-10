@@ -3,10 +3,13 @@ import SwiftUI
 
 struct SettingsView: View {
     @Bindable var viewModel: SettingsViewModel
+    var permissions: PermissionsService
     let updater: SPUUpdater
+    @Environment(\.openWindow) private var openWindow
     @State private var copiedDiagnostics = false
     @State private var formattingAvailable = true
     @State private var formattingMessage: String?
+    @State private var didPromptAccessibility = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xxl) {
@@ -14,6 +17,7 @@ struct SettingsView: View {
                 .font(OType.largeTitle)
                 .foregroundStyle(Color.textPrimary)
             engineSection
+            permissionsSection
             formattingSection
             hotkeySection
             soundsSection
@@ -24,6 +28,7 @@ struct SettingsView: View {
         }
         .animation(.easeInOut(duration: 0.2), value: viewModel.selectedEngine)
         .onAppear(perform: refreshFormattingStatus)
+        .task { await permissions.pollWhileVisible() }
     }
 
     private func refreshFormattingStatus() {
@@ -114,6 +119,71 @@ struct SettingsView: View {
                 .font(OType.caption)
                 .foregroundStyle(Color.textTertiary)
         }
+    }
+
+    // MARK: - Permissions
+
+    private var permissionsSection: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            ContentSectionHeader(title: "Permissions", symbol: "lock.shield")
+
+            VStack(spacing: 0) {
+                PermissionRow(
+                    title: "Microphone",
+                    caption: "Hears your voice while you dictate",
+                    symbol: "mic.fill",
+                    status: permissions.microphone,
+                    grant: { Task { await permissions.requestMicrophone() } },
+                    openSettings: PermissionsService.openMicrophoneSettings
+                )
+                SubtleDivider()
+                PermissionRow(
+                    title: "Speech recognition",
+                    caption: "Turns your speech into text on-device",
+                    symbol: "waveform",
+                    status: permissions.speechRecognition,
+                    grant: { Task { await permissions.requestSpeechRecognition() } },
+                    openSettings: PermissionsService.openSpeechSettings
+                )
+                SubtleDivider()
+                PermissionRow(
+                    title: "Accessibility",
+                    caption: "Lets Orathor insert text at your cursor",
+                    symbol: "accessibility",
+                    status: accessibilityStatus,
+                    grant: {
+                        permissions.promptAccessibility()
+                        didPromptAccessibility = true
+                    },
+                    openSettings: PermissionsService.openAccessibilitySettings
+                )
+                SubtleDivider()
+                Button {
+                    openWindow(id: "onboarding")
+                    NSApp.activate(ignoringOtherApps: true)
+                } label: {
+                    HStack {
+                        Text("Show welcome guide")
+                            .font(OType.body)
+                            .foregroundStyle(Color.textPrimary)
+                        Spacer()
+                        Image(systemName: "questionmark.circle")
+                            .font(.system(size: 14))
+                            .foregroundStyle(Color.textTertiary)
+                    }
+                    .padding(.horizontal, Spacing.lg)
+                    .padding(.vertical, Spacing.md)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+            }
+            .cardStyle(padding: 0)
+        }
+    }
+
+    private var accessibilityStatus: PermissionsService.Status {
+        if permissions.accessibility { return .granted }
+        return didPromptAccessibility ? .denied : .notDetermined
     }
 
     private var formattingSection: some View {

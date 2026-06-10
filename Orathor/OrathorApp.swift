@@ -115,6 +115,16 @@ struct OrathorApp: App {
             }
             CommandGroup(replacing: .help) {}
         }
+
+        Window("Welcome to Orathor", id: "onboarding") {
+            OnboardingView(viewModel: viewModel)
+        }
+        .windowStyle(.hiddenTitleBar)
+        .windowResizability(.contentSize)
+        .defaultLaunchBehavior(
+            UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") ? .suppressed : .presented
+        )
+        .restorationBehavior(.disabled)
     }
 }
 

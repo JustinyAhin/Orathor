@@ -196,6 +196,12 @@
 - Measured (diagnostics markers): handshakes ran 0.7–1.9s per dictation (vs 100–400ms estimate); key-up→insert now Apple ~65ms, Deepgram 340–663ms, OpenAI 744–1007ms; no dropped audio across all runs
 - Warm connections (qv2.2): speech services are cached in the VM (rebuilt only on engine/API-key/language change via new `TranscriptionService.shutdown()` hook); Deepgram skips CloseStream and sends KeepAlive every 5s, OpenAI pings every 15s; 120s idle limit; stale warm socket falls back to normal connect with the handshake queue as safety net; converters rebuild if mic format changes between dictations
 
+### Step 22: First-Run Onboarding + Permissions
+- `PermissionsService` (@Observable) — single source of truth for Microphone (`AVCaptureDevice`), Speech Recognition (`SFSpeechRecognizer`), Accessibility (`AXIsProcessTrusted`); 1s `pollWhileVisible()` from view `.task` since AX has no change notification; System Settings deep links for all three panes
+- Onboarding window (id "onboarding", 520×540, hidden title bar): welcome → permissions checklist with live status → try-it step (hotkey chip, in-window text field, listening indicator, success via history count). Auto-presents on first launch via `defaultLaunchBehavior(.presented)` gated on `hasCompletedOnboarding`; closing early counts as done
+- `PermissionRow` component shared with the new Settings "Permissions" card (live status + grant/Open Settings actions + "Show welcome guide" re-open row)
+- `checkPermissions()` no longer fires the Speech Recognition system dialog on popover open — non-prompting reads only; `startRecording()` keeps the on-demand request as fallback
+
 ## Remaining
 
 ### Core Features
@@ -204,9 +210,9 @@
 
 ### Polish
 - [x] Error handling with user-facing alerts
-- [ ] Permission status indicators in settings
+- [x] Permission status indicators in settings
 - [ ] App icon
-- [ ] Accessibility permission onboarding flow
+- [x] Accessibility permission onboarding flow
 
 ### Step 16: Distribution + Auto-Updates
 - Sparkle framework integrated via SPM for auto-update support

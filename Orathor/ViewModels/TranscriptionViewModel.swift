@@ -14,6 +14,7 @@ final class TranscriptionViewModel {
 
     let settingsViewModel = SettingsViewModel()
     let historyService = TranscriptHistoryService()
+    let permissions = PermissionsService()
 
     private let audioService = AudioService()
     private var speechService: any TranscriptionService
@@ -129,15 +130,18 @@ final class TranscriptionViewModel {
         keyboardService.start()
     }
 
+    /// Non-prompting status reads — the onboarding flow (or `startRecording`'s
+    /// on-demand fallback) owns the actual permission requests.
     func checkPermissions() async {
+        permissions.refresh()
         if settingsViewModel.selectedEngine == .apple {
-            hasPermission = await AppleSpeechService.requestPermission()
+            hasPermission = permissions.speechRecognition == .granted
         } else if settingsViewModel.selectedEngine == .deepgram {
             hasPermission = settingsViewModel.isDeepgramConfigured
         } else {
             hasPermission = settingsViewModel.isOpenAIConfigured
         }
-        hasAccessibility = TextInsertionService.hasAccessibilityPermission
+        hasAccessibility = permissions.accessibility
     }
 
     private func configureSpeechServiceErrorHandler() {

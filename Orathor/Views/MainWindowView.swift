@@ -118,7 +118,11 @@ struct MainWindowView: View {
             TranscriptsView(historyService: viewModel.historyService)
         case .settings:
             ScrollView {
-                SettingsView(viewModel: viewModel.settingsViewModel, updater: updater)
+                SettingsView(
+                    viewModel: viewModel.settingsViewModel,
+                    permissions: viewModel.permissions,
+                    updater: updater
+                )
                     .padding(Spacing.xxxl)
             }
         }
