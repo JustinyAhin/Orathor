@@ -48,6 +48,7 @@ enum Radius {
     static let md: CGFloat = 8
     static let lg: CGFloat = 10
     static let xl: CGFloat = 12
+    static let xxl: CGFloat = 16
 }
 
 // MARK: - Typography
@@ -61,9 +62,20 @@ enum OType {
     static let caption = Font.system(size: 11, weight: .regular)
     static let captionMedium = Font.system(size: 11, weight: .medium)
     static let micro = Font.system(size: 10, weight: .medium)
+    static let eyebrow = Font.system(size: 10, weight: .semibold)
+
+    static let greeting = Font.system(size: 22, weight: .semibold)
+    static let summary = Font.system(size: 13, weight: .regular)
+    static let statNumber = Font.system(size: 24, weight: .medium)
+    static let statNumberUnit = Font.system(size: 13, weight: .medium)
+    static let contentHeader = Font.system(size: 13, weight: .semibold)
+    static let sidebarItem = Font.system(size: 13)
+    static let sidebarGroup = Font.system(size: 11, weight: .semibold)
 
     // Monospace — distinctive technical precision for data
     static let stat = Font.system(size: 32, weight: .bold, design: .monospaced)
+    static let statValue = Font.system(size: 26, weight: .bold, design: .monospaced)
+    static let statUnit = Font.system(size: 13, weight: .semibold, design: .monospaced)
     static let mono = Font.system(size: 13, weight: .regular, design: .monospaced)
     static let monoSmall = Font.system(size: 11, weight: .medium, design: .monospaced)
     static let monoMicro = Font.system(size: 10, weight: .medium, design: .monospaced)

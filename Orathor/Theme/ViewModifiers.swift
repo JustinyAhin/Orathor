@@ -95,6 +95,85 @@ extension View {
     }
 }
 
+// MARK: - Stat / Chart Card Style
+// Chunkier card for dashboard stat + chart surfaces — larger radius, generous padding.
+
+struct StatCardModifier: ViewModifier {
+    var padding: CGFloat = Spacing.lg
+
+    func body(content: Content) -> some View {
+        content
+            .padding(padding)
+            .background(Color.surfaceElevated)
+            .clipShape(RoundedRectangle(cornerRadius: Radius.xl, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: Radius.xl, style: .continuous)
+                    .stroke(Color.borderSubtle, lineWidth: 0.5)
+            )
+    }
+}
+
+extension View {
+    func statCardStyle(padding: CGFloat = Spacing.lg) -> some View {
+        modifier(StatCardModifier(padding: padding))
+    }
+}
+
+// MARK: - Tinted Icon Tile
+// Rounded square with a tinted background and a full-color SF Symbol — used on stat cards.
+
+struct TintedIconTile: View {
+    let symbol: String
+    let color: Color
+    var size: CGFloat = 28
+    var symbolSize: CGFloat = 13
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: Radius.md, style: .continuous)
+            .fill(color.opacity(0.15))
+            .frame(width: size, height: size)
+            .overlay(
+                Image(systemName: symbol)
+                    .font(.system(size: symbolSize, weight: .semibold))
+                    .foregroundStyle(color)
+            )
+    }
+}
+
+// MARK: - Content Section Header
+
+struct ContentSectionHeader<Trailing: View>: View {
+    let title: String
+    let symbol: String
+    var color: Color = .indicatorBlue
+    var meta: String? = nil
+    @ViewBuilder var trailing: Trailing
+
+    var body: some View {
+        HStack(spacing: Spacing.xs) {
+            Image(systemName: symbol)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(color)
+            Text(title)
+                .font(OType.contentHeader)
+                .foregroundStyle(Color.textPrimary)
+            if let meta {
+                Text(meta)
+                    .font(OType.monoSmall)
+                    .foregroundStyle(Color.textTertiary)
+            }
+            Spacer(minLength: Spacing.sm)
+            trailing
+        }
+    }
+}
+
+extension ContentSectionHeader where Trailing == EmptyView {
+    init(title: String, symbol: String, color: Color = .indicatorBlue, meta: String? = nil) {
+        self.init(title: title, symbol: symbol, color: color, meta: meta) { EmptyView() }
+    }
+}
+
 // MARK: - Section Header
 
 struct SectionHeaderModifier: ViewModifier {

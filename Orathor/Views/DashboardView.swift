@@ -3,6 +3,8 @@ import SwiftUI
 struct DashboardView: View {
     let historyService: TranscriptHistoryService
 
+    @AppStorage("dashboardActivityPeriod") private var period: ActivityPeriod = .week
+
     private var entries: [TranscriptEntry] { historyService.entries }
 
     private var totalWords: Int {
@@ -30,17 +32,64 @@ struct DashboardView: View {
         } else {
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.xxl) {
-                    Text("Home")
-                        .font(OType.largeTitle)
-                        .foregroundStyle(Color.textPrimary)
+                    header
                     statsStrip
-                    activitySection
+                    trendsSection
                     topAppsSection
                     recentSection
                 }
                 .padding(Spacing.xxxl)
             }
         }
+    }
+
+    // MARK: - Header
+
+    private var header: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            Text("\(greeting), \(firstName)")
+                .font(OType.greeting)
+                .foregroundStyle(Color.textPrimary)
+            summaryLine
+                .font(OType.summary)
+                .foregroundStyle(Color.textSecondary)
+                .lineSpacing(3)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var greeting: String {
+        switch Calendar.current.component(.hour, from: Date()) {
+        case ..<12: "Good morning"
+        case 12..<17: "Good afternoon"
+        default: "Good evening"
+        }
+    }
+
+    private var firstName: String {
+        NSFullUserName().split(separator: " ").first.map(String.init) ?? "there"
+    }
+
+    private var summaryLine: Text {
+        let words = colored(formattedCount(totalWords), .indicatorBlue)
+        let sessions = colored("\(entries.count)", .indicatorGreen)
+        let saved = colored(formattedDuration(timeSaved), .brand)
+        let wpm = colored(String(format: "%.0f", averageWPM), .indicatorGreen)
+
+        var line = Text("You've dictated ") + words + Text(" words across ")
+            + sessions + Text(entries.count == 1 ? " session" : " sessions")
+            + Text(", saving about ") + saved + Text(" — averaging ")
+            + wpm + Text(" wpm.")
+
+        if currentStreak > 0 {
+            let streak = colored("\(currentStreak)-day", .brand)
+            line = line + Text("  You're on a ") + streak + Text(" streak.")
+        }
+        return line
+    }
+
+    private func colored(_ value: String, _ color: Color) -> Text {
+        Text(value).foregroundColor(color).fontWeight(.medium)
     }
 
     // MARK: - Empty State
@@ -64,14 +113,14 @@ struct DashboardView: View {
 
     private var statsStrip: some View {
         HStack(spacing: Spacing.md) {
-            StatCard(value: formattedCount(totalWords), label: "Words", dotColor: .indicatorBlue)
-            StatCard(value: "\(entries.count)", label: "Sessions", dotColor: .indicatorGreen)
-            StatCard(value: formattedDuration(timeSaved), label: "Saved", dotColor: .indicatorOrange)
-            StatCard(value: String(format: "%.0f", averageWPM), label: "Avg WPM", dotColor: .indicatorYellow)
+            StatCard(value: formattedCount(totalWords), label: "Words", color: .indicatorBlue)
+            StatCard(value: "\(entries.count)", label: "Sessions", color: .indicatorGreen)
+            StatCard(value: formattedDuration(timeSaved), label: "Time saved", color: .brand)
+            StatCard(value: String(format: "%.0f", averageWPM), unit: "wpm", label: "Avg speed", color: .indicatorYellow)
         }
     }
 
-    // MARK: - Activity Streak
+    // MARK: - Day Summaries (shared by streak, activity, WPM derivations)
 
     private var daySummaries: [Date: DaySummary] {
         var map: [Date: DaySummary] = [:]
@@ -92,14 +141,15 @@ struct DashboardView: View {
         let today = calendar.startOfDay(for: Date())
         var streak = 0
         var day = today
+        let summaries = daySummaries
 
         // If no activity today, start checking from yesterday
-        if daySummaries[today] == nil {
+        if summaries[today] == nil {
             guard let yesterday = calendar.date(byAdding: .day, value: -1, to: today) else { return 0 }
             day = yesterday
         }
 
-        while daySummaries[day] != nil {
+        while summaries[day] != nil {
             streak += 1
             guard let prev = calendar.date(byAdding: .day, value: -1, to: day) else { break }
             day = prev
@@ -107,27 +157,103 @@ struct DashboardView: View {
         return streak
     }
 
-    private var activitySection: some View {
-        VStack(alignment: .leading, spacing: Spacing.md) {
-            HStack(alignment: .lastTextBaseline) {
-                Text("Activity")
-                    .sectionHeaderStyle()
-                Spacer()
-                if currentStreak > 0 {
-                    HStack(spacing: Spacing.xxs) {
-                        Image(systemName: "flame.fill")
-                            .font(.system(size: 10))
-                            .foregroundStyle(Color.brand)
-                        Text("\(currentStreak) day streak")
-                            .font(OType.monoSmall)
-                            .foregroundStyle(Color.textSecondary)
-                    }
-                }
-            }
-
-            ActivityGrid(daySummaries: daySummaries)
-                .cardStyle(padding: Spacing.md)
+    private var wordsPerDay: [DayPoint] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let summaries = daySummaries
+        return (0..<period.days).reversed().compactMap { offset -> DayPoint? in
+            guard let day = calendar.date(byAdding: .day, value: -offset, to: today) else { return nil }
+            return DayPoint(date: day, value: Double(summaries[day]?.wordCount ?? 0))
         }
+    }
+
+    private var wpmPerDay: [DayPoint] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let summaries = daySummaries
+        return (0..<period.days).reversed().compactMap { offset -> DayPoint? in
+            guard let day = calendar.date(byAdding: .day, value: -offset, to: today),
+                  let summary = summaries[day], summary.durationSeconds > 0 else { return nil }
+            let wpm = Double(summary.wordCount) / (summary.durationSeconds / 60)
+            return DayPoint(date: day, value: wpm)
+        }
+    }
+
+    private var wpmDeltaPercent: Double? {
+        let points = wpmPerDay
+        guard points.count >= 2 else { return nil }
+        let mid = points.count / 2
+        let older = points[..<mid]
+        let recent = points[mid...]
+        guard !older.isEmpty, !recent.isEmpty else { return nil }
+        let olderMean = older.map(\.value).reduce(0, +) / Double(older.count)
+        let recentMean = recent.map(\.value).reduce(0, +) / Double(recent.count)
+        guard olderMean > 0 else { return nil }
+        return (recentMean - olderMean) / olderMean * 100
+    }
+
+    // MARK: - Engines
+
+    private var engineSlices: [EngineSlice] {
+        let colors: [SpeechEngine: Color] = [
+            .deepgram: .indicatorBlue,
+            .apple: .indicatorGreen,
+            .openAIWhisper: .indicatorOrange
+        ]
+        var counts: [SpeechEngine: Int] = [:]
+        for entry in entries {
+            guard let engine = entry.engine else { continue }
+            counts[engine, default: 0] += 1
+        }
+        return counts
+            .map { EngineSlice(engine: $0.key, count: $0.value, color: colors[$0.key] ?? .indicatorGray) }
+            .sorted { $0.count > $1.count }
+    }
+
+    // MARK: - Trends (period-scoped)
+
+    private var trendsSection: some View {
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            HStack {
+                Spacer()
+                PeriodPicker(selection: $period)
+            }
+            WPMTrendChart(points: wpmPerDay, deltaPercent: wpmDeltaPercent)
+            activityRow
+        }
+    }
+
+    @ViewBuilder
+    private var activityRow: some View {
+        let slices = engineSlices
+        if slices.isEmpty {
+            activityCard
+        } else {
+            HStack(alignment: .top, spacing: Spacing.md) {
+                activityCard
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                enginesCard(slices)
+                    .frame(width: 200)
+            }
+            .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
+    private var activityCard: some View {
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            ContentSectionHeader(title: "Activity", symbol: "chart.bar.fill")
+            ActivityBarChart(points: wordsPerDay)
+                .frame(maxHeight: .infinity)
+        }
+        .statCardStyle()
+    }
+
+    private func enginesCard(_ slices: [EngineSlice]) -> some View {
+        VStack(alignment: .leading, spacing: Spacing.md) {
+            ContentSectionHeader(title: "Engines", symbol: "waveform")
+            EngineDonut(slices: slices)
+        }
+        .statCardStyle()
     }
 
     // MARK: - Top Apps
@@ -150,18 +276,17 @@ struct DashboardView: View {
         let apps = topApps
         if !apps.isEmpty {
             VStack(alignment: .leading, spacing: Spacing.md) {
-                Text("Top Apps")
-                    .sectionHeaderStyle()
+                ContentSectionHeader(title: "Top apps", symbol: "macwindow")
 
                 VStack(spacing: 0) {
                     ForEach(Array(apps.prefix(5).enumerated()), id: \.element.bundleID) { index, app in
                         if index > 0 {
                             SubtleDivider(leadingInset: Spacing.lg)
                         }
-                        TopAppRow(rank: index + 1, name: app.name, bundleID: app.bundleID, count: app.count, maxCount: apps.first?.count ?? 1, barColor: TopAppRow.barColors[index % TopAppRow.barColors.count])
+                        TopAppRow(name: app.name, bundleID: app.bundleID, count: app.count, maxCount: apps.first?.count ?? 1)
                     }
                 }
-                .leftAccentCard(padding: 0)
+                .statCardStyle(padding: 0)
             }
         }
     }
@@ -170,8 +295,7 @@ struct DashboardView: View {
 
     private var recentSection: some View {
         VStack(alignment: .leading, spacing: Spacing.md) {
-            Text("Recent")
-                .sectionHeaderStyle()
+            ContentSectionHeader(title: "Recent", symbol: "clock")
 
             VStack(spacing: 0) {
                 ForEach(Array(entries.prefix(8).enumerated()), id: \.element.id) { index, entry in
@@ -181,7 +305,7 @@ struct DashboardView: View {
                     HomeTranscriptRow(entry: entry)
                 }
             }
-            .leftAccentCard(padding: 0)
+            .statCardStyle(padding: 0)
         }
     }
 
@@ -211,272 +335,21 @@ struct DashboardView: View {
     }
 }
 
-// MARK: - Supporting Views
-
-private struct StatCard: View {
-    let value: String
-    let label: String
-    let dotColor: Color
-
-    var body: some View {
-        VStack(spacing: Spacing.sm) {
-            Text(value)
-                .font(OType.stat)
-                .foregroundStyle(Color.textPrimary)
-            HStack(spacing: Spacing.xs) {
-                Circle()
-                    .fill(dotColor)
-                    .frame(width: 6, height: 6)
-                Text(label)
-                    .font(OType.captionMedium)
-                    .foregroundStyle(Color.textTertiary)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .cardStyle()
-    }
-}
-
 // MARK: - Day Summary
 
-private struct DaySummary {
+struct DaySummary {
     var dictationCount: Int = 0
     var wordCount: Int = 0
     var durationSeconds: Double = 0
 }
 
-// MARK: - Activity Grid
-
-private struct ActivityGrid: View {
-    let daySummaries: [Date: DaySummary]
-
-    @State private var hoveredDate: Date?
-
-    private let cellSize: CGFloat = 10
-    private let cellSpacing: CGFloat = 2.5
-
-    private var maxCount: Int {
-        daySummaries.values.map(\.dictationCount).max() ?? 1
-    }
-
-    /// Builds a proper weekday-aligned grid like GitHub's contribution graph.
-    /// Each column is a calendar week (Mon–Sun). Last column contains today.
-    /// First column may be partial (starts mid-week).
-    private func weeksGrid(columnCount: Int) -> [[Date?]] {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-
-        let todayWeekday = calendar.component(.weekday, from: today)
-        // weekday: 1=Sun, 2=Mon, ... 7=Sat → offset to make Monday = row 0
-        let daysSinceMonday = (todayWeekday + 5) % 7
-        guard let thisMonday = calendar.date(byAdding: .day, value: -daysSinceMonday, to: today) else {
-            return []
-        }
-
-        guard let gridStart = calendar.date(byAdding: .weekOfYear, value: -(columnCount - 1), to: thisMonday) else {
-            return []
-        }
-
-        var grid: [[Date?]] = []
-        for col in 0..<columnCount {
-            guard let weekStart = calendar.date(byAdding: .weekOfYear, value: col, to: gridStart) else { continue }
-            var week: [Date?] = []
-            for row in 0..<7 {
-                guard let date = calendar.date(byAdding: .day, value: row, to: weekStart) else {
-                    week.append(nil)
-                    continue
-                }
-                if date > today {
-                    week.append(nil)
-                } else {
-                    week.append(date)
-                }
-            }
-            grid.append(week)
-        }
-        return grid
-    }
-
-    private func intensity(for date: Date) -> Double {
-        guard let summary = daySummaries[date], summary.dictationCount > 0 else { return 0 }
-        if maxCount <= 1 { return 1.0 }
-        let normalized = Double(summary.dictationCount) / Double(maxCount)
-        if normalized <= 0.25 { return 0.3 }
-        if normalized <= 0.5 { return 0.55 }
-        if normalized <= 0.75 { return 0.8 }
-        return 1.0
-    }
-
-    var body: some View {
-        GeometryReader { geo in
-            let availableWidth = geo.size.width
-            let columnCount = max(4, Int(availableWidth / (cellSize + cellSpacing)))
-            let grid = weeksGrid(columnCount: columnCount)
-
-            VStack(alignment: .trailing, spacing: Spacing.sm) {
-                HStack(alignment: .top, spacing: cellSpacing) {
-                    // Weekday labels
-                    VStack(alignment: .trailing, spacing: cellSpacing) {
-                        ForEach(0..<7, id: \.self) { row in
-                            if row == 0 || row == 2 || row == 4 {
-                                Text(weekdayLabel(row))
-                                    .font(OType.monoMicro)
-                                    .foregroundStyle(Color.textTertiary)
-                                    .frame(height: cellSize)
-                            } else {
-                                Color.clear.frame(width: 1, height: cellSize)
-                            }
-                        }
-                    }
-
-                    ForEach(Array(grid.enumerated()), id: \.offset) { _, week in
-                        VStack(spacing: cellSpacing) {
-                            ForEach(0..<7, id: \.self) { row in
-                                if let date = week[row] {
-                                    ActivityCell(
-                                        date: date,
-                                        level: intensity(for: date),
-                                        summary: daySummaries[date],
-                                        cellSize: cellSize,
-                                        hoveredDate: $hoveredDate
-                                    )
-                                } else {
-                                    Color.clear.frame(width: cellSize, height: cellSize)
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Legend
-                HStack(spacing: Spacing.xs) {
-                    Text("Less")
-                        .font(OType.monoMicro)
-                        .foregroundStyle(Color.textTertiary)
-                    HStack(spacing: 2) {
-                        RoundedRectangle(cornerRadius: 2)
-                            .fill(Color.borderSubtle.opacity(0.4))
-                            .frame(width: 8, height: 8)
-                        ForEach([0.3, 0.55, 0.8, 1.0], id: \.self) { level in
-                            RoundedRectangle(cornerRadius: 2)
-                                .fill(Color.indicatorBlue.opacity(level))
-                                .frame(width: 8, height: 8)
-                        }
-                    }
-                    Text("More")
-                        .font(OType.monoMicro)
-                        .foregroundStyle(Color.textTertiary)
-                }
-            }
-        }
-        .frame(height: 7 * cellSize + 6 * cellSpacing + Spacing.sm + 12)
-    }
-
-    private func weekdayLabel(_ row: Int) -> String {
-        ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][row]
-    }
-}
-
-// MARK: - Activity Cell
-
-private struct ActivityCell: View {
-    let date: Date
-    let level: Double
-    let summary: DaySummary?
-    let cellSize: CGFloat
-    @Binding var hoveredDate: Date?
-
-    private var isHovered: Bool { hoveredDate == date }
-
-    var body: some View {
-        RoundedRectangle(cornerRadius: 2)
-            .fill(level > 0 ? Color.indicatorBlue.opacity(level) : Color.borderSubtle.opacity(0.4))
-            .frame(width: cellSize, height: cellSize)
-            .overlay(
-                RoundedRectangle(cornerRadius: 2)
-                    .stroke(Color.textPrimary.opacity(isHovered ? 0.6 : 0), lineWidth: 1)
-            )
-            .onHover { hovered in
-                hoveredDate = hovered ? date : nil
-            }
-            .popover(
-                isPresented: .init(
-                    get: { isHovered },
-                    set: { if !$0 { hoveredDate = nil } }
-                ),
-                arrowEdge: .top
-            ) {
-                CellPopoverContent(date: date, summary: summary)
-            }
-    }
-}
-
-// MARK: - Cell Popover Content
-
-private struct CellPopoverContent: View {
-    let date: Date
-    let summary: DaySummary?
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: Spacing.sm) {
-            Text(date.formatted(.dateTime.weekday(.wide).month(.abbreviated).day()))
-                .font(OType.captionMedium)
-                .foregroundStyle(Color.textPrimary)
-
-            if let summary, summary.dictationCount > 0 {
-                VStack(alignment: .leading, spacing: Spacing.xxs) {
-                    DetailChip(icon: "mic.fill", text: "\(summary.dictationCount) dictation\(summary.dictationCount == 1 ? "" : "s")")
-                    DetailChip(icon: "text.word.spacing", text: "\(summary.wordCount) words")
-                    DetailChip(icon: "clock", text: formatDuration(summary.durationSeconds))
-                }
-            } else {
-                Text("No dictations")
-                    .font(OType.caption)
-                    .foregroundStyle(Color.textTertiary)
-            }
-        }
-        .padding(Spacing.sm)
-    }
-
-    private func formatDuration(_ seconds: Double) -> String {
-        let total = Int(seconds)
-        let m = total / 60
-        let s = total % 60
-        if m > 0 { return "\(m)m \(s)s" }
-        return "\(s)s"
-    }
-}
-
-private struct DetailChip: View {
-    let icon: String
-    let text: String
-
-    var body: some View {
-        HStack(spacing: Spacing.xxxs) {
-            Image(systemName: icon)
-                .font(.system(size: 8))
-                .foregroundStyle(Color.brand)
-            Text(text)
-                .font(OType.monoMicro)
-                .foregroundStyle(Color.textSecondary)
-        }
-        .padding(.horizontal, Spacing.xs)
-        .padding(.vertical, Spacing.xxxs)
-        .background(Color.brand.opacity(0.08), in: RoundedRectangle(cornerRadius: Radius.xs))
-    }
-}
-
 // MARK: - Top App Row
 
 private struct TopAppRow: View {
-    static let barColors: [Color] = [.indicatorBlue, .indicatorGreen, .indicatorOrange, .indicatorYellow, .indicatorGray]
-
-    let rank: Int
     let name: String
     let bundleID: String
     let count: Int
     let maxCount: Int
-    var barColor: Color = .indicatorBlue
 
     private var barFraction: CGFloat {
         CGFloat(count) / CGFloat(max(maxCount, 1))
@@ -490,19 +363,24 @@ private struct TopAppRow: View {
                 .font(OType.body)
                 .foregroundStyle(Color.textPrimary)
                 .lineLimit(1)
-                .frame(minWidth: 60, alignment: .leading)
+                .frame(width: 110, alignment: .leading)
 
             GeometryReader { geo in
-                RoundedRectangle(cornerRadius: 2)
-                    .fill(barColor)
-                    .frame(width: max(4, geo.size.width * barFraction), height: 6)
-                    .frame(maxHeight: .infinity, alignment: .center)
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color.borderSubtle.opacity(0.5))
+                        .frame(height: 6)
+                    Capsule()
+                        .fill(Color.indicatorBlue)
+                        .frame(width: max(6, geo.size.width * barFraction), height: 6)
+                }
+                .frame(maxHeight: .infinity, alignment: .center)
             }
 
             Text("\(count)")
                 .font(OType.monoSmall)
                 .foregroundStyle(Color.textSecondary)
-                .frame(minWidth: 20, alignment: .trailing)
+                .frame(minWidth: 28, alignment: .trailing)
         }
         .padding(.horizontal, Spacing.lg)
         .padding(.vertical, Spacing.sm)
@@ -527,30 +405,24 @@ private struct HomeTranscriptRow: View {
     let entry: TranscriptEntry
 
     var body: some View {
-        HStack(alignment: .top, spacing: Spacing.md) {
+        HStack(spacing: Spacing.md) {
             appIcon
 
-            VStack(alignment: .leading, spacing: Spacing.xxs) {
-                HStack(spacing: Spacing.xs) {
-                    if let appName = entry.targetAppName {
-                        Text(appName)
-                            .font(OType.captionMedium)
-                            .foregroundStyle(Color.textSecondary)
-                    }
-                    Spacer()
-                    Text(entry.timestamp, format: .dateTime.hour().minute())
-                        .font(OType.monoSmall)
-                        .foregroundStyle(Color.textTertiary)
-                    Text("\(entry.wordCount) words")
-                        .font(OType.monoMicro)
-                        .foregroundStyle(Color.textTertiary)
-                }
-                Text(entry.text)
-                    .font(OType.body)
-                    .foregroundStyle(Color.textPrimary)
-                    .lineLimit(2)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
+            Text(entry.text)
+                .font(OType.body)
+                .foregroundStyle(Color.textPrimary)
+                .lineLimit(1)
+                .truncationMode(.tail)
+
+            Spacer(minLength: Spacing.md)
+
+            Text("\(entry.wordCount)w")
+                .font(OType.monoMicro)
+                .foregroundStyle(Color.textTertiary)
+            Text(entry.timestamp, format: .dateTime.hour().minute())
+                .font(OType.monoSmall)
+                .foregroundStyle(Color.textTertiary)
+                .frame(width: 44, alignment: .trailing)
         }
         .padding(.horizontal, Spacing.lg)
         .padding(.vertical, Spacing.sm)
@@ -563,7 +435,11 @@ private struct HomeTranscriptRow: View {
             Image(nsImage: NSWorkspace.shared.icon(forFile: appURL.path()))
                 .resizable()
                 .frame(width: 16, height: 16)
-                .padding(.top, 2)
+        } else {
+            Image(systemName: "app")
+                .font(.system(size: 12))
+                .foregroundStyle(Color.textTertiary)
+                .frame(width: 16, height: 16)
         }
     }
 }

@@ -103,6 +103,7 @@ struct OrathorApp: App {
             MainWindowView(viewModel: viewModel, updater: sparkleController.updater)
         }
         .defaultSize(width: 800, height: 600)
+        .windowStyle(.hiddenTitleBar)
         .commands {
             CommandGroup(after: .appInfo) {
                 CheckForUpdatesView(
