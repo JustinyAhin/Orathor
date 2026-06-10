@@ -23,6 +23,35 @@ final class TranscriptHistoryService {
 
     var recordingsDirectory: URL { recordingsURL }
 
+    var todayEntries: [TranscriptEntry] {
+        let calendar = Calendar.current
+        return entries.filter { calendar.isDateInToday($0.timestamp) }
+    }
+
+    var todayWordCount: Int {
+        todayEntries.reduce(0) { $0 + $1.wordCount }
+    }
+
+    var currentStreak: Int {
+        let calendar = Calendar.current
+        let activeDays = Set(entries.map { calendar.startOfDay(for: $0.timestamp) })
+        let today = calendar.startOfDay(for: Date())
+
+        var day = today
+        if !activeDays.contains(today) {
+            guard let yesterday = calendar.date(byAdding: .day, value: -1, to: today) else { return 0 }
+            day = yesterday
+        }
+
+        var streak = 0
+        while activeDays.contains(day) {
+            streak += 1
+            guard let previous = calendar.date(byAdding: .day, value: -1, to: day) else { break }
+            day = previous
+        }
+        return streak
+    }
+
     func add(_ entry: TranscriptEntry) {
         entries.insert(entry, at: 0)
         saveEntries()

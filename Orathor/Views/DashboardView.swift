@@ -137,26 +137,7 @@ struct DashboardView: View {
         return map
     }
 
-    private var currentStreak: Int {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        var streak = 0
-        var day = today
-        let summaries = daySummaries
-
-        // If no activity today, start checking from yesterday
-        if summaries[today] == nil {
-            guard let yesterday = calendar.date(byAdding: .day, value: -1, to: today) else { return 0 }
-            day = yesterday
-        }
-
-        while summaries[day] != nil {
-            streak += 1
-            guard let prev = calendar.date(byAdding: .day, value: -1, to: day) else { break }
-            day = prev
-        }
-        return streak
-    }
+    private var currentStreak: Int { historyService.currentStreak }
 
     private var wordsPerDay: [DayPoint] {
         let calendar = Calendar.current
@@ -315,13 +296,7 @@ struct DashboardView: View {
     // MARK: - Helpers
 
     private func formattedCount(_ count: Int) -> String {
-        if count >= 1000 {
-            let k = Double(count) / 1000
-            return k.truncatingRemainder(dividingBy: 1) == 0
-                ? "\(Int(k))K"
-                : String(format: "%.1fK", k)
-        }
-        return "\(count)"
+        count.abbreviated
     }
 
     private func formattedDuration(_ seconds: TimeInterval) -> String {

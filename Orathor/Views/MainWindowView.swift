@@ -23,33 +23,88 @@ struct MainWindowView: View {
     // MARK: - Sidebar
 
     private var sidebar: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: Spacing.lg) {
-                ForEach(SidebarGroup.allCases, id: \.self) { group in
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(group.title)
-                            .font(OType.sidebarGroup)
-                            .foregroundStyle(Color.textTertiary)
-                            .padding(.horizontal, Spacing.sm)
-                            .padding(.bottom, Spacing.xxs)
+        VStack(spacing: 0) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: Spacing.lg) {
+                    ForEach(SidebarGroup.allCases, id: \.self) { group in
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(group.title)
+                                .font(OType.sidebarGroup)
+                                .foregroundStyle(Color.textTertiary)
+                                .padding(.horizontal, Spacing.sm)
+                                .padding(.bottom, Spacing.xxs)
 
-                        ForEach(group.sections) { section in
-                            SidebarRow(
-                                section: section,
-                                isSelected: selectedSection == section
-                            ) {
-                                selectedSection = section
+                            ForEach(group.sections) { section in
+                                SidebarRow(
+                                    section: section,
+                                    isSelected: selectedSection == section
+                                ) {
+                                    selectedSection = section
+                                }
                             }
                         }
                     }
                 }
+                .padding(.horizontal, Spacing.xs)
+                .padding(.bottom, Spacing.md)
             }
-            .padding(.horizontal, Spacing.xs)
-            .padding(.bottom, Spacing.md)
+            .scrollContentBackground(.hidden)
+            .scrollIndicators(.hidden)
+            .scrollBounceBehavior(.basedOnSize)
+
+            sidebarTodayBlock
+            sidebarFooter
         }
-        .scrollContentBackground(.hidden)
-        .scrollIndicators(.hidden)
-        .scrollBounceBehavior(.basedOnSize)
+    }
+
+    private var sidebarTodayBlock: some View {
+        let history = viewModel.historyService
+        let sessions = history.todayEntries.count
+        let streak = history.currentStreak
+
+        return VStack(alignment: .leading, spacing: Spacing.xs) {
+            Text("Today")
+                .font(OType.sidebarGroup)
+                .foregroundStyle(Color.textTertiary)
+
+            (statValue(history.todayWordCount.abbreviated, .indicatorBlue) + Text(" words"))
+                .font(OType.caption)
+                .foregroundStyle(Color.textSecondary)
+
+            (statValue("\(sessions)", .indicatorGreen)
+                + Text(sessions == 1 ? " session" : " sessions")
+                + (streak > 0
+                    ? Text(" · ") + statValue("\(streak)-day", .brand) + Text(" streak")
+                    : Text("")))
+                .font(OType.caption)
+                .foregroundStyle(Color.textSecondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, Spacing.md)
+        .padding(.bottom, Spacing.sm)
+    }
+
+    private func statValue(_ value: String, _ color: Color) -> Text {
+        Text(value).foregroundColor(color).fontWeight(.medium)
+    }
+
+    private var sidebarFooter: some View {
+        HStack(spacing: Spacing.xs) {
+            Circle()
+                .fill(viewModel.isRecording ? Color.indicatorRed : Color.indicatorGreen)
+                .frame(width: 6, height: 6)
+            Text(viewModel.isRecording ? "Recording" : viewModel.settingsViewModel.selectedEngine.shortName)
+                .font(OType.caption)
+                .foregroundStyle(Color.textTertiary)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, Spacing.md)
+        .padding(.vertical, Spacing.sm)
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(Color.borderSubtle)
+                .frame(height: 0.5)
+        }
     }
 
     // MARK: - Detail

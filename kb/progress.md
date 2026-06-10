@@ -140,6 +140,7 @@
 - Period selector (7d/14d/30d) hoisted out of the Activity card to a standalone control that scopes the trend charts; selection persisted via @AppStorage
 - Calm content section headers (ContentSectionHeader: small colored icon + sentence-case title) across Home, Settings, Transcripts, popover — replacing uppercase labels
 - Custom sidebar: comfortable rows, soft active pill, hover state, muted sentence-case group headers; collapse toggle removed; hidden title bar so the sidebar runs full-height under the traffic lights
+- Sidebar bottom anchored with a "Today" mini-summary (words, sessions, streak — editorial colored-data style) above a status footer (engine name + status dot, red while recording) so tall windows don't leave the sidebar visually empty; today/streak stats moved into TranscriptHistoryService and shared with the dashboard
 - Shared TranscriptRow across Home/Transcripts/popover: click-to-copy with green "Copied" feedback + subtle animation, pointer-cursor affordance, play/Finder/delete actions; replaced HomeTranscriptRow and TranscriptEntryRow
 - Shared SegmentedControl for the dashboard period picker and transcript filter pills (identical fill, font, animation)
 - kb/design.md rewritten to codify the refined direction: restraint, data-only color (blue-led), flat cards, editorial voice, component patterns
