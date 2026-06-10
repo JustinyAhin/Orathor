@@ -23,17 +23,11 @@ Sparkle uses `CURRENT_PROJECT_VERSION` to detect updates. Always increment it.
 ./scripts/package.sh
 ```
 
-Produces `dist/Orathor-{version}-{build}.zip`.
+Produces `dist/Orathor-{version}-{build}.zip` and a signed `dist/appcast.xml`.
 
-### 3. Generate appcast
-
-```bash
-SPARKLE_BIN=$(find ~/Library/Developer/Xcode/DerivedData -path "*/artifacts/sparkle/Sparkle/bin/generate_appcast" 2>/dev/null | head -1)
-$SPARKLE_BIN --download-url-prefix "https://raw.githubusercontent.com/JustinyAhin/Orathor-releases/main/releases/" dist/
-```
-
-This creates/updates `dist/appcast.xml` with the signed entry for the new build.
-Download URLs in the appcast will point to the `releases/` folder.
+The script runs Sparkle's `generate_appcast` with `--maximum-versions 1`, so the
+appcast only contains the latest version (plus its deltas from recent builds).
+Download URLs in the appcast point to the `releases/` folder.
 
 ### 4. Publish to Orathor-releases
 

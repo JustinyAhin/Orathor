@@ -34,6 +34,15 @@ rm -f "$ZIP_PATH"
 echo "Packaging $ZIP_NAME..."
 ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$ZIP_PATH"
 
+# Generate signed appcast (latest version only)
+SPARKLE_BIN=$(find "$DERIVED_DATA" -path "*/artifacts/sparkle/Sparkle/bin/generate_appcast" 2>/dev/null | head -1)
+if [ -z "$SPARKLE_BIN" ]; then
+    echo "Error: generate_appcast not found in DerivedData."
+    exit 1
+fi
+echo "Generating appcast..."
+"$SPARKLE_BIN" --maximum-versions 1 --download-url-prefix "https://raw.githubusercontent.com/JustinyAhin/Orathor-releases/main/releases/" "$OUT_DIR"
+
 echo ""
 echo "Done! Ready to share:"
 echo "  $ZIP_PATH"
