@@ -12,6 +12,7 @@
 ### Improvements
 
 - **Faster dictation** — speech sockets pre-connect on hotkey press with audio buffered during the handshake; removed the fixed 300ms post-stop delay; tightened Deepgram finalize timeout; latency instrumentation added to diagnostics
+- **Warm cloud connections** — Deepgram and OpenAI sockets stay open between dictations (keepalives, 120s idle close), eliminating the 0.7–1.9s handshake on every recording; stale sockets fall back to a fresh connect automatically
 - **Dashboard refinement** — editorial greeting opener, quiet stat cards, flat card surfaces, blue-led palette, chart hover tooltips, sidebar Today summary and engine status footer
 - **Unified transcript rows** — click-to-copy with feedback everywhere (Home, Transcripts, popover); recording level meters recolored to red
 
