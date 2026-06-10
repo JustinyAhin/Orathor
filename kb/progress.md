@@ -193,7 +193,8 @@
 - Stop path (qv2.4): removed the fixed 300ms post-stop sleep (removeTap is synchronous; socket ordering guarantees audio precedes Finalize/commit); Deepgram finalize timeout tightened 2s → 1s
 - Latency instrumentation in diagnostics: socket-open and first-transcript ms after connect (per engine), engine-finalized and auto-insert ms after key-up
 - Whisper `delay` is a hidden default for benchmarking minimal vs low (qv2.3): `defaults write segbedji.Orathor whisperTranscriptionDelay minimal`, default "low"
-- Warm Deepgram connection between dictations (qv2.2) deliberately deferred — only if pre-connect isn't snappy enough
+- Measured (diagnostics markers): handshakes ran 0.7–1.9s per dictation (vs 100–400ms estimate); key-up→insert now Apple ~65ms, Deepgram 340–663ms, OpenAI 744–1007ms; no dropped audio across all runs
+- Warm connections (qv2.2): speech services are cached in the VM (rebuilt only on engine/API-key/language change via new `TranscriptionService.shutdown()` hook); Deepgram skips CloseStream and sends KeepAlive every 5s, OpenAI pings every 15s; 120s idle limit; stale warm socket falls back to normal connect with the handshake queue as safety net; converters rebuild if mic format changes between dictations
 
 ## Remaining
 
