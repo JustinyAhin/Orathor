@@ -246,10 +246,13 @@ final class OpenAIRealtimeWhisperService: NSObject, TranscriptionService, URLSes
     // MARK: - Session Configuration
 
     private func sessionUpdatePayload() -> [String: Any] {
+        // Latency/accuracy tradeoff (minimal/low/medium/high/xhigh) — "low"
+        // targets live captions. Hidden override for benchmarking:
+        // defaults write segbedji.Orathor whisperTranscriptionDelay minimal
+        let delay = UserDefaults.standard.string(forKey: "whisperTranscriptionDelay") ?? "low"
         var transcription: [String: Any] = [
             "model": "gpt-realtime-whisper",
-            // Latency/accuracy tradeoff — "low" targets live captions
-            "delay": "low"
+            "delay": delay
         ]
 
         if language != "multi" {
