@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.0.10 — 2026-06-10
+
+### New
+
+- **First-run onboarding** — a welcome window opens on first launch: grant Microphone, Speech Recognition, and Accessibility with live status, then try your first dictation right in the window; reopen anytime from Settings → Permissions → "Show welcome guide"
+- **Permissions in Settings** — new card with live status for all three permissions, grant buttons, and System Settings shortcuts
+
+### Fixes
+
+- **No more surprise permission prompt** — opening the menu bar popover no longer triggers the Speech Recognition system dialog; permissions are requested through onboarding or on first recording
+
 ## 0.0.9 — 2026-06-10
 
 ### New
