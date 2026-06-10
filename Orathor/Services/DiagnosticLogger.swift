@@ -2,7 +2,11 @@ import AppKit
 import Foundation
 import os
 
-final class DiagnosticLogger {
+/// Thread-safe: all stored properties are immutable and writes are serialized
+/// through `queue`. Marked `nonisolated` so it can be called synchronously from
+/// any isolation context (actors, the main actor, audio threads) under the
+/// project's main-actor-by-default isolation.
+nonisolated final class DiagnosticLogger: Sendable {
     static let shared = DiagnosticLogger()
 
     private let fileURL: URL
@@ -144,7 +148,8 @@ final class DiagnosticLogger {
 }
 
 private extension ISO8601DateFormatter {
-    static let shared: ISO8601DateFormatter = {
+    // ISO8601DateFormatter is thread-safe for formatting; safe to share nonisolated.
+    nonisolated(unsafe) static let shared: ISO8601DateFormatter = {
         let f = ISO8601DateFormatter()
         f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
         return f

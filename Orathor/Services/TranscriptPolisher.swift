@@ -1,8 +1,6 @@
 import Foundation
 import FoundationModels
 
-private let diag = DiagnosticLogger.shared
-
 /// Optional on-device cleanup pass for finished transcripts, using Apple's
 /// Foundation Models system language model. Engine-agnostic — runs on the final
 /// string from any transcription engine. Always fails open: on any error or when
@@ -49,7 +47,7 @@ actor TranscriptPolisher {
 
         let availability = SystemLanguageModel.default.availability
         guard case .available = availability else {
-            diag.log("Polish skipped — model unavailable: \(String(describing: availability))")
+            DiagnosticLogger.shared.log("Polish skipped — model unavailable: \(String(describing: availability))")
             return raw
         }
 
@@ -59,13 +57,13 @@ actor TranscriptPolisher {
             let response = try await session.respond(to: raw)
             let cleaned = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
             if cleaned.isEmpty {
-                diag.log("Polish returned empty — keeping raw")
+                DiagnosticLogger.shared.log("Polish returned empty — keeping raw")
                 return raw
             }
-            diag.log("Polish OK — \(raw.count) → \(cleaned.count) chars")
+            DiagnosticLogger.shared.log("Polish OK — \(raw.count) → \(cleaned.count) chars")
             return cleaned
         } catch {
-            diag.log("Polish failed — \(error)")
+            DiagnosticLogger.shared.log("Polish failed — \(error)")
             return raw
         }
     }
