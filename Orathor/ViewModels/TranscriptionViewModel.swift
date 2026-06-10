@@ -253,9 +253,9 @@ final class TranscriptionViewModel {
     private func stopRecording() async {
         diag.log("STOP recording — wasCancelled: \(wasCancelled)")
         let stopStart = Date()
+        // No flush delay needed: removeTap is synchronous and all audio is
+        // enqueued on the socket before Finalize/commit, so ordering holds.
         audioService.stopRecording()
-        // Let in-flight audio buffers reach cloud providers before finalizing
-        try? await Task.sleep(for: .milliseconds(300))
         await speechService.stopTranscribing()
         diag.log("Stop: engine finalized \(Int(Date().timeIntervalSince(stopStart) * 1000))ms after key-up")
         isRecording = false

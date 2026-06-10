@@ -56,11 +56,13 @@ final class DeepgramService: NSObject, TranscriptionService, URLSessionWebSocket
         // Send Finalize to flush remaining audio, then wait for the response
         sendTextMessage(["type": "Finalize"])
 
-        // Wait for final result or timeout after 2 seconds
+        // Wait for final result or timeout after 1 second — the from_finalize
+        // response normally arrives well under that; the timeout only covers a
+        // dead connection.
         await withCheckedContinuation { continuation in
             finalizeContinuation = continuation
 
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { [weak self] in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
                 self?.resolveFinalize()
             }
         }
