@@ -62,11 +62,15 @@ final class OpenAIRealtimeWhisperService: NSObject, TranscriptionService, URLSes
         await withCheckedContinuation { continuation in
             stopContinuation = continuation
 
+            // Generous backstop: the completed event is the normal exit and a dead
+            // connection resolves via handleDisconnect — expiring early drops the
+            // tail of speech the server is still transcribing
             let timeout = DispatchWorkItem { [weak self] in
+                DiagnosticLogger.shared.log("Stop timed out waiting for final transcript — tail may be cut")
                 self?.resolveStop()
             }
             stopTimeoutWorkItem = timeout
-            DispatchQueue.main.asyncAfter(deadline: .now() + 2.0, execute: timeout)
+            DispatchQueue.main.asyncAfter(deadline: .now() + 10.0, execute: timeout)
         }
 
         isTranscribing = false

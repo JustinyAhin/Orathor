@@ -184,6 +184,7 @@
 - Works for all three engines via the shared `transcribedText` observable — Deepgram (interim results) and Apple Speech (volatile segments) already streamed
 - OpenAI `gpt-realtime-whisper` streams deltas natively as audio arrives — turn detection must stay off (`NSNull()`, the model rejects it with "Turn detection is not supported"); added `delay: "low"` for live-caption latency
 - Stop-time commit hitting `input_audio_buffer_commit_empty` (e.g. instant tap with no audio) is treated as a clean stop, not surfaced as an error
+- Fixed tail-of-sentence loss on Whisper: the 2s stop timeout could expire before the server's final `completed` transcript arrived (deltas lag speech by the `delay` budget), pasting only partial text. Timeout raised to 10s as a pure backstop — `completed` is the normal exit, dead connections resolve via `handleDisconnect` — and timeout expiry now logs to diagnostics
 
 ## Remaining
 
