@@ -34,14 +34,18 @@ rm -f "$ZIP_PATH"
 echo "Packaging $ZIP_NAME..."
 ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$ZIP_PATH"
 
-# Generate signed appcast (latest version only)
+# Generate signed appcast (latest version only).
+# Deltas are disabled: re-running this script regenerates the current version's
+# zip from a fresh, non-reproducible build, so deltas computed against it no
+# longer match what users actually installed (Sparkle "source hash" failures).
+# At ~2MB zipped, full downloads cost nothing.
 SPARKLE_BIN=$(find "$DERIVED_DATA" -path "*/artifacts/sparkle/Sparkle/bin/generate_appcast" 2>/dev/null | head -1)
 if [ -z "$SPARKLE_BIN" ]; then
     echo "Error: generate_appcast not found in DerivedData."
     exit 1
 fi
 echo "Generating appcast..."
-"$SPARKLE_BIN" --maximum-versions 1 --download-url-prefix "https://raw.githubusercontent.com/JustinyAhin/Orathor-releases/main/releases/" "$OUT_DIR"
+"$SPARKLE_BIN" --maximum-versions 1 --maximum-deltas 0 --download-url-prefix "https://raw.githubusercontent.com/JustinyAhin/Orathor-releases/main/releases/" "$OUT_DIR"
 
 echo ""
 echo "Done! Ready to share:"
