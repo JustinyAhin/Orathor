@@ -133,6 +133,21 @@ The app requires these entitlements/permissions:
 
 Always check permission status before using protected APIs and guide the user to grant access.
 
+## Git
+
+- Do not add `Co-Authored-By` lines to commit messages.
+- Prefix every commit with a topic tag in square brackets so history is greppable. Pick one:
+  - `[feat]` — new app features
+  - `[fix]` — bug fixes
+  - `[ui]` — SwiftUI views, styling, layout, components, theme
+  - `[speech]` — transcription engines (Deepgram, Apple Speech, Whisper), accuracy, formatting
+  - `[audio]` — mic capture, AVAudioEngine, audio pipeline
+  - `[hotkey]` — global shortcuts, keyboard handling, text insertion
+  - `[infra]` — build, scripts, entitlements, Info.plist, release/packaging
+  - `[chore]` — deps, tooling, internal scripts
+- Examples: `[speech] add OpenAI realtime Whisper engine`, `[ui] redesign Home dashboard and sidebar`, `[fix] preserve transcript selection across window focus`.
+- Keep commit descriptions short. Add a longer body only when it provides real value/context (non-obvious why, tricky tradeoff, follow-up notes).
+
 ## Workflow
 
 ### Token efficiency rules
