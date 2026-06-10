@@ -130,6 +130,7 @@
 - Dark/Light/System theme switcher in Settings > Appearance (defaults to dark)
 - Settings page uses full-width layout matching other pages
 - Updated design.md with Readout as primary reference
+- Dashboard charts (WPM trend, activity bars, engine donut) now have hover tooltips: rule mark + flat tooltip card on the line/bar charts; donut highlights the hovered slice, dims the rest, and swaps the center label
 
 ### Diagnostics
 - Diagnostic clipboard export trimmed to session header + last 200 log lines (prevents full 512KB dump)
