@@ -187,6 +187,14 @@
 - Stop-time commit hitting `input_audio_buffer_commit_empty` (e.g. instant tap with no audio) is treated as a clean stop, not surfaced as an error
 - Fixed tail-of-sentence loss on Whisper: the 2s stop timeout could expire before the server's final `completed` transcript arrived (deltas lag speech by the `delay` budget), pasting only partial text. Timeout raised to 10s as a pure backstop — `completed` is the normal exit, dead connections resolve via `handleDisconnect` — and timeout expiry now logs to diagnostics
 
+### Step 21: Dictation Latency (bd epic Orathor-qv2)
+- Pre-connect on key-down (qv2.1): WS handshake starts from `startRecording` in parallel with audio engine spin-up instead of on the first audio buffer. `TranscriptionService.startTranscribing()` is now formatless; cloud services build their audio converter lazily from the first buffer's format (target rates are fixed: 16k Deepgram, 24k OpenAI)
+- Handshake message queue: both cloud services queue outbound messages under a lock until `didOpenWithProtocol`, then flush in order — audio spoken during the handshake is no longer silently dropped. OpenAI's `session.update` moved into `didOpen` (was sent into a not-yet-open socket)
+- Stop path (qv2.4): removed the fixed 300ms post-stop sleep (removeTap is synchronous; socket ordering guarantees audio precedes Finalize/commit); Deepgram finalize timeout tightened 2s → 1s
+- Latency instrumentation in diagnostics: socket-open and first-transcript ms after connect (per engine), engine-finalized and auto-insert ms after key-up
+- Whisper `delay` is a hidden default for benchmarking minimal vs low (qv2.3): `defaults write segbedji.Orathor whisperTranscriptionDelay minimal`, default "low"
+- Warm Deepgram connection between dictations (qv2.2) deliberately deferred — only if pre-connect isn't snappy enough
+
 ## Remaining
 
 ### Core Features
