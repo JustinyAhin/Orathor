@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.0.9 — 2026-06-10
+
+### New
+
+- **New local engine (SpeechAnalyzer)** — Apple Speech migrated from the legacy SFSpeechRecognizer to the macOS 26 SpeechAnalyzer/SpeechTranscriber stack: faster, no one-minute cap, model ships with the OS and downloads automatically ("Preparing language…" shown on first use)
+- **Smart formatting** — optional on-device polish via Apple Foundation Models: fixes punctuation, removes filler words, applies spoken "new line" commands; toggle in Settings or the wand pill in the popover header; requires Apple Intelligence, original text always preserved ("Copy original")
+- **Live transcript preview** — the recording overlay streams your words as you speak, across all three engines
+- **Engine switcher pill** — change speech engine straight from the menu bar popover header
+
+### Improvements
+
+- **Faster dictation** — speech sockets pre-connect on hotkey press with audio buffered during the handshake; removed the fixed 300ms post-stop delay; tightened Deepgram finalize timeout; latency instrumentation added to diagnostics
+- **Dashboard refinement** — editorial greeting opener, quiet stat cards, flat card surfaces, blue-led palette, chart hover tooltips, sidebar Today summary and engine status footer
+- **Unified transcript rows** — click-to-copy with feedback everywhere (Home, Transcripts, popover); recording level meters recolored to red
+
+### Fixes
+
+- **Whisper sentence tails** — stopping no longer cuts the end of your last sentence; the final transcript always lands before insertion
+- **Overlay preview** — latest words stay visible in the two-line preview; panel re-fits when the overlay switches modes
+- **Swift 6 warnings** — DiagnosticLogger actor isolation cleanup
+
 ## 0.0.8 — 2026-05-13
 
 ### New
