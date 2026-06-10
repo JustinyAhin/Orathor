@@ -23,6 +23,14 @@ enum SpeechEngine: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    var compactName: String {
+        switch self {
+        case .apple: "Apple"
+        case .deepgram: "Deepgram"
+        case .openAIWhisper: "Whisper"
+        }
+    }
+
     var description: String {
         switch self {
         case .apple: "On-device, no API key needed. Good for basic dictation."

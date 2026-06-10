@@ -163,6 +163,7 @@
 - Defaults to "multi" (auto-detect), single-language selection improves accuracy
 - Language passed through SettingsViewModel → TranscriptionViewModel → DeepgramService → WebSocket URL
 - Persisted in UserDefaults
+- Quick switchers in menu bar popover: language pill in footer (cloud engines only), engine pill in header next to "Recents" — both pipe through SettingsViewModel so persistence/onEngineChanged behave identically to Settings
 
 ### Step 19: SpeechAnalyzer Migration + On-Device Smart Formatting
 - Migrated AppleSpeechService from legacy SFSpeechRecognizer to modern SpeechAnalyzer/SpeechTranscriber (macOS 26+ stack from WWDC25)

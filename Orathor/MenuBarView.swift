@@ -71,6 +71,7 @@ struct MenuBarView: View {
                 HStack {
                     ContentSectionHeader(title: "Recents", symbol: "clock")
                     Spacer()
+                    enginePicker
                 }
                 .padding(.horizontal, Spacing.lg)
                 .padding(.vertical, Spacing.sm)
@@ -203,6 +204,31 @@ struct MenuBarView: View {
         }
         .padding(.horizontal, Spacing.lg)
         .padding(.vertical, Spacing.sm)
+    }
+
+    private var enginePicker: some View {
+        Menu {
+            ForEach(SpeechEngine.allCases) { engine in
+                Toggle(engine.displayName, isOn: Binding(
+                    get: { viewModel.settingsViewModel.selectedEngine == engine },
+                    set: { if $0 { viewModel.settingsViewModel.selectedEngine = engine } }
+                ))
+            }
+        } label: {
+            HStack(spacing: Spacing.xxs) {
+                Image(systemName: "waveform")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Color.brand)
+                Text(viewModel.settingsViewModel.selectedEngine.compactName)
+                    .font(OType.captionMedium)
+            }
+            .foregroundStyle(Color.textSecondary)
+            .padding(.horizontal, Spacing.sm)
+            .padding(.vertical, Spacing.xxs)
+            .background(Color.surfaceSecondary, in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
     }
 
     private var languagePicker: some View {
