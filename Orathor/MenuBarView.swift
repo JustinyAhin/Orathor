@@ -6,6 +6,7 @@ struct MenuBarView: View {
     @State private var playbackService = AudioPlaybackService()
     @State private var searchText = ""
     @State private var escapeMonitor: Any?
+    @State private var formattingAvailable = true
 
     private var filteredEntries: [TranscriptEntry] {
         let query = searchText.trimmingCharacters(in: .whitespaces)
@@ -34,6 +35,7 @@ struct MenuBarView: View {
         .frame(width: 340)
         .task {
             await viewModel.checkPermissions()
+            formattingAvailable = TranscriptPolisher.status.available
         }
         .onAppear {
             escapeMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
@@ -68,9 +70,10 @@ struct MenuBarView: View {
                     .padding(.horizontal, Spacing.lg)
                     .padding(.bottom, Spacing.xs)
             } else {
-                HStack {
+                HStack(spacing: Spacing.xs) {
                     ContentSectionHeader(title: "Recents", symbol: "clock")
                     Spacer()
+                    smartFormattingToggle
                     enginePicker
                 }
                 .padding(.horizontal, Spacing.lg)
@@ -204,6 +207,28 @@ struct MenuBarView: View {
         }
         .padding(.horizontal, Spacing.lg)
         .padding(.vertical, Spacing.sm)
+    }
+
+    private var smartFormattingToggle: some View {
+        Button {
+            viewModel.settingsViewModel.smartFormattingEnabled.toggle()
+        } label: {
+            Image(systemName: "wand.and.stars")
+                .font(.system(size: 11))
+                .foregroundStyle(viewModel.settingsViewModel.smartFormattingEnabled ? Color.brand : Color.textTertiary)
+                .frame(height: 16)
+                .padding(.horizontal, Spacing.sm)
+                .padding(.vertical, Spacing.xxs)
+                .background(Color.surfaceSecondary, in: Capsule())
+        }
+        .buttonStyle(.plain)
+        .disabled(!formattingAvailable)
+        .opacity(formattingAvailable ? 1 : 0.4)
+        .help(
+            formattingAvailable
+                ? (viewModel.settingsViewModel.smartFormattingEnabled ? "Smart formatting on" : "Smart formatting off")
+                : "Smart formatting unavailable on this Mac"
+        )
     }
 
     private var enginePicker: some View {

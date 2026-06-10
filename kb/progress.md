@@ -164,6 +164,7 @@
 - Language passed through SettingsViewModel → TranscriptionViewModel → DeepgramService → WebSocket URL
 - Persisted in UserDefaults
 - Quick switchers in menu bar popover: language pill in footer (cloud engines only), engine pill in header next to "Recents" — both pipe through SettingsViewModel so persistence/onEngineChanged behave identically to Settings
+- Smart formatting toggle pill in popover header (wand icon next to engine pill): brand-colored when on, muted when off, disabled with tooltip when Foundation Models unavailable
 
 ### Step 19: SpeechAnalyzer Migration + On-Device Smart Formatting
 - Migrated AppleSpeechService from legacy SFSpeechRecognizer to modern SpeechAnalyzer/SpeechTranscriber (macOS 26+ stack from WWDC25)
