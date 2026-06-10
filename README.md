@@ -4,6 +4,16 @@ Voice dictation for macOS that just works — fast, accurate, and out of your wa
 
 Press a shortcut, speak, and your words appear wherever your cursor is. Orathor is a native menu bar app built with Swift and SwiftUI. No Electron, no web views, no accounts.
 
+## Install
+
+1. Download the latest zip from [Orathor-releases](https://github.com/JustinyAhin/Orathor-releases/tree/main/releases)
+2. Unzip and drag `Orathor.app` to `/Applications`
+3. **Right-click → Open** the first time — the app isn't notarized, so a normal double-click is blocked by Gatekeeper
+4. Orathor lives in the menu bar (no Dock icon) — look for the mic icon
+5. Grant the permissions it asks for: Microphone, Accessibility (text insertion), and Speech Recognition (Apple Speech engine)
+
+Updates after that are automatic via Sparkle.
+
 ## How it works
 
 1. Trigger recording with the **Right Option** key (hold or double-tap — configurable in Settings)
