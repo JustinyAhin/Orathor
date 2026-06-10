@@ -10,6 +10,14 @@ struct TranscriptEntry: Identifiable, Codable {
     let targetAppBundleID: String?
     let audioFileName: String?
     let engine: SpeechEngine?
+    /// Whether on-device smart formatting (Foundation Models) altered this transcript.
+    /// `nil` for entries recorded before the feature existed.
+    let smartFormatted: Bool?
+    /// The original transcript before smart formatting. `nil` when formatting was
+    /// off, made no change, or the entry predates the feature.
+    let rawText: String?
+    /// Label for the model that performed formatting (e.g. on-device Foundation Models).
+    let formattingModel: String?
 
     init(
         text: String,
@@ -19,7 +27,10 @@ struct TranscriptEntry: Identifiable, Codable {
         targetAppName: String?,
         targetAppBundleID: String?,
         audioFileName: String? = nil,
-        engine: SpeechEngine? = nil
+        engine: SpeechEngine? = nil,
+        smartFormatted: Bool? = nil,
+        rawText: String? = nil,
+        formattingModel: String? = nil
     ) {
         self.id = UUID()
         self.text = text
@@ -30,5 +41,8 @@ struct TranscriptEntry: Identifiable, Codable {
         self.targetAppBundleID = targetAppBundleID
         self.audioFileName = audioFileName
         self.engine = engine
+        self.smartFormatted = smartFormatted
+        self.rawText = rawText
+        self.formattingModel = formattingModel
     }
 }

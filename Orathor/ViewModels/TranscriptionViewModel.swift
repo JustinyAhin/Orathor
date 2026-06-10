@@ -9,6 +9,7 @@ final class TranscriptionViewModel {
     var hasPermission = false
     var hasAccessibility = false
     var needsAccessibilityPrompt = false
+    var isPreparingModel = false
 
     let settingsViewModel = SettingsViewModel()
     let historyService = TranscriptHistoryService()
@@ -16,6 +17,7 @@ final class TranscriptionViewModel {
     private let audioService = AudioService()
     private var speechService: any TranscriptionService
     private let keyboardService = KeyboardService()
+    private let polisher = TranscriptPolisher()
     private var shouldAutoInsert = false
     private(set) var recordingMode: KeyboardService.RecordingMode = .insertAtCursor
     private var recordingStartTime: Date?
@@ -107,6 +109,13 @@ final class TranscriptionViewModel {
     }
 
     private func configureSpeechServiceErrorHandler() {
+        if let apple = speechService as? AppleSpeechService {
+            apple.onPreparingChanged = { [weak self] preparing in
+                Task { @MainActor in
+                    self?.isPreparingModel = preparing
+                }
+            }
+        }
         if let deepgram = speechService as? DeepgramService {
             deepgram.onError = { [weak self] message in
                 Task { @MainActor in
@@ -264,8 +273,19 @@ final class TranscriptionViewModel {
             return
         }
 
-        let text = currentTranscription
+        var text = currentTranscription
         let duration = recordingStartTime.map { Date().timeIntervalSince($0) } ?? 0
+
+        // Optional on-device cleanup pass (Foundation Models). Fails open to raw text.
+        var didPolish = false
+        var originalText: String?
+        if settingsViewModel.smartFormattingEnabled, !text.isEmpty {
+            let raw = text
+            text = await polisher.polish(text)
+            didPolish = text != raw
+            if didPolish { originalText = raw }
+            diag.log("Smart formatting — applied: \(settingsViewModel.smartFormattingEnabled), changed: \(didPolish) (\(raw.count) → \(text.count) chars)")
+        }
 
         diag.log("Transcription result — text length: \(text.count), mode: \(recordingMode), shouldAutoInsert: \(shouldAutoInsert), duration: \(String(format: "%.1f", duration))s")
 
@@ -303,7 +323,10 @@ final class TranscriptionViewModel {
                 targetAppName: targetApp?.name,
                 targetAppBundleID: targetApp?.bundleIdentifier,
                 audioFileName: currentRecordingURL?.lastPathComponent,
-                engine: settingsViewModel.selectedEngine
+                engine: settingsViewModel.selectedEngine,
+                smartFormatted: didPolish,
+                rawText: originalText,
+                formattingModel: didPolish ? TranscriptPolisher.modelDescription : nil
             )
             historyService.add(entry)
         } else if let url = currentRecordingURL {

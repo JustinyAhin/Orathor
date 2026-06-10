@@ -163,11 +163,24 @@
 - Language passed through SettingsViewModel → TranscriptionViewModel → DeepgramService → WebSocket URL
 - Persisted in UserDefaults
 
+### Step 19: SpeechAnalyzer Migration + On-Device Smart Formatting
+- Migrated AppleSpeechService from legacy SFSpeechRecognizer to modern SpeechAnalyzer/SpeechTranscriber (macOS 26+ stack from WWDC25)
+- ~2× faster than Whisper Large V3 Turbo, no 1-min cap, better distant-mic, model ships with OS (zero bundle bytes, auto-updates)
+- DictationTranscriber fallback when SpeechTranscriber.isAvailable is false
+- AVAudioConverter bridges mic format (48kHz float) → analyzer's bestAvailableAudioFormat (block-based API, handles sample-rate change)
+- Volatile/final reconciliation: finalized segments accumulate, volatile tail appended for live display
+- First-run model download via AssetInventory (status/assetInstallationRequest) with "Preparing language…" state in RecordingOverlay (onPreparingChanged callback → isPreparingModel)
+- Re-entrancy guard (isStarting) since VM spawns a start task per audio buffer until isTranscribing flips
+- TranscriptPolisher (Foundation Models, on-device LLM): optional cleanup pass — fixes punctuation, removes fillers, applies spoken "new line" commands; engine-agnostic, fails open to raw text on unavailable/error
+- Wired into TranscriptionViewModel.stopRecording before insertion; "Smart formatting" toggle in Settings (off by default, key "smartFormatting")
+- Smart formatting requires Apple Intelligence (Foundation Models). TranscriptPolisher.status maps availability → user-facing reason; Settings toggle is disabled with an amber caption when unavailable (e.g. appleIntelligenceNotEnabled) so the feature never fails silently
+- Provenance captured on TranscriptEntry: rawText (original), smartFormatted (bool), formattingModel (label); history row shows a wand badge + "Copy original" action. Polisher logs outcome (OK/skipped-unavailable/failed) to diagnostics
+
 ## Remaining
 
 ### Core Features
-- [ ] Smart formatting (auto-punctuation, capitalization)
-- [ ] Command mode ("new line", "select all", "delete that" voice commands)
+- [x] Smart formatting (auto-punctuation, capitalization) — on-device Foundation Models polish, opt-in
+- [ ] Command mode ("new line", "select all", "delete that" voice commands) — partial: "new line" handled via smart formatting; structured @Generable command mode still TODO
 
 ### Polish
 - [x] Error handling with user-facing alerts

@@ -111,6 +111,12 @@ final class SettingsViewModel {
         }
     }
 
+    var smartFormattingEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(smartFormattingEnabled, forKey: "smartFormatting")
+        }
+    }
+
     var onEngineChanged: ((SpeechEngine) -> Void)?
     var onHotkeyChanged: (() -> Void)?
 
@@ -141,6 +147,7 @@ final class SettingsViewModel {
         appearanceMode = AppearanceMode(rawValue: storedAppearance) ?? .dark
 
         transcriptionLanguage = UserDefaults.standard.string(forKey: "transcriptionLanguage") ?? "multi"
+        smartFormattingEnabled = UserDefaults.standard.object(forKey: "smartFormatting") as? Bool ?? false
 
         startSound = UserDefaults.standard.string(forKey: "startSound") ?? SoundService.defaultStart
         stopSound = UserDefaults.standard.string(forKey: "stopSound") ?? SoundService.defaultStop

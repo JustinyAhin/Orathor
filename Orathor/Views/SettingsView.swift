@@ -5,6 +5,8 @@ struct SettingsView: View {
     @Bindable var viewModel: SettingsViewModel
     let updater: SPUUpdater
     @State private var copiedDiagnostics = false
+    @State private var formattingAvailable = true
+    @State private var formattingMessage: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xxl) {
@@ -12,6 +14,7 @@ struct SettingsView: View {
                 .font(OType.largeTitle)
                 .foregroundStyle(Color.textPrimary)
             engineSection
+            formattingSection
             hotkeySection
             soundsSection
             appearanceSection
@@ -20,6 +23,13 @@ struct SettingsView: View {
             versionFooter
         }
         .animation(.easeInOut(duration: 0.2), value: viewModel.selectedEngine)
+        .onAppear(perform: refreshFormattingStatus)
+    }
+
+    private func refreshFormattingStatus() {
+        let status = TranscriptPolisher.status
+        formattingAvailable = status.available
+        formattingMessage = status.message
     }
 
     // MARK: - Version
@@ -103,6 +113,32 @@ struct SettingsView: View {
             Text(viewModel.selectedEngine.description)
                 .font(OType.caption)
                 .foregroundStyle(Color.textTertiary)
+        }
+    }
+
+    private var formattingSection: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            ContentSectionHeader(title: "Formatting", symbol: "wand.and.stars")
+
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Smart formatting")
+                        .font(OType.body)
+                        .foregroundStyle(formattingAvailable ? Color.textPrimary : Color.textTertiary)
+                    Text(formattingMessage ?? "On-device cleanup — fixes punctuation and removes filler words")
+                        .font(OType.caption)
+                        .foregroundStyle(formattingAvailable ? Color.textTertiary : Color.warning)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer()
+                Toggle("", isOn: $viewModel.smartFormattingEnabled)
+                    .toggleStyle(.switch)
+                    .labelsHidden()
+                    .disabled(!formattingAvailable)
+            }
+            .padding(.horizontal, Spacing.lg)
+            .padding(.vertical, Spacing.md)
+            .cardStyle(padding: 0)
         }
     }
 

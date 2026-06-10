@@ -31,6 +31,13 @@ struct MainTranscriptRow: View {
                     Text("\(entry.wordCount) words")
                         .font(OType.monoMicro)
                         .foregroundStyle(Color.textTertiary)
+
+                    if entry.smartFormatted == true {
+                        Image(systemName: "wand.and.stars")
+                            .font(.system(size: 9))
+                            .foregroundStyle(Color.brand)
+                            .help("Smart formatted · \(entry.formattingModel ?? "on-device")")
+                    }
                 }
 
                 Text(TextHighlighter.highlight(entry.text, query: searchText))
@@ -75,6 +82,12 @@ struct MainTranscriptRow: View {
                 copyText()
             }
 
+            if let raw = entry.rawText {
+                iconButton("text.badge.minus", help: "Copy original (unformatted)") {
+                    copy(raw)
+                }
+            }
+
             if historyService.audioFileURL(for: entry) != nil {
                 iconButton(playbackService.isPlaying ? "stop.fill" : "play.fill",
                           help: playbackService.isPlaying ? "Stop" : "Play") {
@@ -101,8 +114,7 @@ struct MainTranscriptRow: View {
     }
 
     private func copyText() {
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(entry.text, forType: .string)
+        copy(entry.text)
         withAnimation {
             showCopied = true
         }
@@ -111,6 +123,11 @@ struct MainTranscriptRow: View {
                 showCopied = false
             }
         }
+    }
+
+    private func copy(_ string: String) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(string, forType: .string)
     }
 
     private func togglePlayback() {

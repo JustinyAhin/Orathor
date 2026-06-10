@@ -58,6 +58,8 @@ struct RecordingOverlayView: View {
                 accessibilityPromptContent
             } else if let error = viewModel.errorMessage, !viewModel.isRecording {
                 errorContent(error)
+            } else if viewModel.isPreparingModel {
+                preparingContent
             } else {
                 recordingContent
             }
@@ -109,6 +111,17 @@ struct RecordingOverlayView: View {
                 .lineLimit(2)
         }
         .frame(maxWidth: 300)
+    }
+
+    private var preparingContent: some View {
+        HStack(spacing: Spacing.sm) {
+            ProgressView()
+                .controlSize(.small)
+                .scaleEffect(0.7)
+            Text("Preparing language…")
+                .font(OType.monoSmall)
+                .foregroundStyle(Color.textPrimary)
+        }
     }
 
     private var recordingContent: some View {
