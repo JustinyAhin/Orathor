@@ -20,12 +20,21 @@ final class OpenAIRealtimeWhisperService: NSObject, TranscriptionService, URLSes
     private var activeDeltaItemID: String?
     private var activeDeltaText = ""
 
+    // Sends into a socket whose handshake hasn't completed are silently dropped,
+    // so messages queue under the lock until didOpen flushes them in order (after
+    // session.update). The lock also guards the audio-thread/delegate-queue race.
+    private let socketLock = NSLock()
+    private var isSocketOpen = false
+    private var pendingMessages: [URLSessionWebSocketTask.Message] = []
+    private var connectStart: Date?
+    private var didLogFirstTranscript = false
+
     init(apiKey: String, language: String = "multi") {
         self.apiKey = apiKey
         self.language = language
     }
 
-    func startTranscribing(audioFormat: AVAudioFormat) async throws {
+    func startTranscribing() async throws {
         guard !apiKey.isEmpty else {
             throw OpenAIRealtimeWhisperError.noApiKey
         }
@@ -35,12 +44,15 @@ final class OpenAIRealtimeWhisperService: NSObject, TranscriptionService, URLSes
         itemOrder = []
         activeDeltaItemID = nil
         activeDeltaText = ""
+        didLogFirstTranscript = false
 
-        setupAudioConverter(sourceFormat: audioFormat)
         try await connect()
     }
 
     func processAudioBuffer(_ buffer: AVAudioPCMBuffer) {
+        if audioConverter == nil {
+            setupAudioConverter(sourceFormat: buffer.format)
+        }
         guard let data = convertBufferToData(buffer) else { return }
         processAudioData(data)
     }
@@ -97,13 +109,21 @@ final class OpenAIRealtimeWhisperService: NSObject, TranscriptionService, URLSes
         let session = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
         let task = session.webSocketTask(with: request)
 
+        markSocketClosed()
+        connectStart = Date()
+
         urlSession = session
         webSocketTask = task
         task.resume()
 
         isTranscribing = true
         listenForMessages()
-        sendSessionUpdate()
+    }
+
+    private func markSocketClosed() {
+        socketLock.lock()
+        isSocketOpen = false
+        socketLock.unlock()
     }
 
     private func disconnect() {
@@ -162,6 +182,12 @@ final class OpenAIRealtimeWhisperService: NSObject, TranscriptionService, URLSes
 
     private func applyDelta(_ event: OpenAIRealtimeEvent) {
         guard let delta = event.delta, !delta.isEmpty else { return }
+        if !didLogFirstTranscript {
+            didLogFirstTranscript = true
+            if let start = connectStart {
+                DiagnosticLogger.shared.log("OpenAI: first transcript \(Int(Date().timeIntervalSince(start) * 1000))ms after connect")
+            }
+        }
         let itemID = event.itemID ?? activeDeltaItemID ?? "active"
 
         if activeDeltaItemID != itemID {
@@ -219,7 +245,7 @@ final class OpenAIRealtimeWhisperService: NSObject, TranscriptionService, URLSes
 
     // MARK: - Session Configuration
 
-    private func sendSessionUpdate() {
+    private func sessionUpdatePayload() -> [String: Any] {
         var transcription: [String: Any] = [
             "model": "gpt-realtime-whisper",
             // Latency/accuracy tradeoff — "low" targets live captions
@@ -230,7 +256,7 @@ final class OpenAIRealtimeWhisperService: NSObject, TranscriptionService, URLSes
             transcription["language"] = language
         }
 
-        sendJSON([
+        return [
             "type": "session.update",
             "session": [
                 "type": "transcription",
@@ -247,7 +273,7 @@ final class OpenAIRealtimeWhisperService: NSObject, TranscriptionService, URLSes
                     ]
                 ]
             ]
-        ])
+        ]
     }
 
     // MARK: - Audio Conversion
@@ -297,10 +323,28 @@ final class OpenAIRealtimeWhisperService: NSObject, TranscriptionService, URLSes
     // MARK: - Helpers
 
     private func sendJSON(_ dict: [String: Any]) {
-        guard let data = try? JSONSerialization.data(withJSONObject: dict),
-              let text = String(data: data, encoding: .utf8) else { return }
+        guard let message = jsonMessage(dict) else { return }
+        enqueueOrSend(message)
+    }
 
-        webSocketTask?.send(.string(text)) { error in
+    private func jsonMessage(_ dict: [String: Any]) -> URLSessionWebSocketTask.Message? {
+        guard let data = try? JSONSerialization.data(withJSONObject: dict),
+              let text = String(data: data, encoding: .utf8) else { return nil }
+        return .string(text)
+    }
+
+    private func enqueueOrSend(_ message: URLSessionWebSocketTask.Message) {
+        socketLock.lock()
+        defer { socketLock.unlock() }
+        if isSocketOpen {
+            send(message)
+        } else {
+            pendingMessages.append(message)
+        }
+    }
+
+    private func send(_ message: URLSessionWebSocketTask.Message) {
+        webSocketTask?.send(message) { error in
             guard error != nil else { return }
             Task { @MainActor in
                 self.handleDisconnect()
@@ -309,6 +353,22 @@ final class OpenAIRealtimeWhisperService: NSObject, TranscriptionService, URLSes
     }
 
     // MARK: - URLSessionWebSocketDelegate
+
+    func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?) {
+        socketLock.lock()
+        isSocketOpen = true
+        if let update = jsonMessage(sessionUpdatePayload()) {
+            send(update)
+        }
+        let queued = pendingMessages
+        pendingMessages = []
+        queued.forEach(send)
+        socketLock.unlock()
+
+        if let start = connectStart {
+            DiagnosticLogger.shared.log("OpenAI: socket open \(Int(Date().timeIntervalSince(start) * 1000))ms after connect, flushed \(queued.count) queued messages")
+        }
+    }
 
     func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
         Task { @MainActor in

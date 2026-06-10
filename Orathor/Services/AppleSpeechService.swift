@@ -45,9 +45,8 @@ final class AppleSpeechService: TranscriptionService {
         }
     }
 
-    func startTranscribing(audioFormat: AVAudioFormat) async throws {
-        // Guard against re-entrancy: the view model spawns a start task on every
-        // audio buffer until `isTranscribing` flips true, and model download is async.
+    func startTranscribing() async throws {
+        // Guard against re-entrancy while the async model download is in flight.
         guard !isTranscribing, !isStarting, !startFailed else { return }
         isStarting = true
         defer { isStarting = false }

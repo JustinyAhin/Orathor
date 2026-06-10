@@ -225,22 +225,21 @@ final class TranscriptionViewModel {
             targetApp = TextInsertionService.getFrontmostApp()
             diag.log("START recording — engine: \(engine), mode: \(recordingMode), targetApp: \(targetApp?.name ?? "nil") (\(targetApp?.bundleIdentifier ?? "nil")), shouldAutoInsert: \(shouldAutoInsert), accessibility: \(TextInsertionService.hasAccessibilityPermission)")
 
-            audioService.onAudioBuffer = { [weak self] buffer, format in
+            audioService.onAudioBuffer = { [weak self] buffer, _ in
+                self?.speechService.processAudioBuffer(buffer)
+            }
+
+            // Connect on key-down so the WS handshake overlaps audio engine
+            // spin-up; audio arriving mid-handshake queues inside the service.
+            Task { [weak self] in
                 guard let self else { return }
-                if !self.speechService.isTranscribing {
-                    Task {
-                        do {
-                            try await self.speechService.startTranscribing(audioFormat: format)
-                        } catch {
-                            Task { @MainActor in
-                                self.errorMessage = error.localizedDescription
-                                await self.stopRecording()
-                                self.scheduleErrorOverlayDismiss()
-                            }
-                        }
-                    }
+                do {
+                    try await self.speechService.startTranscribing()
+                } catch {
+                    self.errorMessage = error.localizedDescription
+                    await self.stopRecording()
+                    self.scheduleErrorOverlayDismiss()
                 }
-                self.speechService.processAudioBuffer(buffer)
             }
 
             currentRecordingURL = historyService.newRecordingURL()
@@ -253,10 +252,12 @@ final class TranscriptionViewModel {
 
     private func stopRecording() async {
         diag.log("STOP recording — wasCancelled: \(wasCancelled)")
+        let stopStart = Date()
         audioService.stopRecording()
         // Let in-flight audio buffers reach cloud providers before finalizing
         try? await Task.sleep(for: .milliseconds(300))
         await speechService.stopTranscribing()
+        diag.log("Stop: engine finalized \(Int(Date().timeIntervalSince(stopStart) * 1000))ms after key-up")
         isRecording = false
 
         let cancelled = wasCancelled
@@ -297,7 +298,7 @@ final class TranscriptionViewModel {
             case .insertAtCursor:
                 if shouldAutoInsert {
                     if TextInsertionService.hasAccessibilityPermission {
-                        diag.log("Auto-inserting text at cursor")
+                        diag.log("Auto-inserting text at cursor \(Int(Date().timeIntervalSince(stopStart) * 1000))ms after key-up")
                         TextInsertionService.insertText(text)
                     } else {
                         diag.log("No accessibility permission — copying to clipboard as fallback")
