@@ -56,17 +56,34 @@ struct RecordingOverlayView: View {
     var viewModel: TranscriptionViewModel
     @State private var isPulsing = false
 
+    private enum Mode: Equatable {
+        case accessibilityPrompt
+        case error(String)
+        case preparing
+        case formatting
+        case recording
+    }
+
+    private var mode: Mode {
+        if viewModel.needsAccessibilityPrompt { return .accessibilityPrompt }
+        if let error = viewModel.errorMessage, !viewModel.isRecording { return .error(error) }
+        if viewModel.isPreparingModel { return .preparing }
+        if viewModel.isFormatting { return .formatting }
+        return .recording
+    }
+
     var body: some View {
         Group {
-            if viewModel.needsAccessibilityPrompt {
+            switch mode {
+            case .accessibilityPrompt:
                 accessibilityPromptContent
-            } else if let error = viewModel.errorMessage, !viewModel.isRecording {
-                errorContent(error)
-            } else if viewModel.isPreparingModel {
+            case .error(let message):
+                errorContent(message)
+            case .preparing:
                 preparingContent
-            } else if viewModel.isFormatting {
+            case .formatting:
                 formattingContent
-            } else {
+            case .recording:
                 recordingContent
             }
         }
@@ -81,6 +98,12 @@ struct RecordingOverlayView: View {
                 )
         }
         .fixedSize()
+        .onChange(of: mode) {
+            // Defer so the panel measures the newly committed content
+            Task { @MainActor in
+                RecordingOverlay.refreshLayout()
+            }
+        }
     }
 
     private var accessibilityPromptContent: some View {
@@ -168,14 +191,28 @@ struct RecordingOverlayView: View {
                     .frame(width: 50, height: 16)
             }
 
-            // Fixed two-line area so the panel never resizes while streaming
-            Text(viewModel.currentTranscription.isEmpty ? "Listening…" : viewModel.currentTranscription)
-                .font(OType.monoSmall)
-                .foregroundStyle(viewModel.currentTranscription.isEmpty ? Color.textTertiary : Color.textPrimary)
-                .lineLimit(2, reservesSpace: true)
-                .truncationMode(.head)
-                .frame(width: 340, alignment: .topLeading)
+            transcriptPreview
         }
+    }
+
+    // Fixed two-line area so the panel never resizes while streaming. The text
+    // is bottom-anchored and clipped from the top so the latest words stay
+    // visible — multiline head truncation is unreliable in SwiftUI
+    private var transcriptPreview: some View {
+        Text(verbatim: " \n ")
+            .font(OType.monoSmall)
+            .hidden()
+            .frame(width: 340, alignment: .topLeading)
+            .overlay(alignment: .bottomLeading) {
+                Text(viewModel.currentTranscription.isEmpty ? "Listening…" : viewModel.currentTranscription)
+                    .font(OType.monoSmall)
+                    .foregroundStyle(viewModel.currentTranscription.isEmpty ? Color.textTertiary : Color.textPrimary)
+                    .frame(width: 340, alignment: .leading)
+                    // Take the full wrapped height — the overlay otherwise
+                    // proposes the two-line height and Text tail-truncates
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .clipped()
     }
 }
 

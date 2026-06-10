@@ -180,8 +180,8 @@
 - Provenance captured on TranscriptEntry: rawText (original), smartFormatted (bool), formattingModel (label); history row shows a wand badge + "Copy original" action. Polisher logs outcome (OK/skipped-unavailable/failed) to diagnostics
 
 ### Step 20: Live Transcription Preview + Whisper Streaming
-- RecordingOverlay shows the transcript live while speaking: streaming text below the REC/waveform row (2 lines, head-truncated so latest words stay visible)
-- Panel resizes/repositions as text grows via `RecordingOverlay.refreshLayout()` (extracted from `show()`, triggered by `.onChange(of: currentTranscription)`)
+- RecordingOverlay shows the transcript live while speaking: streaming text below the REC/waveform row in a fixed two-line area (bottom-anchored, clipped from the top so the latest words stay visible — SwiftUI multiline head truncation is unreliable). Panel size is constant while streaming, so no per-delta relayout
+- Panel re-fits/repositions when the overlay switches modes (recording ↔ formatting/error/preparing/accessibility prompt) via `RecordingOverlay.refreshLayout()` triggered by `.onChange(of: mode)` — pill sizes differ a lot between modes
 - Works for all three engines via the shared `transcribedText` observable — Deepgram (interim results) and Apple Speech (volatile segments) already streamed
 - OpenAI `gpt-realtime-whisper` streams deltas natively as audio arrives — turn detection must stay off (`NSNull()`, the model rejects it with "Turn detection is not supported"); added `delay: "low"` for live-caption latency
 - Stop-time commit hitting `input_audio_buffer_commit_empty` (e.g. instant tap with no audio) is treated as a clean stop, not surfaced as an error

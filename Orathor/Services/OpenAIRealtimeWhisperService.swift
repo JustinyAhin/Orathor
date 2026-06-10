@@ -198,8 +198,8 @@ final class OpenAIRealtimeWhisperService: NSObject, TranscriptionService, URLSes
     }
 
     private func handleErrorEvent(_ event: OpenAIRealtimeEvent) {
-        // With server VAD, the flush-commit at stop fails harmlessly when VAD
-        // already committed all audio — finish the stop without surfacing it
+        // The flush-commit at stop fails harmlessly when no audio was ever
+        // appended (e.g. instant tap) — finish the stop without surfacing it
         if event.error?.code == "input_audio_buffer_commit_empty" {
             resolveStop()
             return
