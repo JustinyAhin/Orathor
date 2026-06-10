@@ -132,6 +132,18 @@
 - Updated design.md with Readout as primary reference
 - Dashboard charts (WPM trend, activity bars, engine donut) now have hover tooltips: rule mark + flat tooltip card on the line/bar charts; donut highlights the hovered slice, dims the rest, and swaps the center label
 
+### Step 18: Refinement Pass — Quiet, Blue-Led, Shared Components
+- Editorial Home opener: time-of-day greeting (NSFullUserName) + muted summary sentence with colored data words; streak folded into the sentence; replaces the stat-wall lead
+- Quiet stat cards: system-font numbers (24pt medium, no longer bold mono), centered with dot + label below; removed tinted icon tiles
+- Flat cards everywhere: removed drop shadows from cardStyle/statCardStyle (hairline border only)
+- Blue-led palette: amber demoted to streak/brand accents only; WPM trend, activity bars, and Top apps bars are monochrome blue; recording level meters (overlay + popover) recolored to recording red
+- Period selector (7d/14d/30d) hoisted out of the Activity card to a standalone control that scopes the trend charts; selection persisted via @AppStorage
+- Calm content section headers (ContentSectionHeader: small colored icon + sentence-case title) across Home, Settings, Transcripts, popover — replacing uppercase labels
+- Custom sidebar: comfortable rows, soft active pill, hover state, muted sentence-case group headers; collapse toggle removed; hidden title bar so the sidebar runs full-height under the traffic lights
+- Shared TranscriptRow across Home/Transcripts/popover: click-to-copy with green "Copied" feedback + subtle animation, pointer-cursor affordance, play/Finder/delete actions; replaced HomeTranscriptRow and TranscriptEntryRow
+- Shared SegmentedControl for the dashboard period picker and transcript filter pills (identical fill, font, animation)
+- kb/design.md rewritten to codify the refined direction: restraint, data-only color (blue-led), flat cards, editorial voice, component patterns
+
 ### Diagnostics
 - Diagnostic clipboard export trimmed to session header + last 200 log lines (prevents full 512KB dump)
 - Full log still accessible via "Reveal in Finder"
