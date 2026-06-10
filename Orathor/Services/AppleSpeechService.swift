@@ -25,6 +25,11 @@ final class AppleSpeechService: TranscriptionService {
     /// transiently on top of this for display, then folded in once finalized.
     private var finalizedText = ""
     private var isStarting = false
+    /// Set when a start fails for a non-transient reason (e.g. unsupported locale)
+    /// so the per-buffer start attempts don't re-run the whole path every buffer.
+    private var startFailed = false
+    /// Rate-limits audio-conversion failure logging to once per session.
+    private var didLogConversionFailure = false
 
     init(language: String = "multi") {
         // "multi" (auto) maps to the system locale; otherwise honour the setting.
@@ -43,7 +48,7 @@ final class AppleSpeechService: TranscriptionService {
     func startTranscribing(audioFormat: AVAudioFormat) async throws {
         // Guard against re-entrancy: the view model spawns a start task on every
         // audio buffer until `isTranscribing` flips true, and model download is async.
-        guard !isTranscribing, !isStarting else { return }
+        guard !isTranscribing, !isStarting, !startFailed else { return }
         isStarting = true
         defer { isStarting = false }
 
@@ -58,6 +63,7 @@ final class AppleSpeechService: TranscriptionService {
                 resolved = await SpeechTranscriber.supportedLocale(equivalentTo: Locale(identifier: "en-US"))
             }
             guard let resolved else {
+                startFailed = true
                 diag.log("Apple: SpeechTranscriber — no model for locale \(locale.identifier) (or en-US fallback)")
                 throw SpeechError.localeNotSupported(locale)
             }
@@ -73,6 +79,7 @@ final class AppleSpeechService: TranscriptionService {
                 resolved = await DictationTranscriber.supportedLocale(equivalentTo: Locale(identifier: "en-US"))
             }
             guard let resolved else {
+                startFailed = true
                 diag.log("Apple: DictationTranscriber fallback — no model for locale \(locale.identifier) (or en-US fallback)")
                 throw SpeechError.localeNotSupported(locale)
             }
@@ -119,7 +126,8 @@ final class AppleSpeechService: TranscriptionService {
                     }
                 }
             } catch {
-                // Stream ended with an error — keep whatever was finalized.
+                // Keep whatever was finalized, but record why the stream ended.
+                DiagnosticLogger.shared.log("Apple: results stream ended with error: \(error)")
             }
         }
     }
@@ -137,7 +145,9 @@ final class AppleSpeechService: TranscriptionService {
     func stopTranscribing() async {
         inputBuilder?.finish()
         try? await analyzer?.finalizeAndFinishThroughEndOfInput()
-        recognizerTask?.cancel()
+        // Finishing the analyzer ends the results stream; drain it so the final
+        // segment is captured before teardown rather than cancelled mid-flight.
+        await drainResults()
 
         analyzer = nil
         inputBuilder = nil
@@ -145,6 +155,20 @@ final class AppleSpeechService: TranscriptionService {
         analyzerFormat = nil
         recognizerTask = nil
         isTranscribing = false
+        startFailed = false
+        didLogConversionFailure = false
+    }
+
+    /// Awaits the results task draining naturally, with a watchdog that cancels it
+    /// if the stream never terminates (e.g. finalize threw).
+    private func drainResults() async {
+        guard let task = recognizerTask else { return }
+        let watchdog = Task {
+            try? await Task.sleep(for: .seconds(2))
+            task.cancel()
+        }
+        await task.value
+        watchdog.cancel()
     }
 
     // MARK: - Model assets
@@ -180,12 +204,12 @@ final class AppleSpeechService: TranscriptionService {
         if converter == nil || converter?.outputFormat != format {
             converter = AVAudioConverter(from: buffer.format, to: format)
         }
-        guard let converter else { return nil }
+        guard let converter else { return logConversionFailure("could not create converter") }
 
         let ratio = format.sampleRate / buffer.format.sampleRate
         let capacity = AVAudioFrameCount((Double(buffer.frameLength) * ratio).rounded(.up)) + 1
         guard let output = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: capacity) else {
-            return nil
+            return logConversionFailure("could not allocate output buffer")
         }
 
         var consumed = false
@@ -200,8 +224,20 @@ final class AppleSpeechService: TranscriptionService {
             return buffer
         }
 
-        guard status != .error, error == nil, output.frameLength > 0 else { return nil }
+        guard status != .error, error == nil, output.frameLength > 0 else {
+            return logConversionFailure("convert failed: \(error?.localizedDescription ?? "status \(status.rawValue)")")
+        }
         return output
+    }
+
+    /// Logs an audio-conversion failure once per session (it would otherwise repeat
+    /// for every buffer) and returns nil so the buffer is dropped.
+    private func logConversionFailure(_ reason: String) -> AVAudioPCMBuffer? {
+        if !didLogConversionFailure {
+            didLogConversionFailure = true
+            DiagnosticLogger.shared.log("Apple: dropping audio — \(reason)")
+        }
+        return nil
     }
 
     enum SpeechError: LocalizedError {

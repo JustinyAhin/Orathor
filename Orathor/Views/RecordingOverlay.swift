@@ -60,6 +60,8 @@ struct RecordingOverlayView: View {
                 errorContent(error)
             } else if viewModel.isPreparingModel {
                 preparingContent
+            } else if viewModel.isFormatting {
+                formattingContent
             } else {
                 recordingContent
             }
@@ -119,6 +121,17 @@ struct RecordingOverlayView: View {
                 .controlSize(.small)
                 .scaleEffect(0.7)
             Text("Preparing language…")
+                .font(OType.monoSmall)
+                .foregroundStyle(Color.textPrimary)
+        }
+    }
+
+    private var formattingContent: some View {
+        HStack(spacing: Spacing.sm) {
+            ProgressView()
+                .controlSize(.small)
+                .scaleEffect(0.7)
+            Text("Formatting…")
                 .font(OType.monoSmall)
                 .foregroundStyle(Color.textPrimary)
         }

@@ -10,6 +10,7 @@ final class TranscriptionViewModel {
     var hasAccessibility = false
     var needsAccessibilityPrompt = false
     var isPreparingModel = false
+    var isFormatting = false
 
     let settingsViewModel = SettingsViewModel()
     let historyService = TranscriptHistoryService()
@@ -281,7 +282,9 @@ final class TranscriptionViewModel {
         var originalText: String?
         if settingsViewModel.smartFormattingEnabled, !text.isEmpty {
             let raw = text
+            isFormatting = true
             text = await polisher.polish(text)
+            isFormatting = false
             didPolish = text != raw
             if didPolish { originalText = raw }
             diag.log("Smart formatting — applied: \(settingsViewModel.smartFormattingEnabled), changed: \(didPolish) (\(raw.count) → \(text.count) chars)")

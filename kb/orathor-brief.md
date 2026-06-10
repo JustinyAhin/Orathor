@@ -70,7 +70,7 @@ Orathor is a native macOS app that turns speech into text instantly, anywhere on
 - **Speech engine (cloud):** Deepgram Nova (default) — more cloud providers later
 - **Speech engine (local):** Apple Speech framework
 - **Distribution:** Direct download + Mac App Store
-- **Requirements:** macOS 14 Sonoma or later
+- **Requirements:** macOS 26 or later (on-device SpeechAnalyzer + Foundation Models)
 
 ## Business Model
 

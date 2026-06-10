@@ -60,6 +60,13 @@ actor TranscriptPolisher {
                 DiagnosticLogger.shared.log("Polish returned empty — keeping raw")
                 return raw
             }
+            // Cleanup should roughly preserve length. A wild deviation means the model
+            // answered/rewrote rather than cleaned (e.g. prompt-like dictation) — reject it.
+            let ratio = Double(cleaned.count) / Double(raw.count)
+            guard ratio >= 0.5, ratio <= 1.5 else {
+                DiagnosticLogger.shared.log("Polish rejected — length deviated (\(raw.count) → \(cleaned.count)), keeping raw")
+                return raw
+            }
             DiagnosticLogger.shared.log("Polish OK — \(raw.count) → \(cleaned.count) chars")
             return cleaned
         } catch {
