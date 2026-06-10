@@ -177,6 +177,13 @@
 - Smart formatting requires Apple Intelligence (Foundation Models). TranscriptPolisher.status maps availability → user-facing reason; Settings toggle is disabled with an amber caption when unavailable (e.g. appleIntelligenceNotEnabled) so the feature never fails silently
 - Provenance captured on TranscriptEntry: rawText (original), smartFormatted (bool), formattingModel (label); history row shows a wand badge + "Copy original" action. Polisher logs outcome (OK/skipped-unavailable/failed) to diagnostics
 
+### Step 20: Live Transcription Preview + Whisper Streaming
+- RecordingOverlay shows the transcript live while speaking: streaming text below the REC/waveform row (2 lines, head-truncated so latest words stay visible)
+- Panel resizes/repositions as text grows via `RecordingOverlay.refreshLayout()` (extracted from `show()`, triggered by `.onChange(of: currentTranscription)`)
+- Works for all three engines via the shared `transcribedText` observable — Deepgram (interim results) and Apple Speech (volatile segments) already streamed
+- OpenAI `gpt-realtime-whisper` streams deltas natively as audio arrives — turn detection must stay off (`NSNull()`, the model rejects it with "Turn detection is not supported"); added `delay: "low"` for live-caption latency
+- Stop-time commit hitting `input_audio_buffer_commit_empty` (e.g. instant tap with no audio) is treated as a clean stop, not surfaced as an error
+
 ## Remaining
 
 ### Core Features

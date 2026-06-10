@@ -194,6 +194,12 @@ final class OpenAIRealtimeWhisperService: NSObject, TranscriptionService, URLSes
     }
 
     private func handleErrorEvent(_ event: OpenAIRealtimeEvent) {
+        // With server VAD, the flush-commit at stop fails harmlessly when VAD
+        // already committed all audio — finish the stop without surfacing it
+        if event.error?.code == "input_audio_buffer_commit_empty" {
+            resolveStop()
+            return
+        }
         let message = event.error?.message ?? "OpenAI transcription failed."
         onError?(message)
         resolveStop()
@@ -211,7 +217,9 @@ final class OpenAIRealtimeWhisperService: NSObject, TranscriptionService, URLSes
 
     private func sendSessionUpdate() {
         var transcription: [String: Any] = [
-            "model": "gpt-realtime-whisper"
+            "model": "gpt-realtime-whisper",
+            // Latency/accuracy tradeoff — "low" targets live captions
+            "delay": "low"
         ]
 
         if language != "multi" {
@@ -229,6 +237,8 @@ final class OpenAIRealtimeWhisperService: NSObject, TranscriptionService, URLSes
                             "rate": 24000
                         ],
                         "transcription": transcription,
+                        // gpt-realtime-whisper streams deltas natively and rejects
+                        // turn detection — leave it off and commit manually at stop
                         "turn_detection": NSNull()
                     ]
                 ]
@@ -335,4 +345,5 @@ private struct OpenAIRealtimeEvent: Decodable {
 
 private struct OpenAIRealtimeError: Decodable {
     let message: String?
+    let code: String?
 }

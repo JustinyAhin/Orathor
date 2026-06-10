@@ -25,18 +25,22 @@ enum RecordingOverlay {
             panel = p
         }
 
-        if let hostingView = panel?.contentView as? NSHostingView<RecordingOverlayView> {
-            let size = hostingView.fittingSize
-            hostingView.frame.size = size
-            panel?.setContentSize(size)
-        }
-
-        positionAtBottomCenter()
+        refreshLayout()
         panel?.orderFrontRegardless()
     }
 
     static func hide() {
         panel?.orderOut(nil)
+    }
+
+    static func refreshLayout() {
+        guard let panel else { return }
+        if let hostingView = panel.contentView as? NSHostingView<RecordingOverlayView> {
+            let size = hostingView.fittingSize
+            hostingView.frame.size = size
+            panel.setContentSize(size)
+        }
+        positionAtBottomCenter()
     }
 
     private static func positionAtBottomCenter() {
@@ -138,29 +142,39 @@ struct RecordingOverlayView: View {
     }
 
     private var recordingContent: some View {
-        HStack(spacing: Spacing.sm) {
-            Circle()
-                .fill(Color.recording)
-                .frame(width: 6, height: 6)
-                .opacity(isPulsing ? 0.3 : 1.0)
-                .animation(
-                    .easeInOut(duration: 0.8).repeatForever(autoreverses: true),
-                    value: isPulsing
-                )
-                .onAppear { isPulsing = true }
+        VStack(alignment: .leading, spacing: Spacing.xs) {
+            HStack(spacing: Spacing.sm) {
+                Circle()
+                    .fill(Color.recording)
+                    .frame(width: 6, height: 6)
+                    .opacity(isPulsing ? 0.3 : 1.0)
+                    .animation(
+                        .easeInOut(duration: 0.8).repeatForever(autoreverses: true),
+                        value: isPulsing
+                    )
+                    .onAppear { isPulsing = true }
 
-            Text("REC")
-                .font(OType.monoSmall)
-                .foregroundStyle(Color.textPrimary)
+                Text("REC")
+                    .font(OType.monoSmall)
+                    .foregroundStyle(Color.textPrimary)
 
-            if viewModel.recordingMode == .clipboard {
-                Text("CLIP")
-                    .font(OType.monoMicro)
-                    .foregroundStyle(Color.textTertiary)
+                if viewModel.recordingMode == .clipboard {
+                    Text("CLIP")
+                        .font(OType.monoMicro)
+                        .foregroundStyle(Color.textTertiary)
+                }
+
+                OverlayLevelBars(level: viewModel.currentAudioLevel)
+                    .frame(width: 50, height: 16)
             }
 
-            OverlayLevelBars(level: viewModel.currentAudioLevel)
-                .frame(width: 50, height: 16)
+            // Fixed two-line area so the panel never resizes while streaming
+            Text(viewModel.currentTranscription.isEmpty ? "Listening…" : viewModel.currentTranscription)
+                .font(OType.monoSmall)
+                .foregroundStyle(viewModel.currentTranscription.isEmpty ? Color.textTertiary : Color.textPrimary)
+                .lineLimit(2, reservesSpace: true)
+                .truncationMode(.head)
+                .frame(width: 340, alignment: .topLeading)
         }
     }
 }
