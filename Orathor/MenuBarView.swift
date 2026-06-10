@@ -69,8 +69,7 @@ struct MenuBarView: View {
                     .padding(.bottom, Spacing.xs)
             } else {
                 HStack {
-                    Text("Recents")
-                        .sectionHeaderStyle()
+                    ContentSectionHeader(title: "Recents", symbol: "clock")
                     Spacer()
                 }
                 .padding(.horizontal, Spacing.lg)
@@ -163,11 +162,12 @@ struct MenuBarView: View {
                 ScrollView {
                     LazyVStack(spacing: Spacing.xxxs) {
                         ForEach(filteredEntries) { entry in
-                            TranscriptEntryRow(
+                            TranscriptRow(
                                 entry: entry,
                                 searchText: searchText,
                                 historyService: viewModel.historyService,
-                                playbackService: playbackService
+                                playbackService: playbackService,
+                                compact: true
                             )
                         }
                     }
@@ -232,167 +232,6 @@ struct MenuBarView: View {
 
     private var currentLanguageLabel: String {
         DeepgramLanguage.allOptions.first { $0.code == viewModel.settingsViewModel.transcriptionLanguage }?.label ?? "Auto-detect"
-    }
-}
-
-struct TranscriptEntryRow: View {
-    let entry: TranscriptEntry
-    let searchText: String
-    let historyService: TranscriptHistoryService
-    let playbackService: AudioPlaybackService
-
-    @State private var isHovered = false
-    @State private var showCopied = false
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 0) {
-            RoundedRectangle(cornerRadius: 1)
-                .fill(Color.brand)
-                .frame(width: 2)
-                .padding(.vertical, Spacing.xs)
-
-            VStack(alignment: .leading, spacing: Spacing.xxs) {
-                HStack(spacing: Spacing.xs) {
-                    appIconAndName
-                    Spacer()
-                    metadata
-                }
-
-                Text(highlightedText)
-                    .font(OType.callout)
-                    .foregroundStyle(Color.textPrimary)
-                    .lineLimit(2)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .textSelection(.enabled)
-
-                if isHovered {
-                    actionBar
-                        .transition(.opacity)
-                }
-            }
-            .padding(.leading, Spacing.sm)
-        }
-        .padding(.horizontal, Spacing.sm)
-        .padding(.vertical, Spacing.xs)
-        .background(
-            RoundedRectangle(cornerRadius: Radius.md)
-                .fill(isHovered ? Color.surfaceSecondary : .clear)
-        )
-        .contentShape(Rectangle())
-        .onHover { isHovered = $0 }
-        .animation(.easeInOut(duration: 0.15), value: isHovered)
-    }
-
-    private var highlightedText: AttributedString {
-        TextHighlighter.highlight(entry.text, query: searchText)
-    }
-
-    @ViewBuilder
-    private var appIconAndName: some View {
-        HStack(spacing: Spacing.xs) {
-            if let bundleID = entry.targetAppBundleID,
-               let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
-                Image(nsImage: NSWorkspace.shared.icon(forFile: appURL.path()))
-                    .resizable()
-                    .frame(width: 14, height: 14)
-            }
-            if let appName = entry.targetAppName {
-                Text(appName)
-                    .font(OType.captionMedium)
-                    .foregroundStyle(Color.textSecondary)
-            }
-        }
-    }
-
-    private var metadata: some View {
-        HStack(spacing: Spacing.xxs) {
-            let seconds = Int(entry.durationSeconds)
-            Text("\(seconds)s")
-            Text("\u{2022}")
-            Text("\(entry.wordCount) words")
-            Text("\u{2022}")
-            Text(entry.timestamp, style: .relative)
-        }
-        .font(OType.monoMicro)
-        .foregroundStyle(Color.textTertiary)
-    }
-
-    private var actionBar: some View {
-        HStack(spacing: Spacing.sm) {
-            Spacer()
-
-            rowButton(showCopied ? "checkmark" : "doc.on.doc", help: "Copy text") {
-                copyText()
-            }
-
-            Menu {
-                if historyService.audioFileURL(for: entry) != nil {
-                    Button {
-                        togglePlayback()
-                    } label: {
-                        Label(
-                            playbackService.isPlaying ? "Stop" : "Play",
-                            systemImage: playbackService.isPlaying ? "stop.fill" : "play.fill"
-                        )
-                    }
-
-                    Button {
-                        showInFinder()
-                    } label: {
-                        Label("Show in Finder", systemImage: "folder")
-                    }
-                }
-
-                Divider()
-
-                Button(role: .destructive) {
-                    historyService.delete(entry)
-                } label: {
-                    Label("Delete", systemImage: "trash")
-                }
-            } label: {
-                Image(systemName: "ellipsis.circle")
-                    .font(.system(size: 12))
-                    .foregroundStyle(Color.textSecondary)
-            }
-            .buttonStyle(.plain)
-            .menuIndicator(.hidden)
-        }
-    }
-
-    private func rowButton(_ icon: String, help: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: icon)
-                .font(.system(size: 11))
-        }
-        .buttonStyle(IconButtonStyle(size: 22))
-        .help(help)
-    }
-
-    private func copyText() {
-        NSPasteboard.general.clearContents()
-        NSPasteboard.general.setString(entry.text, forType: .string)
-        withAnimation {
-            showCopied = true
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-            withAnimation {
-                showCopied = false
-            }
-        }
-    }
-
-    private func togglePlayback() {
-        if playbackService.isPlaying {
-            playbackService.stop()
-        } else if let url = historyService.audioFileURL(for: entry) {
-            playbackService.play(url: url)
-        }
-    }
-
-    private func showInFinder() {
-        guard let url = historyService.audioFileURL(for: entry) else { return }
-        NSWorkspace.shared.selectFile(url.path, inFileViewerRootedAtPath: "")
     }
 }
 

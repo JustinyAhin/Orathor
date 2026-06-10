@@ -84,7 +84,7 @@ struct TranscriptsView: View {
                             Section {
                                 LazyVStack(spacing: Spacing.xxxs) {
                                     ForEach(group.entries) { entry in
-                                        TranscriptEntryRow(
+                                        TranscriptRow(
                                             entry: entry,
                                             searchText: searchText,
                                             historyService: historyService,
@@ -92,10 +92,13 @@ struct TranscriptsView: View {
                                         )
                                     }
                                 }
+                                .padding(Spacing.xs)
+                                .statCardStyle(padding: 0)
                             } header: {
                                 Text(group.date)
-                                    .sectionHeaderStyle()
-                                    .padding(.vertical, Spacing.xxs)
+                                    .font(OType.captionMedium)
+                                    .foregroundStyle(Color.textSecondary)
+                                    .padding(.vertical, Spacing.xs)
                                     .padding(.horizontal, Spacing.xxs)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                                     .background(Color.surfacePrimary)

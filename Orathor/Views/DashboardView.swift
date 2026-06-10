@@ -4,6 +4,7 @@ struct DashboardView: View {
     let historyService: TranscriptHistoryService
 
     @AppStorage("dashboardActivityPeriod") private var period: ActivityPeriod = .week
+    @State private var playbackService = AudioPlaybackService()
 
     private var entries: [TranscriptEntry] { historyService.entries }
 
@@ -297,14 +298,16 @@ struct DashboardView: View {
         VStack(alignment: .leading, spacing: Spacing.md) {
             ContentSectionHeader(title: "Recent", symbol: "clock")
 
-            VStack(spacing: 0) {
-                ForEach(Array(entries.prefix(8).enumerated()), id: \.element.id) { index, entry in
-                    if index > 0 {
-                        SubtleDivider(leadingInset: Spacing.lg)
-                    }
-                    HomeTranscriptRow(entry: entry)
+            VStack(spacing: Spacing.xxxs) {
+                ForEach(entries.prefix(5)) { entry in
+                    TranscriptRow(
+                        entry: entry,
+                        historyService: historyService,
+                        playbackService: playbackService
+                    )
                 }
             }
+            .padding(Spacing.xs)
             .statCardStyle(padding: 0)
         }
     }
@@ -397,49 +400,6 @@ private struct TopAppRow: View {
                 .font(.system(size: 14))
                 .foregroundStyle(Color.textTertiary)
                 .frame(width: 20, height: 20)
-        }
-    }
-}
-
-private struct HomeTranscriptRow: View {
-    let entry: TranscriptEntry
-
-    var body: some View {
-        HStack(spacing: Spacing.md) {
-            appIcon
-
-            Text(entry.text)
-                .font(OType.body)
-                .foregroundStyle(Color.textPrimary)
-                .lineLimit(1)
-                .truncationMode(.tail)
-
-            Spacer(minLength: Spacing.md)
-
-            Text("\(entry.wordCount)w")
-                .font(OType.monoMicro)
-                .foregroundStyle(Color.textTertiary)
-            Text(entry.timestamp, format: .dateTime.hour().minute())
-                .font(OType.monoSmall)
-                .foregroundStyle(Color.textTertiary)
-                .frame(width: 44, alignment: .trailing)
-        }
-        .padding(.horizontal, Spacing.lg)
-        .padding(.vertical, Spacing.sm)
-    }
-
-    @ViewBuilder
-    private var appIcon: some View {
-        if let bundleID = entry.targetAppBundleID,
-           let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
-            Image(nsImage: NSWorkspace.shared.icon(forFile: appURL.path()))
-                .resizable()
-                .frame(width: 16, height: 16)
-        } else {
-            Image(systemName: "app")
-                .font(.system(size: 12))
-                .foregroundStyle(Color.textTertiary)
-                .frame(width: 16, height: 16)
         }
     }
 }

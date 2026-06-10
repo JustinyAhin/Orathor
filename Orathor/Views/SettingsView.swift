@@ -38,8 +38,7 @@ struct SettingsView: View {
 
     private var engineSection: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            Text("Speech Engine")
-                .sectionHeaderStyle()
+            ContentSectionHeader(title: "Speech engine", symbol: "waveform")
 
             VStack(alignment: .leading, spacing: 0) {
                 engineRow(.apple)
@@ -160,8 +159,7 @@ struct SettingsView: View {
 
     private var soundsSection: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            Text("Sounds")
-                .sectionHeaderStyle()
+            ContentSectionHeader(title: "Sounds", symbol: "speaker.wave.2.fill")
 
             VStack(spacing: 0) {
                 soundRow(label: "Start recording", selection: $viewModel.startSound)
@@ -226,8 +224,7 @@ struct SettingsView: View {
 
     private var appearanceSection: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            Text("Appearance")
-                .sectionHeaderStyle()
+            ContentSectionHeader(title: "Appearance", symbol: "paintbrush.fill")
 
             VStack(spacing: 0) {
                 HStack {
@@ -294,8 +291,7 @@ struct SettingsView: View {
 
     private var updatesSection: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            Text("Updates")
-                .sectionHeaderStyle()
+            ContentSectionHeader(title: "Updates", symbol: "arrow.triangle.2.circlepath")
 
             VStack(spacing: 0) {
                 HStack {
@@ -341,8 +337,7 @@ struct SettingsView: View {
 
     private var diagnosticsSection: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            Text("Diagnostics")
-                .sectionHeaderStyle()
+            ContentSectionHeader(title: "Diagnostics", symbol: "stethoscope")
 
             VStack(spacing: 0) {
                 Button {
@@ -403,8 +398,7 @@ struct SettingsView: View {
 
     private var hotkeySection: some View {
         VStack(alignment: .leading, spacing: Spacing.sm) {
-            Text("Hotkeys")
-                .sectionHeaderStyle()
+            ContentSectionHeader(title: "Hotkeys", symbol: "keyboard")
 
             VStack(spacing: 0) {
                 HotkeyField(label: "Insert at cursor", hotkey: $viewModel.insertHotkey)
