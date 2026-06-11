@@ -1,9 +1,13 @@
 # Release Flow
 
+Official binaries are published as **GitHub Releases on the main repo** (`JustinyAhin/Orathor`), with the Sparkle appcast committed at the repo root. The old `Orathor-releases` repo is only a legacy feed mirror for installs older than 0.0.11.
+
 ## Prerequisites
 
 - Sparkle EdDSA private key in your Keychain (generated once via `generate_keys`)
-- `Orathor-releases` repo cloned at `../Orathor-releases`
+- `gh` CLI authenticated with push access to the repo
+- Access to the private `OrathorLicensing` repo (the script swaps it in over the stub)
+- Working tree clean enough to commit `appcast.xml` (the script commits and pushes it)
 
 ## Steps
 
@@ -17,49 +21,33 @@ In `Orathor.xcodeproj/project.pbxproj`, update both Debug and Release configs:
 
 Sparkle uses `CURRENT_PROJECT_VERSION` to detect updates. Always increment it.
 
-### 2. Build and package
+Commit the bump before releasing — the script tags HEAD via the GitHub release.
+
+### 2. Release
 
 ```bash
 ./scripts/package.sh
 ```
 
-Produces `dist/Orathor-{version}-{build}.zip` and a signed `dist/appcast.xml`.
+The script does everything:
 
-The script runs Sparkle's `generate_appcast` with `--maximum-versions 1`, so the
-appcast only contains the latest version (plus its deltas from recent builds).
-Download URLs in the appcast point to the `releases/` folder.
+1. Swaps the closed `OrathorLicensing` module over the committed stub (restored on exit, even on failure).
+2. Builds Release, asserts the licensing code is actually in the binary.
+3. Zips to `dist/Orathor-{version}-{build}.zip` (ditto).
+4. Generates a signed `appcast.xml` (latest version only, no deltas) with download URLs pointing at `github.com/JustinyAhin/Orathor/releases/download/v{version}/`.
+5. Creates GitHub release `v{version}` with the zip as asset (fails if the tag already exists — bump the version or delete the release to retry).
+6. Copies the appcast to the repo root, commits, and pushes it (that's what `SUFeedURL` points at).
+7. If `../Orathor-releases` exists, mirrors the appcast there for pre-0.0.11 installs (their `SUFeedURL` still points at the old repo; the mirrored appcast redirects them to the new download URLs). Delete that clone and archive the repo once everyone has updated.
 
-### 4. Publish to Orathor-releases
+### 3. Share
 
-```bash
-mkdir -p ../Orathor-releases/releases
-cp dist/appcast.xml ../Orathor-releases/
-cp dist/Orathor-*.zip ../Orathor-releases/releases/
-cd ../Orathor-releases
-git add -A
-git commit -m "Release {version} (build {build})"
-git push
+Download link:
+```
+https://github.com/JustinyAhin/Orathor/releases/latest
 ```
 
-### 5. Share
-
-Download link for friends:
-```
-https://raw.githubusercontent.com/JustinyAhin/Orathor-releases/main/releases/Orathor-{version}-{build}.zip
-```
-
-First-time install: tell them to right-click → Open to bypass Gatekeeper.
+First-time install: right-click → Open to bypass Gatekeeper (until builds are notarized).
 After that, Sparkle handles updates automatically.
-
-### 6. Tag the release
-
-Create an empty commit to mark the version boundary in git history:
-
-```bash
-git commit --allow-empty -m "v{version}"
-```
-
-This makes it easy to see what changed between releases with `git log v{prev}..v{current}`.
 
 ## Versioning
 
@@ -68,9 +56,12 @@ This makes it easy to see what changed between releases with `git log v{prev}..v
 | Version | `MARKETING_VERSION` | `0.0.1` | New features, meaningful changes |
 | Build | `CURRENT_PROJECT_VERSION` | `1` | Every release, always increment |
 
+`git log v{prev}..v{current}` shows what changed between releases (tags come from the GitHub releases).
+
 ## Key locations
 
 - EdDSA private key: your login Keychain
 - EdDSA public key: `Info.plist` (`SUPublicEDKey`)
-- Appcast URL: `Info.plist` (`SUFeedURL`)
-- Release repo: https://github.com/JustinyAhin/Orathor-releases
+- Appcast: `appcast.xml` at repo root, served via `raw.githubusercontent.com/JustinyAhin/Orathor/main/appcast.xml` (`SUFeedURL`)
+- Binaries: GitHub Releases on `JustinyAhin/Orathor`
+- Legacy feed mirror (pre-0.0.11 installs): https://github.com/JustinyAhin/Orathor-releases

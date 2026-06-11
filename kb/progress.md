@@ -202,6 +202,11 @@
 - `PermissionRow` component shared with the new Settings "Permissions" card (live status + grant/Open Settings actions + "Show welcome guide" re-open row)
 - `checkPermissions()` no longer fires the Speech Recognition system dialog on popover open — non-prompting reads only; `startRecording()` keeps the on-demand request as fallback
 
+### Step 25: Releases Moved to Main Repo
+- Binaries now published as GitHub Releases on `JustinyAhin/Orathor` (tag `v{version}`, zip as asset via `gh release create`); appcast.xml committed at repo root, `SUFeedURL` → raw main-branch URL
+- `package.sh` fully automates: build → zip → appcast → GitHub release → appcast commit+push; mirrors the appcast to `../Orathor-releases` so pre-0.0.11 installs (old feed URL) still get updates — archive that repo once everyone's past 0.0.11
+- Refuses to re-release an existing tag
+
 ### Step 24: License-Key Gating (VoiceInk model)
 - `Packages/OrathorLicensing` local SPM package (stub): `LicenseManager` (@MainActor @Observable), `LicenseState`/`LicenseError` — always licensed, `isGated = false`; the public API is the contract with the closed implementation
 - Closed implementation in private repo `JustinyAhin/OrathorLicensing`: 7-day trial (Keychain `license.trialStart`, survives reinstall; clock-rollback guard via `license.maxSeenDate`), Polar.sh customer-portal license-key client (activate/validate/deactivate, public endpoints, sandbox in DEBUG), 3-day background re-validation with 14-day offline grace

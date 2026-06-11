@@ -78,6 +78,10 @@ Orathor is licensed under the [GNU General Public License v3.0](LICENSE).
 
 You are free to use, modify, and redistribute the source under the terms of the GPL v3. Derivative works must also be released under the GPL v3. The official prebuilt binary is distributed separately under its own terms and includes a closed licensing component; builds from this repo are always fully unlocked.
 
+### Trademark
+
+"Orathor" — the name, logo, and app icon — is a trademark of Justin Ahinon and is **not** covered by the GPL. You may fork, modify, and redistribute the code under the GPL v3, but distributed forks must use a different name and icon, must not present themselves as Orathor or as officially associated with it, and must not use the name in a way that suggests endorsement. Building the app from source unmodified for personal use is of course fine.
+
 ## Contributing
 
 Contributions are welcome. All contributors must sign the [Contributor License Agreement](CLA.md) before their first pull request can be merged — a bot will comment on your PR with instructions.

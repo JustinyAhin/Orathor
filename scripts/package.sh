@@ -69,11 +69,36 @@ if [ -z "$SPARKLE_BIN" ]; then
     exit 1
 fi
 echo "Generating appcast..."
-"$SPARKLE_BIN" --maximum-versions 1 --maximum-deltas 0 --download-url-prefix "https://raw.githubusercontent.com/JustinyAhin/Orathor-releases/main/releases/" "$OUT_DIR"
+"$SPARKLE_BIN" --maximum-versions 1 --maximum-deltas 0 --download-url-prefix "https://github.com/JustinyAhin/Orathor/releases/download/v${VERSION}/" "$OUT_DIR"
+
+# Publish: GitHub release with the zip as asset, then the appcast committed
+# to the repo root (SUFeedURL points at its raw URL on main).
+TAG="v${VERSION}"
+if gh release view "$TAG" >/dev/null 2>&1; then
+    echo "FATAL: release $TAG already exists. Bump the version, or 'gh release delete $TAG' to re-release."
+    exit 1
+fi
+echo "Creating GitHub release $TAG..."
+gh release create "$TAG" "$ZIP_PATH" --title "$TAG" --generate-notes
+
+cp "$OUT_DIR/appcast.xml" ./appcast.xml
+git add appcast.xml
+git commit -m "[infra] release ${VERSION} (build ${BUILD})"
+git push
+
+# Legacy feed mirror: installs older than 0.0.11 still poll the Orathor-releases
+# repo. The mirrored appcast points them at the new download URLs. Drop this
+# (and the old repo) once everyone has updated past 0.0.11.
+LEGACY_REPO="../Orathor-releases"
+if [ -d "$LEGACY_REPO" ]; then
+    cp "$OUT_DIR/appcast.xml" "$LEGACY_REPO/appcast.xml"
+    git -C "$LEGACY_REPO" commit -qam "appcast for ${VERSION}" && git -C "$LEGACY_REPO" push -q
+    echo "Legacy appcast mirrored to Orathor-releases."
+fi
 
 echo ""
-echo "Done! Ready to share:"
-echo "  $ZIP_PATH"
-echo "  $(du -h "$ZIP_PATH" | cut -f1) compressed"
+echo "Done! Released:"
+echo "  https://github.com/JustinyAhin/Orathor/releases/tag/$TAG"
+echo "  appcast.xml committed and pushed"
 echo ""
 echo "Tell your friends: right-click > Open the first time."
