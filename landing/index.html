@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orathor | Voice dictation for macOS that just works</title>
+<meta name="description" content="Orathor is a free, open-source voice dictation app for macOS. Press a shortcut, speak, and your words appear wherever your cursor is. Processing happens on your Mac.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Orathor | Voice dictation for macOS that just works">
+<meta property="og:description" content="Free, open-source voice dictation for macOS. Press a shortcut, speak, and your words appear wherever your cursor is.">
+<meta property="og:image" content="https://ORATHOR-DOMAIN-HERE/og.png">
+<meta property="og:image:width" content="2400">
+<meta property="og:image:height" content="1260">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Orathor | Voice dictation for macOS that just works">
+<meta name="twitter:description" content="Free, open-source voice dictation for macOS. Press a shortcut, speak, and your words appear wherever your cursor is.">
+<meta name="twitter:image" content="https://ORATHOR-DOMAIN-HERE/og.png">
+<link rel="icon" type="image/png" href="favicon.png">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Orathor",
+  "description": "Free, open-source voice dictation for macOS. Press a shortcut, speak, and your words appear wherever your cursor is. Processing happens on your Mac.",
+  "url": "https://ORATHOR-DOMAIN-HERE/",
+  "image": "https://ORATHOR-DOMAIN-HERE/og.png",
+  "applicationCategory": "UtilitiesApplication",
+  "operatingSystem": "macOS 26.0 or later",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "isAccessibleForFree": true,
+  "downloadUrl": "https://github.com/JustinyAhin/Orathor/releases/latest",
+  "license": "https://github.com/JustinyAhin/Orathor/blob/main/LICENSE",
+  "author": {
+    "@type": "Person",
+    "name": "Justin Ahinon",
+    "url": "https://github.com/JustinyAhin"
+  },
+  "sameAs": ["https://github.com/JustinyAhin/Orathor"]
+}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<script>document.documentElement.classList.add("js");</script>
+<style>
+  :root {
+    --bg:            oklch(0.16 0.004 260);
+    --bg-raised:     oklch(0.185 0.005 260);
+    --bg-elevated:   oklch(0.225 0.006 260);
+    --border-subtle: oklch(0.27 0.006 260);
+    --border:        oklch(0.34 0.008 260);
+    --text:          oklch(0.94 0.004 80);
+    --text-muted:    oklch(0.68 0.008 260);
+    --text-faint:    oklch(0.52 0.01 260);
+    --blue:          oklch(0.66 0.16 255);
+    --blue-dim:      oklch(0.66 0.16 255 / 0.14);
+    --green:         oklch(0.74 0.17 152);
+    --amber:         oklch(0.78 0.14 75);
+    --red:           oklch(0.66 0.2 25);
+    --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Instrument Sans", -apple-system, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  ::selection { background: var(--blue-dim); }
+
+  .serif { font-family: "Instrument Serif", Georgia, serif; font-style: italic; font-weight: 400; letter-spacing: 0.01em; }
+
+  .wrap { max-width: 1040px; margin-inline: auto; padding-inline: clamp(20px, 5vw, 48px); }
+
+  a { color: inherit; text-decoration: none; }
+  p a, .footnote a { color: var(--text-muted); border-bottom: 1px solid var(--border); transition: color 0.2s, border-color 0.2s; }
+  p a:hover, .footnote a:hover { color: var(--text); border-color: var(--text-muted); }
+
+  /* ─── Nav ─── */
+  nav {
+    position: fixed; inset: 0 0 auto 0; z-index: 50;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.3s, background 0.3s;
+  }
+  nav.scrolled {
+    background: oklch(0.16 0.004 260 / 0.82);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-color: var(--border-subtle);
+  }
+  .nav-inner {
+    display: flex; align-items: center; justify-content: space-between;
+    height: 60px;
+  }
+  .logo { display: flex; align-items: center; gap: 9px; font-weight: 600; font-size: 15px; letter-spacing: -0.01em; }
+  .logo-mark { width: 24px; height: 24px; border-radius: 6px; display: block; }
+  .nav-links { display: flex; align-items: center; gap: 26px; font-size: 14px; color: var(--text-muted); }
+  .nav-links a:not(.btn) { transition: color 0.2s; }
+  .nav-links a:not(.btn):hover { color: var(--text); }
+  @media (max-width: 640px) { .nav-links a.hide-sm { display: none; } }
+
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 14px; font-weight: 500;
+    padding: 8px 16px; border-radius: 8px;
+    transition: background 0.2s, border-color 0.2s, transform 0.15s var(--ease-out);
+    cursor: pointer; border: 1px solid transparent;
+  }
+  .btn:active { transform: scale(0.98); }
+  .btn-primary { background: var(--text); color: var(--bg); }
+  .btn-primary:hover { background: oklch(0.99 0.002 80); }
+  .btn-ghost { border-color: var(--border); color: var(--text); }
+  .btn-ghost:hover { border-color: var(--text-faint); background: var(--bg-raised); }
+  .btn-lg { padding: 12px 22px; font-size: 15px; border-radius: 10px; }
+
+  /* ─── Hero ─── */
+  header {
+    padding-top: clamp(120px, 18vh, 180px);
+    padding-bottom: clamp(56px, 8vh, 96px);
+  }
+  .hero-eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--text-muted);
+    border: 1px solid var(--border-subtle); border-radius: 99px;
+    padding: 5px 14px; margin-bottom: 28px;
+  }
+  .hero-eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+  h1 {
+    font-size: clamp(42px, 7vw, 76px);
+    font-weight: 500;
+    line-height: 1.04;
+    letter-spacing: -0.035em;
+    max-width: 14ch;
+  }
+  h1 .serif { color: var(--amber); letter-spacing: 0; }
+  .hero-sub {
+    margin-top: 26px;
+    font-size: clamp(17px, 2vw, 19px);
+    color: var(--text-muted);
+    max-width: 52ch;
+    line-height: 1.65;
+  }
+  .hero-sub strong { color: var(--text); font-weight: 500; }
+  .hero-sub .data { color: var(--blue); font-weight: 500; }
+  .hero-actions { display: flex; align-items: center; gap: 14px; margin-top: 36px; flex-wrap: wrap; }
+  .hero-note { font-size: 13px; color: var(--text-faint); margin-top: 14px; }
+
+  html.js .reveal { opacity: 0; transform: translateY(18px); transition: opacity 0.9s var(--ease-out), transform 0.9s var(--ease-out); }
+  html.js .reveal.in { opacity: 1; transform: none; }
+
+  /* ─── Demo window ─── */
+  .demo-section { padding-bottom: clamp(70px, 10vh, 130px); }
+  .demo-frame {
+    position: relative;
+    background: var(--bg-raised);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .demo-titlebar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 13px 16px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .traffic { width: 11px; height: 11px; border-radius: 50%; background: var(--bg-elevated); border: 1px solid var(--border); }
+  .demo-title { margin-left: 10px; font-size: 12.5px; color: var(--text-faint); }
+  .demo-body {
+    padding: clamp(28px, 5vw, 52px);
+    min-height: 270px;
+    font-size: clamp(17px, 2.4vw, 21px);
+    line-height: 1.7;
+    color: var(--text);
+    font-weight: 400;
+  }
+  .demo-body .word { opacity: 0; display: inline; animation: word-in 0.35s var(--ease-out) forwards; }
+  @keyframes word-in { from { opacity: 0; } to { opacity: 1; } }
+  .caret {
+    display: inline-block; width: 2px; height: 1.15em;
+    background: var(--blue); vertical-align: text-bottom;
+    margin-left: 2px; border-radius: 1px;
+    animation: blink 1.1s steps(2) infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* HUD pill */
+  .hud {
+    position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 14px;
+    background: oklch(0.13 0.004 260 / 0.92);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    padding: 10px 20px;
+    backdrop-filter: blur(10px);
+  }
+  .hud-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: 0.35; } }
+  .wave { display: flex; align-items: center; gap: 2.5px; height: 22px; }
+  .wave i {
+    width: 2.5px; border-radius: 2px; background: var(--blue);
+    height: 30%;
+    animation: wave-bob 0.9s ease-in-out infinite alternate;
+  }
+  @keyframes wave-bob { from { height: 18%; opacity: 0.55; } to { height: var(--h, 80%); opacity: 1; } }
+  .hud-time { font-size: 12.5px; color: var(--text-muted); font-variant-numeric: tabular-nums; min-width: 38px; }
+
+  /* shortcut ritual */
+  .ritual {
+    display: flex; align-items: center; justify-content: center; gap: 14px;
+    margin-top: 34px; flex-wrap: wrap;
+    font-size: 14.5px; color: var(--text-muted);
+  }
+  kbd {
+    font-family: inherit; font-size: 13px; font-weight: 500;
+    color: var(--text);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-bottom-width: 2px;
+    border-radius: 7px;
+    padding: 4px 10px;
+    min-width: 30px; text-align: center; display: inline-block;
+  }
+  .ritual .arrow { color: var(--text-faint); }
+
+  /* ─── Section scaffolding ─── */
+  section { padding-block: clamp(70px, 11vh, 140px); }
+  .section-kicker {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 13px; font-weight: 500; color: var(--text-muted);
+    margin-bottom: 18px;
+  }
+  .section-kicker::before { content: ""; width: 22px; height: 1px; background: var(--border); }
+  h2 {
+    font-size: clamp(30px, 4.4vw, 46px);
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    line-height: 1.12;
+    max-width: 22ch;
+  }
+  h2 .serif { color: var(--amber); }
+  .section-sub { margin-top: 18px; color: var(--text-muted); max-width: 54ch; font-size: 16.5px; }
+
+  /* ─── Feature rows ─── */
+  .features { margin-top: clamp(40px, 6vh, 72px); border-top: 1px solid var(--border-subtle); }
+  .feature-row {
+    display: grid;
+    grid-template-columns: 64px 1fr 1.25fr;
+    gap: clamp(16px, 4vw, 56px);
+    padding-block: clamp(26px, 4vh, 40px);
+    border-bottom: 1px solid var(--border-subtle);
+    align-items: baseline;
+  }
+  .feature-num { font-size: 13px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+  .feature-title { font-size: 19px; font-weight: 500; letter-spacing: -0.015em; }
+  .feature-desc { color: var(--text-muted); font-size: 15.5px; }
+  .feature-desc em { font-style: normal; color: var(--text); }
+  @media (max-width: 720px) {
+    .feature-row { grid-template-columns: 44px 1fr; }
+    .feature-desc { grid-column: 2; margin-top: 6px; }
+  }
+
+  /* ─── Engines ─── */
+  .engines { margin-top: clamp(40px, 6vh, 64px); display: grid; gap: 12px; }
+  .engine {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 18px;
+    background: var(--bg-raised);
+    border: 1px solid var(--border-subtle);
+    border-radius: 12px;
+    padding: 20px 24px;
+  }
+  .engine-dot { width: 8px; height: 8px; border-radius: 50%; }
+  .engine-name { font-weight: 500; font-size: 15.5px; }
+  .engine-name span { color: var(--text-faint); font-weight: 400; margin-left: 10px; font-size: 13.5px; }
+  .engine-tag {
+    font-size: 12px; font-weight: 500;
+    padding: 3px 10px; border-radius: 99px;
+    border: 1px solid var(--border-subtle);
+    color: var(--text-muted);
+  }
+  .engine-tag.local { color: var(--green); border-color: oklch(0.74 0.17 152 / 0.3); }
+  @media (max-width: 560px) {
+    .engine { grid-template-columns: auto 1fr; }
+    .engine-tag { grid-column: 2; justify-self: start; }
+  }
+
+  /* ─── App dashboard mockup ─── */
+  .app-frame {
+    margin-top: clamp(40px, 6vh, 64px);
+    background: var(--bg-raised);
+    border: 1px solid var(--border-subtle);
+    border-radius: 14px;
+    overflow: hidden;
+    user-select: none; -webkit-user-select: none;
+    pointer-events: none;
+  }
+  .app-body { display: grid; grid-template-columns: 192px 1fr; }
+  .app-side {
+    border-right: 1px solid var(--border-subtle);
+    background: oklch(0.175 0.004 260);
+    padding: 14px 10px 16px;
+    display: flex; flex-direction: column; gap: 2px;
+    font-size: 12.5px;
+  }
+  .side-group { margin: 10px 8px 4px; font-size: 10.5px; color: var(--text-faint); }
+  .side-group:first-child { margin-top: 2px; }
+  .side-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-radius: 7px; color: var(--text-muted); border: 1px solid transparent; }
+  .side-item svg { width: 12px; height: 12px; flex: none; }
+  .side-item.active { color: var(--text); background: var(--bg-elevated); border-color: var(--border-subtle); }
+  .side-foot { margin-top: auto; padding: 12px 8px 0; font-size: 11px; color: var(--text-faint); display: grid; gap: 3px; }
+  .side-foot .num { color: var(--blue); }
+  .side-foot .streak { color: var(--amber); }
+  .side-status { display: flex; align-items: center; gap: 6px; margin-top: 8px; }
+  .side-status .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+  .app-main { padding: 24px 26px 26px; display: grid; gap: 16px; align-content: start; }
+  .app-greet { font-size: 19px; font-weight: 600; letter-spacing: -0.01em; }
+  .app-summary { font-size: 12.5px; color: var(--text-muted); margin-top: 5px; line-height: 1.6; }
+  .app-summary b { font-weight: 500; color: var(--blue); }
+  .app-summary .streak { font-weight: 500; color: var(--amber); }
+  .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .stat-card { background: oklch(0.205 0.005 260); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 14px 10px 12px; text-align: center; }
+  .stat-num { font-size: 21px; font-weight: 500; letter-spacing: -0.01em; }
+  .stat-num small { font-size: 11px; font-weight: 400; color: var(--text-faint); margin-left: 2px; }
+  .stat-label { display: flex; align-items: center; justify-content: center; gap: 5px; margin-top: 5px; font-size: 11px; color: var(--text-muted); }
+  .stat-label i { width: 5px; height: 5px; border-radius: 50%; }
+  .app-period { display: flex; justify-content: flex-end; gap: 4px; }
+  .period-pill { font-size: 10.5px; padding: 3px 9px; border-radius: 6px; color: var(--text-faint); border: 1px solid transparent; }
+  .period-pill.active { color: var(--text); background: var(--bg-elevated); border-color: var(--border-subtle); }
+  .app-card { background: oklch(0.205 0.005 260); border: 1px solid var(--border-subtle); border-radius: 10px; padding: 14px 16px 12px; }
+  .app-card-head { display: flex; align-items: center; gap: 7px; font-size: 11.5px; font-weight: 600; }
+  .app-card-head svg { width: 11px; height: 11px; flex: none; }
+  .badge-up { margin-left: auto; font-size: 10px; font-weight: 500; color: var(--green); background: oklch(0.74 0.17 152 / 0.12); padding: 2px 8px; border-radius: 99px; }
+  .wpm-chart { display: block; width: 100%; height: auto; margin-top: 12px; }
+  .chart-axis { display: flex; justify-content: space-between; font-size: 9.5px; color: var(--text-faint); margin-top: 6px; padding-inline: 2px; }
+  .app-bottom { display: grid; grid-template-columns: 1.55fr 1fr; gap: 10px; }
+  .bars { display: flex; align-items: flex-end; gap: 3px; height: 104px; margin-top: 14px; }
+  .bars i { flex: 1; background: var(--blue); opacity: 0.7; border-radius: 2px 2px 0 0; }
+  .bars i.peak { opacity: 1; }
+  .donut-wrap { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 12px; }
+  .donut-legend { font-size: 10.5px; color: var(--text-muted); display: grid; gap: 6px; }
+  .donut-legend span { display: flex; align-items: center; gap: 7px; }
+  .donut-legend i { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+  .donut-legend b { font-weight: 400; color: var(--text-faint); margin-left: auto; padding-left: 12px; }
+  @media (max-width: 760px) {
+    .app-side { display: none; }
+    .app-body { grid-template-columns: 1fr; }
+    .stat-row { grid-template-columns: repeat(2, 1fr); }
+    .app-bottom { grid-template-columns: 1fr; }
+  }
+
+  /* ─── Privacy pull quote ─── */
+  .privacy { text-align: center; }
+  .privacy blockquote {
+    font-family: "Instrument Serif", Georgia, serif;
+    font-style: italic;
+    font-size: clamp(28px, 4.6vw, 48px);
+    line-height: 1.25;
+    letter-spacing: -0.01em;
+    max-width: 24ch;
+    margin-inline: auto;
+  }
+  .privacy blockquote .hl { color: var(--blue); }
+  .privacy .footnote { margin-top: 26px; font-size: 15px; color: var(--text-muted); max-width: 50ch; margin-inline: auto; }
+
+  /* ─── CTA ─── */
+  .cta {
+    border-top: 1px solid var(--border-subtle);
+    text-align: center;
+  }
+  .cta h2 { margin-inline: auto; }
+  .cta .hero-actions { justify-content: center; }
+
+  /* ─── Footer ─── */
+  footer {
+    border-top: 1px solid var(--border-subtle);
+    padding-block: 36px;
+    font-size: 13.5px; color: var(--text-faint);
+  }
+  .footer-inner { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+  .footer-links { display: flex; gap: 22px; }
+  .footer-links a { transition: color 0.2s; }
+  .footer-links a:hover { color: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<nav id="nav">
+  <div class="wrap nav-inner">
+    <a class="logo" href="#">
+      <img class="logo-mark" src="icon.png" alt="" width="24" height="24">
+      Orathor
+    </a>
+    <div class="nav-links">
+      <a href="#features" class="hide-sm">Features</a>
+      <a href="#engines" class="hide-sm">Engines</a>
+      <a href="https://github.com/JustinyAhin/Orathor" class="hide-sm">GitHub</a>
+      <a href="https://github.com/JustinyAhin/Orathor/releases/latest" class="btn btn-primary">Download</a>
+    </div>
+  </div>
+</nav>
+
+<header class="wrap">
+  <div class="hero-eyebrow reveal in"><span class="dot"></span> Free &amp; open source · macOS 26+</div>
+  <h1 class="reveal in" style="transition-delay: 0.08s">Speak it.<br><span class="serif">Author it.</span></h1>
+  <p class="hero-sub reveal in" style="transition-delay: 0.16s">
+    Orathor turns your voice into text anywhere on your Mac, in any app and any text field.
+    You think <span class="data">3 to 5×</span> faster than you type. Press a shortcut
+    and speak. Your words land in under <span class="data">500&nbsp;ms</span>, and the audio
+    <strong>never leaves your Mac</strong>.
+  </p>
+  <div class="hero-actions reveal in" style="transition-delay: 0.24s">
+    <a href="https://github.com/JustinyAhin/Orathor/releases/latest" class="btn btn-primary btn-lg">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+      Download for macOS
+    </a>
+    <a href="https://github.com/JustinyAhin/Orathor" class="btn btn-ghost btn-lg">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.6.5.5 5.7.5 12.1c0 5.1 3.3 9.5 7.9 11 .6.1.8-.3.8-.6v-2c-3.2.7-3.9-1.6-3.9-1.6-.5-1.3-1.3-1.7-1.3-1.7-1-.7.1-.7.1-.7 1.2.1 1.8 1.2 1.8 1.2 1 1.8 2.7 1.3 3.4 1 .1-.8.4-1.3.7-1.6-2.6-.3-5.3-1.3-5.3-5.8 0-1.3.4-2.3 1.2-3.1-.1-.3-.5-1.5.1-3.1 0 0 1-.3 3.2 1.2a11 11 0 0 1 5.8 0C17.2 4.8 18.2 5 18.2 5c.6 1.6.2 2.8.1 3.1.7.8 1.2 1.9 1.2 3.1 0 4.5-2.7 5.5-5.3 5.8.4.4.8 1.1.8 2.2v3.2c0 .3.2.7.8.6 4.6-1.5 7.9-5.9 7.9-11C23.5 5.7 18.4.5 12 .5z"/></svg>
+      Star on GitHub
+    </a>
+  </div>
+  <p class="hero-note reveal in" style="transition-delay: 0.3s">There's no account and nothing to set up. You'll be dictating within 30 seconds of installing.</p>
+</header>
+
+<div class="wrap demo-section">
+  <div class="demo-frame reveal" id="demo">
+    <div class="demo-titlebar">
+      <span class="traffic" style="background: oklch(0.62 0.18 25); border-color: transparent;"></span>
+      <span class="traffic" style="background: oklch(0.78 0.15 85); border-color: transparent;"></span>
+      <span class="traffic" style="background: oklch(0.72 0.18 145); border-color: transparent;"></span>
+      <span class="demo-title">Mail — New Message</span>
+    </div>
+    <div class="demo-body"><span id="transcript"></span><span class="caret"></span></div>
+    <div class="hud" aria-hidden="true">
+      <span class="hud-dot"></span>
+      <span class="wave" id="wave"></span>
+      <span class="hud-time" id="hud-time">0:00</span>
+    </div>
+  </div>
+  <div class="ritual reveal" style="transition-delay: 0.1s">
+    <span>Hold right</span> <kbd>⌥</kbd>
+    <span class="arrow">→</span> <span>speak</span>
+    <span class="arrow">→</span> <span>release. Or double-tap <kbd>⌥</kbd> to lock it on. That's the whole manual.</span>
+  </div>
+</div>
+
+<section class="wrap" id="features">
+  <div class="section-kicker reveal">Built to disappear</div>
+  <h2 class="reveal">Every feature earns<br>its <span class="serif">place.</span></h2>
+  <div class="features">
+    <div class="feature-row reveal">
+      <span class="feature-num">01</span>
+      <span class="feature-title">System-wide</span>
+      <span class="feature-desc">Works in <em>every</em> text field: Mail, Slack, Xcode, your terminal. If a cursor blinks there, Orathor types there.</span>
+    </div>
+    <div class="feature-row reveal">
+      <span class="feature-num">02</span>
+      <span class="feature-title">Real-time</span>
+      <span class="feature-desc">Words appear <em>as you speak</em>, not after you stop. Orathor is built in Swift rather than Electron, so it launches instantly and barely touches the CPU.</span>
+    </div>
+    <div class="feature-row reveal">
+      <span class="feature-num">03</span>
+      <span class="feature-title">Smart formatting</span>
+      <span class="feature-desc">Orathor handles punctuation, capitalization, and paragraph breaks for you, and it keeps up with technical terms and proper nouns.</span>
+    </div>
+    <div class="feature-row reveal">
+      <span class="feature-num">04</span>
+      <span class="feature-title">Command mode</span>
+      <span class="feature-desc">Say <em>"new line"</em>, <em>"select all"</em>, or <em>"delete that"</em> to edit by voice without touching the keyboard.</span>
+    </div>
+    <div class="feature-row reveal">
+      <span class="feature-num">05</span>
+      <span class="feature-title">History</span>
+      <span class="feature-desc">Everything you dictate goes into a searchable log that lives on your Mac and nowhere else.</span>
+    </div>
+    <div class="feature-row reveal">
+      <span class="feature-num">06</span>
+      <span class="feature-title">Clipboard mode</span>
+      <span class="feature-desc">Dictate straight to the clipboard when you'd rather paste than insert. Handy for forms and picky apps.</span>
+    </div>
+  </div>
+</section>
+
+<section class="wrap" id="dashboard">
+  <div class="section-kicker reveal">Your numbers</div>
+  <h2 class="reveal">It keeps count, <span class="serif">quietly.</span></h2>
+  <p class="section-sub reveal">The main window shows how much you've dictated: words, sessions, speed, and time saved. Every number is computed on your Mac from your own history.</p>
+  <div class="app-frame reveal" aria-hidden="true">
+    <div class="demo-titlebar">
+      <span class="traffic" style="background: oklch(0.62 0.18 25); border-color: transparent;"></span>
+      <span class="traffic" style="background: oklch(0.78 0.15 85); border-color: transparent;"></span>
+      <span class="traffic" style="background: oklch(0.72 0.18 145); border-color: transparent;"></span>
+    </div>
+    <div class="app-body">
+      <div class="app-side">
+        <div class="side-group">Overview</div>
+        <div class="side-item active">
+          <svg viewBox="0 0 12 12" fill="currentColor"><path d="M1.5 6 6 1.8 10.5 6v4.5H7.4v-3H4.6v3H1.5z"/></svg>
+          Home
+        </div>
+        <div class="side-group">Monitor</div>
+        <div class="side-item">
+          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M2 2.5h8M2 6h8M2 9.5h5"/></svg>
+          Transcripts
+        </div>
+        <div class="side-group">Settings</div>
+        <div class="side-item">
+          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-linecap="round"><circle cx="6" cy="6" r="2" stroke-width="1.3"/><path d="M6 .9v1.8M6 9.3v1.8M.9 6h1.8M9.3 6h1.8M2.4 2.4l1.3 1.3M8.3 8.3l1.3 1.3M9.6 2.4 8.3 3.7M3.7 8.3 2.4 9.6" stroke-width="1.1"/></svg>
+          Settings
+        </div>
+        <div class="side-foot">
+          <span>Today</span>
+          <span><span class="num">461</span> words</span>
+          <span><span class="num">16</span> sessions · <span class="streak">2-day streak</span></span>
+          <span class="side-status"><span class="dot"></span> Apple Speech</span>
+        </div>
+      </div>
+      <div class="app-main">
+        <div>
+          <div class="app-greet">Good morning, Justin</div>
+          <div class="app-summary">You've dictated <b>14.6K</b> words across <b>587</b> sessions, saving about <b>2h</b> at an average of <b>120 wpm</b>. You're on a <span class="streak">2-day streak</span>.</div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-card">
+            <div class="stat-num">14.6K</div>
+            <div class="stat-label"><i style="background: var(--blue)"></i> Words</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num">587</div>
+            <div class="stat-label"><i style="background: var(--blue)"></i> Sessions</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num">2<small>h</small></div>
+            <div class="stat-label"><i style="background: var(--green)"></i> Time saved</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-num">120<small>wpm</small></div>
+            <div class="stat-label"><i style="background: var(--amber)"></i> Avg speed</div>
+          </div>
+        </div>
+        <div class="app-period">
+          <span class="period-pill">7d</span>
+          <span class="period-pill">14d</span>
+          <span class="period-pill active">30d</span>
+        </div>
+        <div class="app-card">
+          <div class="app-card-head">
+            <svg viewBox="0 0 12 12" fill="none" stroke="var(--blue)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 9 4 5.5 6.2 7.5 11 2"/></svg>
+            Words per minute
+            <span class="badge-up">↗ 7% faster</span>
+          </div>
+          <svg class="wpm-chart" viewBox="0 0 640 130" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="wpmFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#3B82F6" stop-opacity="0.22"/>
+                <stop offset="1" stop-color="#3B82F6" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path d="M0,52 C20,48 38,42 56,46 C76,50 86,72 100,92 C112,108 124,96 136,78 C150,58 166,54 182,56 C200,60 216,52 232,50 C250,48 266,58 282,62 C300,66 316,52 332,48 C350,44 366,56 382,58 C400,60 416,48 432,46 C450,44 466,56 482,58 C500,60 516,50 532,46 C550,42 566,50 582,46 C602,42 622,40 634,36 L634,130 L0,130 Z" fill="url(#wpmFill)"/>
+            <path d="M0,52 C20,48 38,42 56,46 C76,50 86,72 100,92 C112,108 124,96 136,78 C150,58 166,54 182,56 C200,60 216,52 232,50 C250,48 266,58 282,62 C300,66 316,52 332,48 C350,44 366,56 382,58 C400,60 416,48 432,46 C450,44 466,56 482,58 C500,60 516,50 532,46 C550,42 566,50 582,46 C602,42 622,40 634,36" fill="none" stroke="#3B82F6" stroke-width="1.8"/>
+            <circle cx="634" cy="36" r="3.5" fill="#3B82F6"/>
+            <text x="616" y="26" font-size="11" fill="#E8E8EA">118</text>
+          </svg>
+          <div class="chart-axis"><span>18 May</span><span>25 May</span><span>1 Jun</span><span>8 Jun</span></div>
+        </div>
+        <div class="app-bottom">
+          <div class="app-card">
+            <div class="app-card-head">
+              <svg viewBox="0 0 12 12" fill="none" stroke="var(--blue)" stroke-width="1.6" stroke-linecap="round"><path d="M2 10V6.5M5 10V3M8 10V7.5M11 10V5"/></svg>
+              Activity
+            </div>
+            <div class="bars">
+              <i style="height:18%"></i><i style="height:9%"></i><i style="height:13%"></i><i style="height:6%"></i><i style="height:21%"></i><i style="height:11%"></i><i style="height:7%"></i><i style="height:15%"></i><i style="height:10%"></i><i style="height:5%"></i><i style="height:17%"></i><i style="height:23%"></i><i style="height:12%"></i><i style="height:8%"></i><i style="height:27%"></i><i style="height:31%"></i><i style="height:19%"></i><i style="height:10%"></i><i style="height:7%"></i><i style="height:13%"></i><i style="height:9%"></i><i style="height:16%"></i><i style="height:6%"></i><i class="peak" style="height:88%"></i><i style="height:58%"></i><i style="height:13%"></i><i style="height:19%"></i><i style="height:9%"></i><i style="height:15%"></i><i style="height:11%"></i>
+            </div>
+            <div class="chart-axis"><span>10 May</span><span>17 May</span><span>24 May</span><span>31 May</span><span>7 Jun</span></div>
+          </div>
+          <div class="app-card">
+            <div class="app-card-head">
+              <svg viewBox="0 0 12 12" fill="none" stroke="var(--blue)" stroke-width="1.5"><circle cx="6" cy="6" r="4"/><circle cx="6" cy="6" r="1.4" fill="var(--blue)" stroke="none"/></svg>
+              Engines
+            </div>
+            <div class="donut-wrap">
+              <svg width="104" height="104" viewBox="0 0 120 120">
+                <g transform="rotate(-90 60 60)">
+                  <circle cx="60" cy="60" r="42" fill="none" stroke="#22C55E" stroke-width="12" stroke-dasharray="181.7 263.9"/>
+                  <circle cx="60" cy="60" r="42" fill="none" stroke="#3B82F6" stroke-width="12" stroke-dasharray="41.9 263.9" stroke-dashoffset="-184.7"/>
+                  <circle cx="60" cy="60" r="42" fill="none" stroke="#EAB308" stroke-width="12" stroke-dasharray="31.3 263.9" stroke-dashoffset="-229.6"/>
+                </g>
+                <text x="60" y="59" text-anchor="middle" font-size="16" font-weight="500" fill="#E8E8EA">70%</text>
+                <text x="60" y="74" text-anchor="middle" font-size="8.5" fill="#7C7C85">on device</text>
+              </svg>
+              <div class="donut-legend">
+                <span><i style="background:#22C55E"></i> Apple Speech <b>412</b></span>
+                <span><i style="background:#3B82F6"></i> Deepgram <b>98</b></span>
+                <span><i style="background:#EAB308"></i> Whisper <b>77</b></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="wrap" id="engines">
+  <div class="section-kicker reveal">Choose your engine</div>
+  <h2 class="reveal">Local by default.<br>Cloud when <span class="serif">you</span> say so.</h2>
+  <p class="section-sub reveal">Out of the box, Orathor uses Apple's on-device SpeechAnalyzer, so audio never leaves your Mac. If you'd rather run a cloud engine, bring your own API key.</p>
+  <div class="engines">
+    <div class="engine reveal">
+      <span class="engine-dot" style="background: var(--green)"></span>
+      <span class="engine-name">Apple SpeechAnalyzer <span>default</span></span>
+      <span class="engine-tag local">on-device</span>
+    </div>
+    <div class="engine reveal">
+      <span class="engine-dot" style="background: var(--blue)"></span>
+      <span class="engine-name">Deepgram Nova <span>your API key</span></span>
+      <span class="engine-tag">cloud</span>
+    </div>
+    <div class="engine reveal">
+      <span class="engine-dot" style="background: var(--blue)"></span>
+      <span class="engine-name">OpenAI Realtime Whisper <span>your API key</span></span>
+      <span class="engine-tag">cloud</span>
+    </div>
+  </div>
+</section>
+
+<section class="wrap privacy">
+  <blockquote class="reveal">"Your voice stays <span class="hl">on your Mac</span>, not on someone else's server."</blockquote>
+  <p class="footnote reveal">On-device processing is the default, not a paid upgrade. And since Orathor is <a href="https://github.com/JustinyAhin/Orathor">open source</a>, you can read exactly what the app does with your audio.</p>
+</section>
+
+<section class="wrap cta">
+  <h2 class="reveal">Stop typing what you<br>could just <span class="serif">say.</span></h2>
+  <div class="hero-actions reveal" style="transition-delay: 0.1s">
+    <a href="https://github.com/JustinyAhin/Orathor/releases/latest" class="btn btn-primary btn-lg">Download for macOS</a>
+    <a href="https://github.com/JustinyAhin/Orathor" class="btn btn-ghost btn-lg">View the source</a>
+  </div>
+  <p class="hero-note reveal" style="transition-delay: 0.16s">Requires macOS 26 or later · Apple Silicon</p>
+</section>
+
+<footer>
+  <div class="wrap footer-inner">
+    <span>© 2026 Orathor. Speak it, author it.</span>
+    <div class="footer-links">
+      <a href="https://github.com/JustinyAhin/Orathor">GitHub</a>
+      <a href="https://github.com/JustinyAhin/Orathor/blob/main/CHANGELOG.md">Changelog</a>
+      <a href="https://github.com/JustinyAhin/Orathor/blob/main/LICENSE">License</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Nav border on scroll
+  const nav = document.getElementById("nav");
+  addEventListener("scroll", () => nav.classList.toggle("scrolled", scrollY > 12), { passive: true });
+
+  // Scroll reveals
+  const observer = new IntersectionObserver(entries => {
+    for (const e of entries) if (e.isIntersecting) { e.target.classList.add("in"); observer.unobserve(e.target); }
+  }, { threshold: 0.15, rootMargin: "0px 0px -40px 0px" });
+  document.querySelectorAll(".reveal:not(.in)").forEach(el => observer.observe(el));
+
+  // Waveform bars
+  const wave = document.getElementById("wave");
+  for (let i = 0; i < 26; i++) {
+    const bar = document.createElement("i");
+    const h = 30 + Math.round(Math.abs(Math.sin(i * 0.7)) * 60);
+    bar.style.setProperty("--h", h + "%");
+    bar.style.animationDelay = (i * 67 % 900) + "ms";
+    bar.style.animationDuration = 600 + (i * 113 % 500) + "ms";
+    wave.appendChild(bar);
+  }
+
+  // Typing demo
+  const phrases = [
+    "Hi Sarah, just wrapped up the design review. The new onboarding flow tested really well, and I'll have the updated specs to you by Thursday morning.",
+    "Note to self: the latency regression only shows up on the first request after launch. Check whether the model is being loaded lazily.",
+    "Hey team, pushing the release to Monday so QA gets a full pass over the weekend. Changelog is drafted, just needs screenshots.",
+  ];
+  const transcript = document.getElementById("transcript");
+  const hudTime = document.getElementById("hud-time");
+  let phraseIdx = 0, startTime = 0;
+
+  function tickClock() {
+    const s = Math.floor((performance.now() - startTime) / 1000);
+    hudTime.textContent = Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0");
+  }
+
+  async function playPhrase() {
+    const words = phrases[phraseIdx].split(" ");
+    phraseIdx = (phraseIdx + 1) % phrases.length;
+    transcript.textContent = "";
+    startTime = performance.now();
+    const clock = setInterval(tickClock, 250);
+
+    if (reduceMotion) {
+      transcript.textContent = words.join(" ");
+      await new Promise(r => setTimeout(r, 6000));
+    } else {
+      for (const w of words) {
+        const span = document.createElement("span");
+        span.className = "word";
+        span.textContent = w + " ";
+        transcript.appendChild(span);
+        await new Promise(r => setTimeout(r, 90 + Math.min(w.length * 22, 180)));
+      }
+      await new Promise(r => setTimeout(r, 3200));
+    }
+    clearInterval(clock);
+    playPhrase();
+  }
+
+  // Start the demo when it scrolls into view
+  const demoObserver = new IntersectionObserver(entries => {
+    if (entries[0].isIntersecting) { demoObserver.disconnect(); playPhrase(); }
+  }, { threshold: 0.3 });
+  demoObserver.observe(document.getElementById("demo"));
+</script>
+</body>
+</html>

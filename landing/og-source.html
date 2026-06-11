@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Orathor OG image v3</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600&family=Instrument+Serif:ital@1&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; }
+  body {
+    background: oklch(0.16 0.004 260);
+    color: oklch(0.94 0.004 80);
+    font-family: "Instrument Sans", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .canvas {
+    width: 1200px; height: 630px;
+    display: flex; flex-direction: column; align-items: center;
+    text-align: center;
+    padding: 72px 80px 56px;
+  }
+  .brand { display: flex; align-items: center; gap: 14px; }
+  .brand img { width: 42px; height: 42px; border-radius: 9px; }
+  .brand span { font-size: 25px; font-weight: 600; letter-spacing: -0.01em; }
+
+  h1 {
+    margin-top: 56px;
+    font-size: 92px;
+    font-weight: 500;
+    line-height: 1.08;
+    letter-spacing: -0.035em;
+    max-width: 1000px;
+  }
+  h1 .serif {
+    font-family: "Instrument Serif", Georgia, serif;
+    font-style: italic;
+    font-weight: 400;
+    letter-spacing: 0;
+    color: oklch(0.78 0.14 75);
+  }
+
+  .wave {
+    margin-top: 64px;
+    width: 100%;
+    display: flex; align-items: center; gap: 6px;
+    height: 88px;
+  }
+  .wave i { flex: 1; border-radius: 4px; background: oklch(0.66 0.16 255); }
+  .wave i.dim { opacity: 0.35; }
+
+  .foot {
+    margin-top: auto;
+    font-size: 23px;
+    color: oklch(0.68 0.008 260);
+  }
+  .foot b { color: oklch(0.94 0.004 80); font-weight: 500; }
+  .foot .sep { margin: 0 14px; color: oklch(0.4 0.008 260); }
+</style>
+</head>
+<body>
+<div class="canvas">
+  <div class="brand">
+    <img src="icon.png" alt="">
+    <span>Orathor</span>
+  </div>
+
+  <h1>Stop typing what<br>you could just <span class="serif">say.</span></h1>
+
+  <div class="wave" id="wave"></div>
+
+  <div class="foot">Voice dictation for <b>macOS</b><span class="sep">·</span>Free &amp; open source<span class="sep">·</span>On-device</div>
+</div>
+<script>
+  const wave = document.getElementById("wave");
+  for (let i = 0; i < 56; i++) {
+    const bar = document.createElement("i");
+    const h = 14 + Math.round(Math.abs(Math.sin(i * 0.55) * Math.sin(i * 0.23)) * 86);
+    bar.style.height = h + "%";
+    if (i < 6 || i > 49) bar.classList.add("dim");
+    wave.appendChild(bar);
+  }
+</script>
+</body>
+</html>
