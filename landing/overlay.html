@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Orathor recording overlay</title>
+<style>
+  /* Faithful to Orathor/Views/RecordingOverlay.swift:
+     padding 16/8, radius 12, ultraThinMaterial + 0.5px BorderSubtle stroke,
+     6px pulsing Recording dot, REC in 11px medium mono, 12-bar level meter
+     (2px bars, 50x16 frame), 340px transcript clipped to two bottom-anchored
+     lines. Colors from Assets.xcassets dark appearance. */
+  :root {
+    --recording: #FF453A;
+    --text-primary: #FAFAF9;
+    --text-tertiary: #6B7280;
+    --border-subtle: rgba(255, 255, 255, 0.12);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    display: grid; place-items: center;
+    background: #131316;
+    overflow: hidden;
+    font-family: ui-monospace, "SF Mono", SFMono-Regular, Menlo, monospace;
+  }
+  /* Soft desktop-like glow behind the panel so the material blur reads */
+  .backdrop {
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(420px 300px at 38% 36%, oklch(0.32 0.06 255 / 0.5), transparent 70%),
+      radial-gradient(380px 280px at 64% 62%, oklch(0.3 0.05 75 / 0.35), transparent 70%);
+  }
+
+  .overlay {
+    position: relative;
+    padding: 8px 16px;
+    border-radius: 12px;
+    background: rgba(28, 28, 31, 0.55);
+    backdrop-filter: blur(24px) saturate(1.4);
+    -webkit-backdrop-filter: blur(24px) saturate(1.4);
+    box-shadow: 0 0 0 0.5px var(--border-subtle), 0 18px 40px rgba(0, 0, 0, 0.45);
+  }
+
+  .head { display: flex; align-items: center; gap: 8px; }
+  .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--recording);
+    animation: pulse 1.6s ease-in-out infinite;
+  }
+  @keyframes pulse { 50% { opacity: 0.3; } }
+  .rec { font-size: 11px; font-weight: 500; color: var(--text-primary); letter-spacing: 0.02em; }
+
+  .levels { display: flex; align-items: center; gap: 2px; width: 50px; height: 16px; }
+  .levels i {
+    width: 2px; height: 3px; border-radius: 1px;
+    background: rgba(107, 114, 128, 0.25);
+    transition: height 0.05s ease-out, background 0.05s ease-out;
+  }
+  .levels i.active { background: var(--recording); }
+
+  .transcript {
+    position: relative;
+    width: 340px;
+    height: 32px;            /* exactly two mono lines, panel never resizes */
+    margin-top: 6px;
+    overflow: hidden;
+  }
+  .transcript span {
+    position: absolute; bottom: 0; left: 0;
+    width: 340px;
+    font-size: 11px; font-weight: 500; line-height: 16px;
+    color: var(--text-primary);
+  }
+  .transcript span.placeholder { color: var(--text-tertiary); }
+</style>
+</head>
+<body>
+<div class="backdrop"></div>
+<div class="overlay">
+  <div class="head">
+    <span class="dot"></span>
+    <span class="rec">REC</span>
+    <span class="levels" id="levels"></span>
+  </div>
+  <div class="transcript"><span id="text" class="placeholder">Listening…</span></div>
+</div>
+<script>
+  const levels = document.getElementById("levels");
+  const bars = [];
+  for (let i = 0; i < 12; i++) {
+    const bar = document.createElement("i");
+    levels.appendChild(bar);
+    bars.push(bar);
+  }
+
+  const text = document.getElementById("text");
+  const phrases = [
+    "Hey team, pushing the release to Monday so QA gets a full pass over the weekend. Changelog is drafted, just needs screenshots.",
+    "Note to self: the latency regression only shows up on the first request after launch. Check whether the model is being loaded lazily.",
+  ];
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Mirrors OverlayLevelBars: bars activate left-to-right with the mic level,
+  // active bars grow with it.
+  function setLevel(level) {
+    bars.forEach((bar, i) => {
+      const active = i / bars.length < level;
+      bar.classList.toggle("active", active);
+      bar.style.height = active ? Math.max(3, level * 16) + "px" : "3px";
+    });
+  }
+
+  let speaking = false;
+  const still = location.search.includes("still");
+  if (!still) {
+    setInterval(() => {
+      setLevel(speaking ? 0.25 + Math.random() * 0.65 : 0);
+    }, 80);
+  }
+
+  async function run() {
+    let phraseIdx = 0;
+    for (;;) {
+      text.textContent = "Listening…";
+      text.classList.add("placeholder");
+      await new Promise(r => setTimeout(r, 1400));
+
+      const words = phrases[phraseIdx].split(" ");
+      phraseIdx = (phraseIdx + 1) % phrases.length;
+      text.classList.remove("placeholder");
+      text.textContent = "";
+      speaking = true;
+      for (const w of words) {
+        text.textContent += (text.textContent ? " " : "") + w;
+        await new Promise(r => setTimeout(r, 90 + Math.min(w.length * 22, 180)));
+      }
+      speaking = false;
+      await new Promise(r => setTimeout(r, 1800));
+    }
+  }
+
+  // ?still renders a frozen mid-dictation frame for screenshot exports
+  if (still) {
+    text.textContent = phrases[0];
+    text.classList.remove("placeholder");
+    speaking = false;
+    setLevel(0.65);
+  } else if (reduceMotion) {
+    text.textContent = phrases[0];
+    text.classList.remove("placeholder");
+    setLevel(0.6);
+  } else {
+    run();
+  }
+</script>
+</body>
+</html>
