@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.11 — 2026-06-11
+
+### New
+
+- **Open source** — Orathor's source code is now public under the GPL v3; the official binary is the supported, prebuilt distribution
+- **Free trial + licensing** — official binaries start a full-featured 7-day trial; a one-time license key (Settings → License) unlocks Orathor permanently on up to 3 Macs. Building from source stays fully unlocked
+- **New update feed** — releases now ship from GitHub Releases on the main repo; updates continue automatically via Sparkle
+
 ## 0.0.10 — 2026-06-10
 
 ### New
