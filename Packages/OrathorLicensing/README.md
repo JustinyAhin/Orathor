@@ -9,7 +9,7 @@ Official binaries distributed by the maintainer swap this package's contents for
 Both implementations expose the same public surface:
 
 - `LicenseState` — `licensed(email:)`, `trialing(daysLeft:)`, `trialExpired`, `licenseInvalid(reason:)`
-- `LicenseError` — `invalidKey`, `activationLimitReached`, `network(String)`, `notActivated`
+- `LicenseError` — `invalidKey`, `activationLimitReached`, `network(String)`, `storage(String)`, `notActivated`
 - `LicenseManager` (`@MainActor @Observable` final class):
   - `state: LicenseState`
   - `isGated: Bool` — `false` in this stub; drives whether license UI is shown

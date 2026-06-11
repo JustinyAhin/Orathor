@@ -19,6 +19,7 @@ public enum LicenseError: LocalizedError, Equatable {
     case invalidKey
     case activationLimitReached
     case network(String)
+    case storage(String)
     case notActivated
 
     public var errorDescription: String? {
@@ -29,6 +30,8 @@ public enum LicenseError: LocalizedError, Equatable {
             return "This license key has reached its activation limit."
         case .network(let message):
             return "Couldn't reach the license server — \(message)"
+        case .storage(let message):
+            return "Couldn't access secure license storage — \(message)"
         case .notActivated:
             return "No license is activated on this device."
         }
