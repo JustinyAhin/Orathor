@@ -219,7 +219,7 @@
 - Closed implementation in private repo `JustinyAhin/OrathorLicensing`: 7-day trial (Keychain `license.trialStart`, survives reinstall; clock-rollback guard via `license.maxSeenDate`), Polar.sh customer-portal license-key client (activate/validate/deactivate, public endpoints, sandbox in DEBUG), 3-day background re-validation with 14-day offline grace
 - Gate at top of `TranscriptionViewModel.startRecording()` — trial expired/invalid license blocks dictation start (never interrupts mid-dictation); `license.refresh()` fired opportunistically
 - Settings "License" section (shown only when `isGated`): status row (trial days left / licensed / problem), key entry + Activate, Deactivate; MenuBarView trial-status caption line above footer
-- `package.sh` swaps the private repo over the stub before the Release build (trap-restored afterward, preflight checks) and asserts the built binary contains `api.polar.sh`
+- `package.sh` exports committed source to a disposable tree, clones the private licensing repo only there, and asserts the built binary contains `api.polar.sh`; the public checkout always retains its stub
 - Sparkle updates deliberately ungated; source builds always fully unlocked
 - TODO before launch: real Polar org ID in `PolarClient.organizationID`, Polar product + activation limit, sandbox activation test
 

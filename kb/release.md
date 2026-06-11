@@ -6,7 +6,7 @@ Official binaries are published as **GitHub Releases on the main repo** (`Justin
 
 - Sparkle EdDSA private key in your Keychain (generated once via `generate_keys`)
 - `gh` CLI authenticated with push access to the repo
-- Access to the private `OrathorLicensing` repo (the script swaps it in over the stub)
+- Access to the private `OrathorLicensing` repo (the script clones it into a disposable release tree)
 - Working tree clean enough to commit `appcast.xml` (the script commits and pushes it)
 
 ## Steps
@@ -31,7 +31,7 @@ Commit the bump before releasing — the script tags HEAD via the GitHub release
 
 The script does everything:
 
-1. Swaps the closed `OrathorLicensing` module over the committed stub (restored on exit, even on failure).
+1. Exports committed source to a disposable tree and clones the closed `OrathorLicensing` module there, leaving the public checkout untouched.
 2. Builds Release, asserts the licensing code is actually in the binary.
 3. Zips to `dist/Orathor-{version}-{build}.zip` (ditto).
 4. Generates a signed `appcast.xml` (latest version only, no deltas) with download URLs pointing at `github.com/JustinyAhin/Orathor/releases/download/v{version}/`.

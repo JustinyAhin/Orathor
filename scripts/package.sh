@@ -3,41 +3,53 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-# Swap in the closed licensing module (official builds enforce trial + license
-# keys; the committed stub is always-licensed for open-source builds).
-LICENSING_DIR="Packages/OrathorLicensing"
+REPO_ROOT="$PWD"
 PRIVATE_REPO="git@github.com:JustinyAhin/OrathorLicensing.git"
+RELEASE_ROOT=""
 
-restore_stub() {
-    rm -rf "$LICENSING_DIR"
-    git checkout -- "$LICENSING_DIR"
-    echo "Stub licensing package restored."
+cleanup() {
+    if [ -n "$RELEASE_ROOT" ] && [ -d "$RELEASE_ROOT" ]; then
+        rm -rf "$RELEASE_ROOT"
+    fi
 }
 
-git ls-remote "$PRIVATE_REPO" HEAD >/dev/null || { echo "FATAL: private licensing repo unreachable."; exit 1; }
-[ -z "$(git status --porcelain "$LICENSING_DIR")" ] || { echo "FATAL: uncommitted changes in $LICENSING_DIR — commit or discard first."; exit 1; }
+trap cleanup EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
-trap restore_stub EXIT
-rm -rf "$LICENSING_DIR"
-git clone -q --depth 1 "$PRIVATE_REPO" "$LICENSING_DIR"
-rm -rf "$LICENSING_DIR/.git"
-echo "Closed licensing module swapped in."
+git ls-remote "$PRIVATE_REPO" HEAD >/dev/null || { echo "FATAL: private licensing repo unreachable."; exit 1; }
+
+# Build from committed source in a disposable tree. The closed licensing source
+# never enters the public checkout, even if the release is interrupted.
+RELEASE_ROOT=$(mktemp -d "${TMPDIR:-/tmp}/orathor-release.XXXXXX")
+RELEASE_SOURCE="$RELEASE_ROOT/Orathor"
+PRIVATE_PACKAGE_DIR="$RELEASE_SOURCE/Packages/OrathorLicensing"
+
+mkdir -p "$RELEASE_SOURCE"
+git archive --format=tar HEAD | tar -xf - -C "$RELEASE_SOURCE"
+rm -rf "$PRIVATE_PACKAGE_DIR"
+git clone -q --depth 1 "$PRIVATE_REPO" "$PRIVATE_PACKAGE_DIR"
+rm -rf "$PRIVATE_PACKAGE_DIR/.git" "$PRIVATE_PACKAGE_DIR/.build"
+echo "Disposable release source prepared with closed licensing module."
 
 # Build release
-BUILD_ROOT="$PWD/.build/release"
+BUILD_ROOT="$RELEASE_ROOT/build"
 DERIVED_DATA="$BUILD_ROOT/DerivedData"
 BUILD_LOG="$BUILD_ROOT/xcodebuild.log"
 APP_PATH="$DERIVED_DATA/Build/Products/Release/Orathor.app"
 
-rm -rf "$BUILD_ROOT"
 mkdir -p "$BUILD_ROOT"
 
 echo "Building Orathor (Release)..."
-if ! xcodebuild \
-    -scheme Orathor \
-    -configuration Release \
-    -derivedDataPath "$DERIVED_DATA" \
-    build >"$BUILD_LOG" 2>&1; then
+if ! (
+    cd "$RELEASE_SOURCE"
+    xcodebuild \
+        -scheme Orathor \
+        -configuration Release \
+        -derivedDataPath "$DERIVED_DATA" \
+        build
+) >"$BUILD_LOG" 2>&1; then
     echo "FATAL: Release build failed. Last 50 log lines:"
     tail -50 "$BUILD_LOG"
     exit 1
@@ -50,7 +62,7 @@ if [ ! -d "$APP_PATH" ]; then
 fi
 
 # Make sure the closed module actually got compiled in (not the stub).
-strings "$APP_PATH/Contents/MacOS/Orathor" | grep -q "api.polar.sh" \
+strings "$APP_PATH/Contents/MacOS/Orathor" | grep -F "api.polar.sh" >/dev/null \
     || { echo "FATAL: built binary does not contain licensing code — stub compiled into release."; exit 1; }
 
 # Get version from the app's Info.plist
@@ -58,7 +70,7 @@ VERSION=$(defaults read "$APP_PATH/Contents/Info" CFBundleShortVersionString 2>/
 BUILD=$(defaults read "$APP_PATH/Contents/Info" CFBundleVersion 2>/dev/null || echo "0")
 
 # Output directory
-OUT_DIR="./dist"
+OUT_DIR="$REPO_ROOT/dist"
 mkdir -p "$OUT_DIR"
 
 ZIP_NAME="Orathor-${VERSION}-${BUILD}.zip"
@@ -94,7 +106,7 @@ fi
 echo "Creating GitHub release $TAG..."
 gh release create "$TAG" "$ZIP_PATH" --title "$TAG" --generate-notes
 
-cp "$OUT_DIR/appcast.xml" ./appcast.xml
+cp "$OUT_DIR/appcast.xml" "$REPO_ROOT/appcast.xml"
 git add appcast.xml
 git commit -m "[infra] release ${VERSION} (build ${BUILD})"
 git push
@@ -102,7 +114,7 @@ git push
 # Legacy feed mirror: installs older than 0.0.11 still poll the Orathor-releases
 # repo. The mirrored appcast points them at the new download URLs. Drop this
 # (and the old repo) once everyone has updated past 0.0.11.
-LEGACY_REPO="../Orathor-releases"
+LEGACY_REPO="$REPO_ROOT/../Orathor-releases"
 if [ -d "$LEGACY_REPO" ]; then
     cp "$OUT_DIR/appcast.xml" "$LEGACY_REPO/appcast.xml"
     git -C "$LEGACY_REPO" commit -qam "appcast for ${VERSION}" && git -C "$LEGACY_REPO" push -q
