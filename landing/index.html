@@ -282,6 +282,13 @@
     margin-top: 34px; flex-wrap: wrap;
     font-size: 14.5px; color: var(--text-muted);
   }
+  .ritual-primary {
+    display: inline-flex; align-items: center; justify-content: center; gap: 14px;
+  }
+  .ritual-step,
+  .ritual-more {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  }
   kbd {
     font-family: inherit; font-size: 13px; font-weight: 500;
     color: var(--text);
@@ -293,6 +300,35 @@
     min-width: 30px; text-align: center; display: inline-block;
   }
   .ritual .arrow { color: var(--text-faint); }
+  @media (max-width: 560px) {
+    .ritual {
+      gap: 12px;
+      margin-inline: auto;
+      max-width: 21rem;
+      font-size: 13.5px;
+      text-align: center;
+      line-height: 1.45;
+    }
+    .ritual-primary {
+      gap: 8px;
+      width: 100%;
+    }
+    .ritual-step,
+    .ritual-more {
+      flex-wrap: wrap;
+    }
+    .ritual-more {
+      display: block;
+      width: 100%;
+      max-width: 21rem;
+      margin-inline: auto;
+    }
+  }
+  @media (max-width: 360px) {
+    .ritual { font-size: 13px; }
+    .ritual-primary { gap: 6px; }
+    kbd { padding-inline: 8px; }
+  }
 
   /* ─── Section scaffolding ─── */
   section { padding-block: clamp(70px, 11vh, 140px); }
@@ -560,9 +596,14 @@
     </div>
   </div>
   <div class="ritual reveal" style="transition-delay: 0.1s">
-    <span>Hold right</span> <kbd>⌥</kbd>
-    <span class="arrow">→</span> <span>speak</span>
-    <span class="arrow">→</span> <span>release. Or double-tap <kbd>⌥</kbd> to lock it on. That's the whole manual.</span>
+    <span class="ritual-primary">
+      <span class="ritual-step">Hold right <kbd>⌥</kbd></span>
+      <span class="arrow">→</span>
+      <span class="ritual-step">speak</span>
+      <span class="arrow">→</span>
+      <span class="ritual-step">release</span>
+    </span>
+    <span class="ritual-more">Double-tap <kbd>⌥</kbd> to lock it on. That's the whole manual.</span>
   </div>
 </div>
 
