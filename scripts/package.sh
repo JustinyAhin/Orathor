@@ -1,7 +1,7 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
-cd /Users/iamsegbedji/work/projects/Orathor
+cd "$(dirname "$0")/.."
 
 # Swap in the closed licensing module (official builds enforce trial + license
 # keys; the committed stub is always-licensed for open-source builds).
@@ -24,15 +24,28 @@ rm -rf "$LICENSING_DIR/.git"
 echo "Closed licensing module swapped in."
 
 # Build release
+BUILD_ROOT="$PWD/.build/release"
+DERIVED_DATA="$BUILD_ROOT/DerivedData"
+BUILD_LOG="$BUILD_ROOT/xcodebuild.log"
+APP_PATH="$DERIVED_DATA/Build/Products/Release/Orathor.app"
+
+rm -rf "$BUILD_ROOT"
+mkdir -p "$BUILD_ROOT"
+
 echo "Building Orathor (Release)..."
-xcodebuild -scheme Orathor -configuration Release build 2>&1 | tail -5
+if ! xcodebuild \
+    -scheme Orathor \
+    -configuration Release \
+    -derivedDataPath "$DERIVED_DATA" \
+    build >"$BUILD_LOG" 2>&1; then
+    echo "FATAL: Release build failed. Last 50 log lines:"
+    tail -50 "$BUILD_LOG"
+    exit 1
+fi
+tail -5 "$BUILD_LOG"
 
-# Find the built app
-DERIVED_DATA="$HOME/Library/Developer/Xcode/DerivedData"
-APP_PATH=$(find "$DERIVED_DATA" -path "*/Build/Products/Release/Orathor.app" -maxdepth 5 2>/dev/null | head -1)
-
-if [ -z "$APP_PATH" ]; then
-    echo "Error: Could not find Orathor.app in Release build products."
+if [ ! -d "$APP_PATH" ]; then
+    echo "FATAL: expected release app was not produced at $APP_PATH."
     exit 1
 fi
 
@@ -63,9 +76,9 @@ ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$ZIP_PATH"
 # zip from a fresh, non-reproducible build, so deltas computed against it no
 # longer match what users actually installed (Sparkle "source hash" failures).
 # At ~2MB zipped, full downloads cost nothing.
-SPARKLE_BIN=$(find "$DERIVED_DATA" -path "*/artifacts/sparkle/Sparkle/bin/generate_appcast" 2>/dev/null | head -1)
-if [ -z "$SPARKLE_BIN" ]; then
-    echo "Error: generate_appcast not found in DerivedData."
+SPARKLE_BIN="$DERIVED_DATA/SourcePackages/artifacts/sparkle/Sparkle/bin/generate_appcast"
+if [ ! -x "$SPARKLE_BIN" ]; then
+    echo "FATAL: generate_appcast not found at $SPARKLE_BIN."
     exit 1
 fi
 echo "Generating appcast..."
