@@ -202,6 +202,13 @@
 - `PermissionRow` component shared with the new Settings "Permissions" card (live status + grant/Open Settings actions + "Show welcome guide" re-open row)
 - `checkPermissions()` no longer fires the Speech Recognition system dialog on popover open — non-prompting reads only; `startRecording()` keeps the on-demand request as fallback
 
+### Step 26: Public Launch of the Monetized Build (0.0.11)
+- Repo made public; v0.0.11 released through the new pipeline (first gated official binary)
+- Full production flow verified end to end: public download → fresh 7-day trial → Polar production checkout (100% discount code) → key activation in Settings ("Licensed" + purchase email)
+- Production Polar product `75f086fc-e3a6-4d0a-ab2b-be711bfd3ac4`; org/product IDs documented in the private OrathorLicensing repo README
+- Pre-0.0.11 installs auto-update via the mirrored legacy appcast; legacy repo can be archived once everyone is past 0.0.11
+- Still open before promoting: pricing finalization on the Polar product, notarization, repo positioning pass (bead Orathor-3wi.6)
+
 ### Step 25: Releases Moved to Main Repo
 - Binaries now published as GitHub Releases on `JustinyAhin/Orathor` (tag `v{version}`, zip as asset via `gh release create`); appcast.xml committed at repo root, `SUFeedURL` → raw main-branch URL
 - `package.sh` fully automates: build → zip → appcast → GitHub release → appcast commit+push; mirrors the appcast to `../Orathor-releases` so pre-0.0.11 installs (old feed URL) still get updates — archive that repo once everyone's past 0.0.11
