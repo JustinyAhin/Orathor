@@ -1,0 +1,15 @@
+<?xml version="1.0" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>Orathor</title>
+        <item>
+            <title>0.0.11</title>
+            <pubDate>Thu, 11 Jun 2026 10:33:28 +0100</pubDate>
+            <sparkle:version>11</sparkle:version>
+            <sparkle:shortVersionString>0.0.11</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.2</sparkle:minimumSystemVersion>
+            <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
+            <enclosure url="https://github.com/JustinyAhin/Orathor/releases/download/v0.0.11/Orathor-0.0.11-11.zip" length="2344048" type="application/octet-stream" sparkle:edSignature="HGs0XFmG8JbXgNY9JCTK1tHs4iazZD956ySJH8sFTm9qltS9F8uJjQ4Y/9gpusi9XGpQJEiv/bajmwDEkjaKDg=="/>
+        </item>
+    </channel>
+</rss>
