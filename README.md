@@ -76,7 +76,7 @@ open Orathor.xcodeproj
 
 Orathor is licensed under the [GNU General Public License v3.0](LICENSE).
 
-You are free to use, modify, and redistribute the source under the terms of the GPL v3. Derivative works must also be released under the GPL v3. The official prebuilt binary is distributed separately.
+You are free to use, modify, and redistribute the source under the terms of the GPL v3. Derivative works must also be released under the GPL v3. The official prebuilt binary is distributed separately under its own terms and includes a closed licensing component; builds from this repo are always fully unlocked.
 
 ## Contributing
 

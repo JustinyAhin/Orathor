@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		1F472CF12F5C7C3B00234182 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 1F472CF02F5C7C3B00234182 /* Sparkle */; };
+		1FA11CE32F5C7C3B00234182 /* OrathorLicensing in Frameworks */ = {isa = PBXBuildFile; productRef = 1FA11CE22F5C7C3B00234182 /* OrathorLicensing */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,6 +29,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				1F472CF12F5C7C3B00234182 /* Sparkle in Frameworks */,
+				1FA11CE32F5C7C3B00234182 /* OrathorLicensing in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -71,6 +73,7 @@
 			name = Orathor;
 			packageProductDependencies = (
 				1F472CF02F5C7C3B00234182 /* Sparkle */,
+				1FA11CE22F5C7C3B00234182 /* OrathorLicensing */,
 			);
 			productName = Orathor;
 			productReference = 1FD750052F5AB14B0032A2F9 /* Orathor.app */;
@@ -102,6 +105,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				1F472CEF2F5C7C3B00234182 /* XCRemoteSwiftPackageReference "Sparkle" */,
+				1FA11CE12F5C7C3B00234182 /* XCLocalSwiftPackageReference "Packages/OrathorLicensing" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 1FD750062F5AB14B0032A2F9 /* Products */;
@@ -362,11 +366,22 @@
 		};
 /* End XCRemoteSwiftPackageReference section */
 
+/* Begin XCLocalSwiftPackageReference section */
+		1FA11CE12F5C7C3B00234182 /* XCLocalSwiftPackageReference "Packages/OrathorLicensing" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/OrathorLicensing;
+		};
+/* End XCLocalSwiftPackageReference section */
+
 /* Begin XCSwiftPackageProductDependency section */
 		1F472CF02F5C7C3B00234182 /* Sparkle */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 1F472CEF2F5C7C3B00234182 /* XCRemoteSwiftPackageReference "Sparkle" */;
 			productName = Sparkle;
+		};
+		1FA11CE22F5C7C3B00234182 /* OrathorLicensing */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = OrathorLicensing;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

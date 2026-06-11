@@ -1,15 +1,20 @@
+import OrathorLicensing
 import Sparkle
 import SwiftUI
 
 struct SettingsView: View {
     @Bindable var viewModel: SettingsViewModel
     var permissions: PermissionsService
+    var license: LicenseManager
     let updater: SPUUpdater
     @Environment(\.openWindow) private var openWindow
     @State private var copiedDiagnostics = false
     @State private var formattingAvailable = true
     @State private var formattingMessage: String?
     @State private var didPromptAccessibility = false
+    @State private var licenseKeyInput = ""
+    @State private var licenseActionError: String?
+    @State private var isActivatingLicense = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xxl) {
@@ -23,6 +28,9 @@ struct SettingsView: View {
             soundsSection
             appearanceSection
             updatesSection
+            if license.isGated {
+                licenseSection
+            }
             diagnosticsSection
             versionFooter
         }
@@ -497,6 +505,141 @@ struct SettingsView: View {
                 .buttonStyle(.plain)
             }
             .cardStyle(padding: 0)
+        }
+    }
+
+    // MARK: - License
+
+    private var licenseSection: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            ContentSectionHeader(title: "License", symbol: "key.fill")
+
+            VStack(alignment: .leading, spacing: 0) {
+                licenseStatusRow
+
+                if case .licensed = license.state {
+                    SubtleDivider()
+                    Button {
+                        Task {
+                            licenseActionError = nil
+                            do {
+                                try await license.deactivate()
+                            } catch {
+                                licenseActionError = error.localizedDescription
+                            }
+                        }
+                    } label: {
+                        HStack {
+                            Text("Deactivate on this Mac")
+                                .font(OType.body)
+                                .foregroundStyle(Color.textPrimary)
+                            Spacer()
+                            Image(systemName: "xmark.circle")
+                                .font(.system(size: 14))
+                                .foregroundStyle(Color.textTertiary)
+                        }
+                        .padding(.horizontal, Spacing.lg)
+                        .padding(.vertical, Spacing.md)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    SubtleDivider()
+                    VStack(alignment: .leading, spacing: Spacing.sm) {
+                        HStack(spacing: Spacing.sm) {
+                            TextField("License key", text: $licenseKeyInput)
+                                .textFieldStyle(.roundedBorder)
+                                .disabled(isActivatingLicense)
+                            Button(isActivatingLicense ? "Activating…" : "Activate") {
+                                Task { await activateLicense() }
+                            }
+                            .disabled(isActivatingLicense || licenseKeyInput.trimmingCharacters(in: .whitespaces).isEmpty)
+                        }
+
+                        if let licenseActionError {
+                            Label(licenseActionError, systemImage: "exclamationmark.triangle.fill")
+                                .font(OType.caption)
+                                .foregroundStyle(Color.warning)
+                        }
+                    }
+                    .padding(.horizontal, Spacing.lg)
+                    .padding(.vertical, Spacing.md)
+                }
+            }
+            .cardStyle(padding: 0)
+        }
+    }
+
+    private var licenseStatusRow: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(licenseStatusTitle)
+                    .font(OType.body)
+                    .foregroundStyle(Color.textPrimary)
+                Text(licenseStatusCaption)
+                    .font(OType.caption)
+                    .foregroundStyle(licenseStatusCaptionColor)
+            }
+            Spacer()
+            Image(systemName: licenseStatusSymbol)
+                .font(.system(size: 16))
+                .foregroundStyle(licenseStatusCaptionColor)
+        }
+        .padding(.horizontal, Spacing.lg)
+        .padding(.vertical, Spacing.md)
+    }
+
+    private var licenseStatusTitle: String {
+        switch license.state {
+        case .licensed: "Licensed"
+        case .trialing: "Free trial"
+        case .trialExpired: "Trial ended"
+        case .licenseInvalid: "License problem"
+        }
+    }
+
+    private var licenseStatusCaption: String {
+        switch license.state {
+        case .licensed(let email):
+            if let key = license.maskedLicenseKey {
+                email.map { "\(key) — \($0)" } ?? key
+            } else {
+                "This Mac is activated"
+            }
+        case .trialing(let daysLeft):
+            daysLeft == 1 ? "1 day left" : "\(daysLeft) days left"
+        case .trialExpired:
+            "Enter a license key to keep dictating"
+        case .licenseInvalid(let reason):
+            reason
+        }
+    }
+
+    private var licenseStatusCaptionColor: Color {
+        switch license.state {
+        case .licensed: Color.success
+        case .trialing: Color.brand
+        case .trialExpired, .licenseInvalid: Color.warning
+        }
+    }
+
+    private var licenseStatusSymbol: String {
+        switch license.state {
+        case .licensed: "checkmark.seal.fill"
+        case .trialing: "clock.fill"
+        case .trialExpired, .licenseInvalid: "exclamationmark.triangle.fill"
+        }
+    }
+
+    private func activateLicense() async {
+        isActivatingLicense = true
+        licenseActionError = nil
+        defer { isActivatingLicense = false }
+        do {
+            try await license.activate(key: licenseKeyInput.trimmingCharacters(in: .whitespaces))
+            licenseKeyInput = ""
+        } catch {
+            licenseActionError = error.localizedDescription
         }
     }
 

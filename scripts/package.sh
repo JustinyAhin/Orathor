@@ -3,6 +3,26 @@ set -e
 
 cd /Users/iamsegbedji/work/projects/Orathor
 
+# Swap in the closed licensing module (official builds enforce trial + license
+# keys; the committed stub is always-licensed for open-source builds).
+LICENSING_DIR="Packages/OrathorLicensing"
+PRIVATE_REPO="git@github.com:JustinyAhin/OrathorLicensing.git"
+
+restore_stub() {
+    rm -rf "$LICENSING_DIR"
+    git checkout -- "$LICENSING_DIR"
+    echo "Stub licensing package restored."
+}
+
+git ls-remote "$PRIVATE_REPO" HEAD >/dev/null || { echo "FATAL: private licensing repo unreachable."; exit 1; }
+[ -z "$(git status --porcelain "$LICENSING_DIR")" ] || { echo "FATAL: uncommitted changes in $LICENSING_DIR — commit or discard first."; exit 1; }
+
+trap restore_stub EXIT
+rm -rf "$LICENSING_DIR"
+git clone -q --depth 1 "$PRIVATE_REPO" "$LICENSING_DIR"
+rm -rf "$LICENSING_DIR/.git"
+echo "Closed licensing module swapped in."
+
 # Build release
 echo "Building Orathor (Release)..."
 xcodebuild -scheme Orathor -configuration Release build 2>&1 | tail -5
@@ -15,6 +35,10 @@ if [ -z "$APP_PATH" ]; then
     echo "Error: Could not find Orathor.app in Release build products."
     exit 1
 fi
+
+# Make sure the closed module actually got compiled in (not the stub).
+strings "$APP_PATH/Contents/MacOS/Orathor" | grep -q "api.polar.sh" \
+    || { echo "FATAL: built binary does not contain licensing code — stub compiled into release."; exit 1; }
 
 # Get version from the app's Info.plist
 VERSION=$(defaults read "$APP_PATH/Contents/Info" CFBundleShortVersionString 2>/dev/null || echo "unknown")

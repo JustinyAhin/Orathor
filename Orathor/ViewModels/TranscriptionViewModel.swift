@@ -1,5 +1,6 @@
 import AppKit
 import AVFoundation
+import OrathorLicensing
 import Speech
 
 @Observable
@@ -15,6 +16,7 @@ final class TranscriptionViewModel {
     let settingsViewModel = SettingsViewModel()
     let historyService = TranscriptHistoryService()
     let permissions = PermissionsService()
+    let license = LicenseManager()
 
     private let audioService = AudioService()
     private var speechService: any TranscriptionService
@@ -83,6 +85,8 @@ final class TranscriptionViewModel {
     func setUp() {
         guard !isSetUp else { return }
         isSetUp = true
+
+        Task { await license.refresh() }
 
         settingsViewModel.onEngineChanged = { [weak self] _ in
             guard let self, !self.isRecording else { return }
@@ -208,6 +212,14 @@ final class TranscriptionViewModel {
     }
 
     private func startRecording() {
+        guard license.canDictate else {
+            errorMessage = license.state == .trialExpired
+                ? "Your free trial has ended. Enter a license key in Settings to keep dictating."
+                : "Your license could not be validated. Check Settings."
+            return
+        }
+        Task { await license.refresh() }
+
         let engine = settingsViewModel.selectedEngine
 
         if engine == .apple {

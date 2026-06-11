@@ -202,6 +202,15 @@
 - `PermissionRow` component shared with the new Settings "Permissions" card (live status + grant/Open Settings actions + "Show welcome guide" re-open row)
 - `checkPermissions()` no longer fires the Speech Recognition system dialog on popover open — non-prompting reads only; `startRecording()` keeps the on-demand request as fallback
 
+### Step 24: License-Key Gating (VoiceInk model)
+- `Packages/OrathorLicensing` local SPM package (stub): `LicenseManager` (@MainActor @Observable), `LicenseState`/`LicenseError` — always licensed, `isGated = false`; the public API is the contract with the closed implementation
+- Closed implementation in private repo `JustinyAhin/OrathorLicensing`: 7-day trial (Keychain `license.trialStart`, survives reinstall; clock-rollback guard via `license.maxSeenDate`), Polar.sh customer-portal license-key client (activate/validate/deactivate, public endpoints, sandbox in DEBUG), 3-day background re-validation with 14-day offline grace
+- Gate at top of `TranscriptionViewModel.startRecording()` — trial expired/invalid license blocks dictation start (never interrupts mid-dictation); `license.refresh()` fired opportunistically
+- Settings "License" section (shown only when `isGated`): status row (trial days left / licensed / problem), key entry + Activate, Deactivate; MenuBarView trial-status caption line above footer
+- `package.sh` swaps the private repo over the stub before the Release build (trap-restored afterward, preflight checks) and asserts the built binary contains `api.polar.sh`
+- Sparkle updates deliberately ungated; source builds always fully unlocked
+- TODO before launch: real Polar org ID in `PolarClient.organizationID`, Polar product + activation limit, sandbox activation test
+
 ### Step 23: Licensing + CLA
 - GPL v3 `LICENSE` added (full GNU text) — copyleft keeps commercial forks open-source while the official binary is sold separately
 - `CLA.md` — individual CLA granting the maintainer rights to sublicense/relicense contributions under any terms (enables proprietary binary distribution); patent grant + originality representations included

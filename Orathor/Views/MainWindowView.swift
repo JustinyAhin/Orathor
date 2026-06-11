@@ -121,6 +121,7 @@ struct MainWindowView: View {
                 SettingsView(
                     viewModel: viewModel.settingsViewModel,
                     permissions: viewModel.permissions,
+                    license: viewModel.license,
                     updater: updater
                 )
                     .padding(Spacing.xxxl)

@@ -1,3 +1,4 @@
+import OrathorLicensing
 import SwiftUI
 
 struct MenuBarView: View {
@@ -30,6 +31,10 @@ struct MenuBarView: View {
             searchBar
             transcriptList
             SubtleDivider()
+            if viewModel.license.isGated, let trialStatus {
+                trialStatusLine(trialStatus)
+                SubtleDivider()
+            }
             footer
         }
         .frame(width: 340)
@@ -181,6 +186,32 @@ struct MenuBarView: View {
                 .frame(maxHeight: 320)
             }
         }
+    }
+
+    private var trialStatus: (message: String, isWarning: Bool)? {
+        switch viewModel.license.state {
+        case .trialing(let daysLeft):
+            (daysLeft == 1 ? "Trial — 1 day left" : "Trial — \(daysLeft) days left", false)
+        case .trialExpired:
+            ("Trial ended — enter a license key in Settings", true)
+        case .licenseInvalid:
+            ("License problem — check Settings", true)
+        case .licensed:
+            nil
+        }
+    }
+
+    private func trialStatusLine(_ status: (message: String, isWarning: Bool)) -> some View {
+        HStack(spacing: Spacing.xxs) {
+            Image(systemName: status.isWarning ? "exclamationmark.triangle.fill" : "clock.fill")
+                .font(.system(size: 9))
+            Text(status.message)
+                .font(OType.caption)
+            Spacer()
+        }
+        .foregroundStyle(status.isWarning ? Color.warning : Color.brand)
+        .padding(.horizontal, Spacing.lg)
+        .padding(.vertical, Spacing.xs)
     }
 
     private var footer: some View {
