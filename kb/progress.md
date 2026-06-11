@@ -217,7 +217,7 @@
 ### Step 24: License-Key Gating (VoiceInk model)
 - `Packages/OrathorLicensing` local SPM package (stub): `LicenseManager` (@MainActor @Observable), `LicenseState`/`LicenseError` — always licensed, `isGated = false`; the public API is the contract with the closed implementation
 - Closed implementation in private repo `JustinyAhin/OrathorLicensing`: 7-day trial (Keychain `license.trialStart`, survives reinstall; clock-rollback guard via `license.maxSeenDate`), Polar.sh customer-portal license-key client (activate/validate/deactivate, public endpoints, sandbox in DEBUG), 3-day background re-validation with 14-day offline grace
-- Gate at top of `TranscriptionViewModel.startRecording()` — trial expired/invalid license blocks dictation start (never interrupts mid-dictation); `license.refresh()` fired opportunistically
+- Gate at top of `TranscriptionViewModel.startRecording()` — recording awaits any due license validation before checking entitlement, and key-up cancels a start still waiting on validation or permissions (never interrupts mid-dictation)
 - Settings "License" section (shown only when `isGated`): status row (trial days left / licensed / problem), key entry + Activate, Deactivate; MenuBarView trial-status caption line above footer
 - `package.sh` exports committed source to a disposable tree, clones the private licensing repo only there, and asserts the built binary contains `api.polar.sh`; the public checkout always retains its stub
 - Sparkle updates deliberately ungated; source builds always fully unlocked

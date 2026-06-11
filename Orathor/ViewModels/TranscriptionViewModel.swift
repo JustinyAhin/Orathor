@@ -28,6 +28,7 @@ final class TranscriptionViewModel {
     private var targetApp: TextInsertionService.FrontmostApp?
     private var currentRecordingURL: URL?
     private var wasCancelled = false
+    private var pendingRecordingStartID: UUID?
 
     private var isSetUp = false
     private let diag = DiagnosticLogger.shared
@@ -108,10 +109,14 @@ final class TranscriptionViewModel {
             case .startRecording(let mode):
                 self.recordingMode = mode
                 self.shouldAutoInsert = (mode == .insertAtCursor)
-                self.startRecording()
+                let startID = UUID()
+                self.pendingRecordingStartID = startID
                 RecordingOverlay.show(viewModel: self)
-                if !self.isRecording, self.errorMessage != nil {
-                    self.scheduleErrorOverlayDismiss()
+                Task {
+                    await self.startRecording(startID: startID)
+                    if !self.isRecording, self.errorMessage != nil {
+                        self.scheduleErrorOverlayDismiss()
+                    }
                 }
             case .stopRecording:
                 Task {
@@ -207,18 +212,23 @@ final class TranscriptionViewModel {
             shouldAutoInsert = false
             Task { await stopRecording() }
         } else {
-            startRecording()
+            let startID = UUID()
+            pendingRecordingStartID = startID
+            Task { await startRecording(startID: startID) }
         }
     }
 
-    private func startRecording() {
+    private func startRecording(startID: UUID) async {
+        await license.refresh()
+        guard pendingRecordingStartID == startID else { return }
+
         guard license.canDictate else {
+            pendingRecordingStartID = nil
             errorMessage = license.state == .trialExpired
                 ? "Your free trial has ended. Enter a license key in Settings to keep dictating."
                 : "Your license could not be validated. Check Settings."
             return
         }
-        Task { await license.refresh() }
 
         let engine = settingsViewModel.selectedEngine
 
@@ -228,28 +238,34 @@ final class TranscriptionViewModel {
                 if status == .authorized {
                     hasPermission = true
                 } else if status == .notDetermined {
-                    Task {
-                        hasPermission = await AppleSpeechService.requestPermission()
-                        if hasPermission { startRecording() }
-                    }
-                    return
+                    hasPermission = await AppleSpeechService.requestPermission()
+                    guard pendingRecordingStartID == startID else { return }
                 } else {
+                    pendingRecordingStartID = nil
+                    errorMessage = "Speech recognition permission is required."
+                    return
+                }
+                guard hasPermission else {
+                    pendingRecordingStartID = nil
                     errorMessage = "Speech recognition permission is required."
                     return
                 }
             }
         } else if engine == .deepgram {
             guard settingsViewModel.isDeepgramConfigured else {
+                pendingRecordingStartID = nil
                 errorMessage = "Deepgram API key is required. Add it in Settings."
                 return
             }
         } else if engine == .openAIWhisper {
             guard settingsViewModel.isOpenAIConfigured else {
+                pendingRecordingStartID = nil
                 errorMessage = "OpenAI API key is required. Add it in Settings."
                 return
             }
         }
 
+        guard pendingRecordingStartID == startID else { return }
         refreshSpeechServiceIfNeeded()
 
         do {
@@ -278,12 +294,15 @@ final class TranscriptionViewModel {
             currentRecordingURL = historyService.newRecordingURL()
             try audioService.startRecording(saveTo: currentRecordingURL)
             isRecording = true
+            pendingRecordingStartID = nil
         } catch {
+            pendingRecordingStartID = nil
             errorMessage = error.localizedDescription
         }
     }
 
     private func stopRecording() async {
+        pendingRecordingStartID = nil
         diag.log("STOP recording — wasCancelled: \(wasCancelled)")
         let stopStart = Date()
         // No flush delay needed: removeTap is synchronous and all audio is
