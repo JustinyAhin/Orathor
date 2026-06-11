@@ -1,55 +1,51 @@
 # Orathor
 
-**Open-source Wispr Flow alternative for macOS — native, on-device, and private.**
+**An open-source Wispr Flow alternative for macOS.** Native, runs on-device, keeps your dictation to yourself.
 
-Press a shortcut, speak, and your words appear wherever your cursor is. Orathor is a native menu bar app built with Swift and SwiftUI — no Electron, no web views, no account required. By default your audio never leaves your Mac: transcription runs **100% on-device** with Apple's SpeechAnalyzer. And because the source is right here, the privacy claim is something you can audit, not just trust.
+Press a shortcut, speak, and your words appear wherever your cursor is. It's a native menu bar app written in Swift and SwiftUI. No Electron, no web views, no account to sign up for. By default your audio never leaves your Mac, because transcription runs entirely on-device with Apple's SpeechAnalyzer. And since the source is right here, that privacy claim is something you can read in the code instead of taking on faith.
 
-Tools like Wispr Flow charge **~$12/month** ($144/year) for cloud dictation. Orathor is a **one-time license — no subscription** — and the source is free to build yourself.
+Tools like Wispr Flow cost around $12 a month, or $144 a year, for cloud dictation. Orathor is a one-time license with no subscription, and the source is free to build yourself.
 
 ## Free vs. paid
 
-Orathor is open source, and a build from this repo is **always fully unlocked** — there's no feature gate hiding in the code.
+Orathor is open source, and a build from this repo is always fully unlocked. There's no feature gate hidden in the code.
 
-- **Build it yourself (free):** clone, open in Xcode, run. Full local dictation with Apple SpeechAnalyzer at zero cost, plus every cloud engine if you bring your own API key.
-- **Buy the binary (one-time license):** a prebuilt download with automatic updates via Sparkle, bundled cloud minutes (Deepgram / Whisper, no key needed), and priority support — for people who'd rather not build from source.
+- **Build it yourself (free):** clone, open in Xcode, run. You get full local dictation with Apple SpeechAnalyzer at no cost, plus every cloud engine if you bring your own API key.
+- **Buy the binary (one-time license):** a prebuilt download that updates itself through Sparkle, with bundled Deepgram and Whisper minutes so you don't need a key, and priority support. It's for people who'd rather not build from source.
 
-Same app either way. Paying is for the convenience of the prebuilt, auto-updating binary, not to remove a limitation.
+Same app either way. You're paying for the convenience of a prebuilt binary that keeps itself up to date, not to unlock anything.
 
 ## How it compares
 
-If you've used **Wispr Flow**, **SuperWhisper**, **Monologue**, **Willow Voice**, **MacWhisper**, or **VoiceInk**, Orathor will feel familiar — system-wide dictation triggered by a hotkey, with smart cleanup. What sets it apart:
+If you've used Wispr Flow, SuperWhisper, Monologue, Willow Voice, MacWhisper, or VoiceInk, Orathor will feel familiar: system-wide dictation on a hotkey, with optional cleanup of the result. A few things are different.
 
-- **Open source** — the on-device privacy claim is auditable, not marketing.
-- **On-device by default** — Apple SpeechAnalyzer runs locally; your voice never has to touch a server. Cloud engines (Deepgram, Whisper) are opt-in.
-- **One-time license, no subscription** — versus the monthly billing most cloud dictation tools require.
-- **Bring your own API key** — use cloud engines in a free build with your own key, no markup.
-- **Native, not Electron** — instant launch, negligible CPU and memory.
+It's open source, so the on-device privacy claim is something you can verify in the code rather than a line on a landing page. It runs locally by default with Apple SpeechAnalyzer, and the cloud engines (Deepgram, Whisper) are opt-in instead of the default. It's a one-time license rather than the monthly bill most cloud dictation tools charge. You can run the cloud engines in a free build with your own API key, at cost. And because it's a native app rather than Electron, it launches instantly and barely shows up in Activity Monitor.
 
 ## Install
 
 1. Download the latest zip from the [Releases page](https://github.com/JustinyAhin/Orathor/releases/latest)
 2. Unzip and drag `Orathor.app` to `/Applications`
-3. **Right-click → Open** the first time — the app isn't notarized, so a normal double-click is blocked by Gatekeeper
-4. Orathor lives in the menu bar (no Dock icon) — look for the mic icon
+3. The first time, right-click the app and choose Open. It isn't notarized yet, so a normal double-click gets blocked by Gatekeeper.
+4. Orathor lives in the menu bar (no Dock icon). Look for the mic icon.
 5. Grant the permissions it asks for: Microphone, Accessibility (text insertion), and Speech Recognition (Apple Speech engine)
 
-Updates after that are automatic via Sparkle.
+After that, updates arrive automatically through Sparkle.
 
 ## How it works
 
-1. Trigger recording with the **Right Option** key (hold or double-tap — configurable in Settings)
-2. Speak — the floating overlay shows a live preview of your words as you talk
-3. Release or tap again to stop — the text is inserted at your cursor
+1. Trigger recording with the **Right Option** key (hold or double-tap, configurable in Settings)
+2. Speak. A floating overlay shows a live preview of your words as you talk.
+3. Release or tap again to stop, and the text is inserted at your cursor.
 
 Press **Escape** while recording to cancel without inserting text.
 
-You can also start/stop from the menu bar popover and copy the transcription to your clipboard, or set a separate hotkey that dictates straight to the clipboard.
+You can also start and stop from the menu bar popover and copy the transcription to your clipboard, or set a separate hotkey that dictates straight to the clipboard.
 
 ## Speech engines
 
 | Engine | Type | Setup |
 |---|---|---|
-| **Apple Speech** (default) | Local, on-device (SpeechAnalyzer) | None — works out of the box |
+| **Apple Speech** (default) | Local, on-device (SpeechAnalyzer) | None, works out of the box |
 | **Deepgram Nova** | Cloud, higher accuracy | Requires an API key (stored in Keychain) |
 | **OpenAI Whisper** | Cloud, realtime streaming | Requires an API key (stored in Keychain) |
 
@@ -57,7 +53,7 @@ Switch engines from the pill in the menu bar popover header, or in Settings.
 
 ## Smart formatting
 
-An optional on-device polish pass (Apple Foundation Models) fixes punctuation, removes filler words, and applies spoken commands like "new line". Opt in from Settings or the wand pill in the popover header — requires Apple Intelligence. The original transcript is always preserved.
+An optional on-device polish pass (Apple Foundation Models) fixes punctuation, removes filler words, and applies spoken commands like "new line". Turn it on in Settings or from the wand pill in the popover header; it needs Apple Intelligence. The original transcript is always kept.
 
 ## Requirements
 
@@ -101,8 +97,8 @@ You are free to use, modify, and redistribute the source under the terms of the 
 
 ### Trademark
 
-"Orathor" — the name, logo, and app icon — is a trademark of Justin Ahinon and is **not** covered by the GPL. You may fork, modify, and redistribute the code under the GPL v3, but distributed forks must use a different name and icon, must not present themselves as Orathor or as officially associated with it, and must not use the name in a way that suggests endorsement. Building the app from source unmodified for personal use is of course fine.
+"Orathor", including the name, logo, and app icon, is a trademark of Justin Ahinon and is **not** covered by the GPL. You may fork, modify, and redistribute the code under the GPL v3, but a distributed fork must use a different name and icon, must not present itself as Orathor or as officially associated with it, and must not use the name in a way that suggests endorsement. Building the app unmodified from source for personal use is of course fine.
 
 ## Contributing
 
-Contributions are welcome. All contributors must sign the [Contributor License Agreement](CLA.md) before their first pull request can be merged — a bot will comment on your PR with instructions.
+Contributions are welcome. All contributors must sign the [Contributor License Agreement](CLA.md) before their first pull request can be merged. A bot will comment on your PR with instructions.
