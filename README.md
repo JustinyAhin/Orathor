@@ -1,12 +1,33 @@
 # Orathor
 
-Voice dictation for macOS that just works — fast, accurate, and out of your way.
+**Open-source Wispr Flow alternative for macOS — native, on-device, and private.**
 
-Press a shortcut, speak, and your words appear wherever your cursor is. Orathor is a native menu bar app built with Swift and SwiftUI. No Electron, no web views, no accounts.
+Press a shortcut, speak, and your words appear wherever your cursor is. Orathor is a native menu bar app built with Swift and SwiftUI — no Electron, no web views, no account required. By default your audio never leaves your Mac: transcription runs **100% on-device** with Apple's SpeechAnalyzer. And because the source is right here, the privacy claim is something you can audit, not just trust.
+
+Tools like Wispr Flow charge **~$12/month** ($144/year) for cloud dictation. Orathor is a **one-time license — no subscription** — and the source is free to build yourself.
+
+## Free vs. paid
+
+Orathor is open source, and a build from this repo is **always fully unlocked** — there's no feature gate hiding in the code.
+
+- **Build it yourself (free):** clone, open in Xcode, run. Full local dictation with Apple SpeechAnalyzer at zero cost, plus every cloud engine if you bring your own API key.
+- **Buy the binary (one-time license):** a prebuilt download with automatic updates via Sparkle, bundled cloud minutes (Deepgram / Whisper, no key needed), and priority support — for people who'd rather not build from source.
+
+Same app either way. Paying is for the convenience of the prebuilt, auto-updating binary, not to remove a limitation.
+
+## How it compares
+
+If you've used **Wispr Flow**, **SuperWhisper**, **Monologue**, **Willow Voice**, **MacWhisper**, or **VoiceInk**, Orathor will feel familiar — system-wide dictation triggered by a hotkey, with smart cleanup. What sets it apart:
+
+- **Open source** — the on-device privacy claim is auditable, not marketing.
+- **On-device by default** — Apple SpeechAnalyzer runs locally; your voice never has to touch a server. Cloud engines (Deepgram, Whisper) are opt-in.
+- **One-time license, no subscription** — versus the monthly billing most cloud dictation tools require.
+- **Bring your own API key** — use cloud engines in a free build with your own key, no markup.
+- **Native, not Electron** — instant launch, negligible CPU and memory.
 
 ## Install
 
-1. Download the latest zip from [Orathor-releases](https://github.com/JustinyAhin/Orathor-releases/tree/main/releases)
+1. Download the latest zip from the [Releases page](https://github.com/JustinyAhin/Orathor/releases/latest)
 2. Unzip and drag `Orathor.app` to `/Applications`
 3. **Right-click → Open** the first time — the app isn't notarized, so a normal double-click is blocked by Gatekeeper
 4. Orathor lives in the menu bar (no Dock icon) — look for the mic icon
