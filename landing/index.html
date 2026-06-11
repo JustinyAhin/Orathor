@@ -241,24 +241,40 @@
   .hud {
     position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%);
     display: flex; align-items: center; gap: 14px;
+    width: max-content;
+    max-width: calc(100% - 32px);
     background: oklch(0.13 0.004 260 / 0.92);
     border: 1px solid var(--border);
     border-radius: 99px;
     padding: 10px 20px;
     backdrop-filter: blur(10px);
   }
-  .hud-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--red); animation: pulse 1.6s ease-in-out infinite; }
+  .hud-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--red); animation: pulse 1.6s ease-in-out infinite; }
   @keyframes pulse { 50% { opacity: 0.35; } }
-  .wave { display: flex; align-items: center; gap: 2.5px; height: 22px; }
+  .wave { flex: none; display: flex; align-items: center; gap: 2.5px; height: 22px; }
   .wave i {
     width: 2.5px; border-radius: 2px; background: var(--blue);
     height: 30%;
     animation: wave-bob 0.9s ease-in-out infinite alternate;
   }
   @keyframes wave-bob { from { height: 18%; opacity: 0.55; } to { height: var(--h, 80%); opacity: 1; } }
-  .hud-time { font-size: 12.5px; color: var(--text-muted); font-variant-numeric: tabular-nums; min-width: 38px; }
-  .hud-live { font-size: 13px; color: var(--text); max-width: 320px; white-space: nowrap; overflow: hidden; }
+  .hud-time { flex: none; font-size: 12.5px; color: var(--text-muted); font-variant-numeric: tabular-nums; min-width: 38px; }
+  .hud-live { flex: 1 1 auto; min-width: 0; font-size: 13px; color: var(--text); max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .hud-live:empty { display: none; }
+  @media (max-width: 520px) {
+    .hud {
+      gap: 10px;
+      max-width: calc(100% - 20px);
+      padding: 9px 12px;
+    }
+    .hud-live { max-width: none; }
+    .wave { gap: 2px; }
+    .wave i { width: 2px; }
+  }
+  @media (max-width: 380px) {
+    .hud-dot { display: none; }
+    .wave i:nth-child(n+19) { display: none; }
+  }
 
   /* shortcut ritual */
   .ritual {
