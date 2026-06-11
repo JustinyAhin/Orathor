@@ -202,6 +202,12 @@
 - `PermissionRow` component shared with the new Settings "Permissions" card (live status + grant/Open Settings actions + "Show welcome guide" re-open row)
 - `checkPermissions()` no longer fires the Speech Recognition system dialog on popover open — non-prompting reads only; `startRecording()` keeps the on-demand request as fallback
 
+### Step 23: Licensing + CLA
+- GPL v3 `LICENSE` added (full GNU text) — copyleft keeps commercial forks open-source while the official binary is sold separately
+- `CLA.md` — individual CLA granting the maintainer rights to sublicense/relicense contributions under any terms (enables proprietary binary distribution); patent grant + originality representations included
+- `.github/workflows/cla.yml` — contributor-assistant/github-action v2.6.1; signatures stored in `signatures/cla.json` on a `cla-signatures` branch of this repo; signing via PR comment; maintainer + bots allowlisted
+- README License section updated (was "All rights reserved") + new Contributing section pointing to the CLA
+
 ## Remaining
 
 ### Core Features
