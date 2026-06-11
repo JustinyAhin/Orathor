@@ -135,6 +135,7 @@ Always check permission status before using protected APIs and guide the user to
 
 ## Git
 
+- **Do not commit or push unless explicitly asked.**
 - Do not add `Co-Authored-By` lines to commit messages.
 - Prefix every commit with a topic tag in square brackets so history is greppable. Pick one:
   - `[feat]` — new app features
