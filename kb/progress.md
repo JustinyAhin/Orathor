@@ -202,6 +202,10 @@
 - `PermissionRow` component shared with the new Settings "Permissions" card (live status + grant/Open Settings actions + "Show welcome guide" re-open row)
 - `checkPermissions()` no longer fires the Speech Recognition system dialog on popover open — non-prompting reads only; `startRecording()` keeps the on-demand request as fallback
 
+### Step 27: Distribution Compliance Notices
+- `Orathor/Licenses/Sparkle-LICENSE.txt` (verbatim copy of Sparkle's MIT + vendored notices) and `Orathor-Binary-Terms.txt` (proprietary binary terms, references GPL source + trademark policy) ship inside the app at `Contents/Resources/` via the synchronized group — covers Sparkle's MIT redistribution requirement in the release zip
+- Binary-terms wording is a first draft — review before relying on it legally
+
 ### Step 26: Public Launch of the Monetized Build (0.0.11)
 - Repo made public; v0.0.11 released through the new pipeline (first gated official binary)
 - Full production flow verified end to end: public download → fresh 7-day trial → Polar production checkout (100% discount code) → key activation in Settings ("Licensed" + purchase email)

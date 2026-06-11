@@ -1,0 +1,30 @@
+Orathor — Binary Distribution Terms
+
+Copyright (c) 2026 Justin Ahinon. All rights reserved.
+
+This official prebuilt Orathor binary is licensed, not sold. It is
+provided for personal use on devices you own or control. It includes a
+closed-source licensing component and may not be redistributed, resold,
+modified, or reverse engineered, except to the extent permitted by
+applicable law.
+
+Free-tier limits and paid unlocks are governed by the license key terms
+presented at purchase.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY ARISING FROM THE USE OF THE SOFTWARE.
+
+Source code (excluding the closed licensing component) is available
+under the GNU General Public License v3.0 at:
+https://github.com/JustinyAhin/Orathor
+Builds from that source are fully unlocked and governed by the GPL v3,
+not these terms. "Orathor" — the name, logo, and app icon — is a
+trademark of Justin Ahinon and is not covered by the GPL.
+
+Third-party software included in this binary:
+
+  Sparkle (https://sparkle-project.org) — MIT License and additional
+  notices. See Sparkle-LICENSE.txt in this folder.
