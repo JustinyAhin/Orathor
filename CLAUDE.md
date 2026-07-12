@@ -135,19 +135,7 @@ Always check permission status before using protected APIs and guide the user to
 
 ## Git
 
-- **Do not commit or push unless explicitly asked.**
-- Do not add `Co-Authored-By` lines to commit messages.
-- Prefix every commit with a topic tag in square brackets so history is greppable. Pick one:
-  - `[feat]` — new app features
-  - `[fix]` — bug fixes
-  - `[ui]` — SwiftUI views, styling, layout, components, theme
-  - `[speech]` — transcription engines (Deepgram, Apple Speech, Whisper), accuracy, formatting
-  - `[audio]` — mic capture, AVAudioEngine, audio pipeline
-  - `[hotkey]` — global shortcuts, keyboard handling, text insertion
-  - `[infra]` — build, scripts, entitlements, Info.plist, release/packaging
-  - `[chore]` — deps, tooling, internal scripts
-- Examples: `[speech] add OpenAI realtime Whisper engine`, `[ui] redesign Home dashboard and sidebar`, `[fix] preserve transcript selection across window focus`.
-- Keep commit descriptions short. Add a longer body only when it provides real value/context (non-obvious why, tricky tradeoff, follow-up notes).
+For the shared Git workflow: [github.com/JustinyAhin/kb/git.md](https://github.com/JustinyAhin/kb/blob/main/git.md)
 
 ## Workflow
 
@@ -166,7 +154,6 @@ cd /Users/iamsegbedji/work/projects/Orathor && xcodebuild -scheme Orathor -confi
 ```
 
 2. If there are build errors, fix them before moving on.
-3. **Update `kb/progress.md`** after every meaningful change (new feature, bug fix, architectural change). Move completed items from Remaining to Completed, add new items as needed.
 
 ## Commands
 
@@ -209,16 +196,7 @@ struct OrathorApp: App {
 
 ## Issue Tracking
 
-This project uses **bd (beads)** for issue tracking.
-Run `bd prime` for workflow context, or install hooks (`bd hooks install`) for auto-injection.
-
-**Quick reference:**
-- `bd ready` — find unblocked work
-- `bd create "Title" --type task --priority 2` — create issue
-- `bd close <id>` — complete work
-- `bd dolt push` — push beads to remote
-
-For full workflow details: `bd prime`
+For the shared Beads workflow and backup/recovery runbook: [github.com/JustinyAhin/kb/beads.md](https://github.com/JustinyAhin/kb/blob/main/beads.md)
 
 ## Fetching Pages
 

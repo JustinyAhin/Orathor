@@ -18,4 +18,7 @@ dist/
 
 # Dolt database files (added by bd init)
 .dolt/
+.beads/dolt/
+# Local Beads backup destination metadata
+.beads/dolt-backup*.json
 *.db
