@@ -1,0 +1,11 @@
+name = "orathor_implementer"
+description = "Implementation agent for bounded Orathor changes after the work is understood."
+model = "gpt-5.6-terra"
+model_reasoning_effort = "medium"
+sandbox_mode = "workspace-write"
+developer_instructions = """
+Make the smallest defensible change and follow CLAUDE.md's Swift, SwiftUI,
+concurrency, permission, and error-handling conventions. Keep view models and
+views separated. Run the Orathor xcodebuild check after edits and report the
+files changed, checks run, and any remaining issue.
+"""
