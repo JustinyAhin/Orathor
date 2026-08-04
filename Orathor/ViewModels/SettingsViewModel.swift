@@ -117,6 +117,12 @@ final class SettingsViewModel {
         }
     }
 
+    var cloudVocabularyEnabled: Bool {
+        didSet {
+            UserDefaults.standard.set(cloudVocabularyEnabled, forKey: "cloudVocabularyEnabled")
+        }
+    }
+
     var onEngineChanged: ((SpeechEngine) -> Void)?
     var onHotkeyChanged: (() -> Void)?
 
@@ -148,6 +154,7 @@ final class SettingsViewModel {
 
         transcriptionLanguage = UserDefaults.standard.string(forKey: "transcriptionLanguage") ?? "multi"
         smartFormattingEnabled = UserDefaults.standard.object(forKey: "smartFormatting") as? Bool ?? false
+        cloudVocabularyEnabled = UserDefaults.standard.object(forKey: "cloudVocabularyEnabled") as? Bool ?? true
 
         startSound = UserDefaults.standard.string(forKey: "startSound") ?? SoundService.defaultStart
         stopSound = UserDefaults.standard.string(forKey: "stopSound") ?? SoundService.defaultStop

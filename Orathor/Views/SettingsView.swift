@@ -4,6 +4,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @Bindable var viewModel: SettingsViewModel
+    @Bindable var dictionaryService: PersonalDictionaryService
     var permissions: PermissionsService
     var license: LicenseManager
     let updater: SPUUpdater
@@ -24,6 +25,10 @@ struct SettingsView: View {
             engineSection
             permissionsSection
             formattingSection
+            PersonalDictionarySettingsView(
+                dictionary: dictionaryService,
+                settings: viewModel
+            )
             hotkeySection
             soundsSection
             appearanceSection

@@ -8,6 +8,7 @@ final class DeepgramService: NSObject, TranscriptionService, URLSessionWebSocket
 
     private let apiKey: String
     private let language: String
+    private let context: TranscriptionContext
     private let targetSampleRate: Double = 16000
     private var webSocketTask: URLSessionWebSocketTask?
     private var urlSession: URLSession?
@@ -33,9 +34,14 @@ final class DeepgramService: NSObject, TranscriptionService, URLSessionWebSocket
     private var keepAliveTask: Task<Void, Never>?
     private let warmIdleLimit: TimeInterval = 120
 
-    init(apiKey: String, language: String = "multi") {
+    init(
+        apiKey: String,
+        language: String = "multi",
+        context: TranscriptionContext = TranscriptionContext()
+    ) {
         self.apiKey = apiKey
         self.language = language
+        self.context = context
     }
 
     func startTranscribing() async throws {
@@ -102,21 +108,11 @@ final class DeepgramService: NSObject, TranscriptionService, URLSessionWebSocket
     // MARK: - WebSocket Connection
 
     private func connect() async throws {
-        let params = [
-            "model=nova-3",
-            "language=\(language)",
-            "encoding=linear16",
-            "channels=1",
-            "sample_rate=\(Int(targetSampleRate))",
-            "punctuate=true",
-            "smart_format=true",
-            "interim_results=true"
-        ]
-
-        let queryString = params.joined(separator: "&")
-        guard let url = URL(string: "wss://api.deepgram.com/v1/listen?\(queryString)") else {
-            throw DeepgramError.invalidURL
-        }
+        let url = try Self.connectionURL(
+            language: language,
+            keywords: context.keywords,
+            sampleRate: Int(targetSampleRate)
+        )
 
         var request = URLRequest(url: url)
         request.setValue("Token \(apiKey)", forHTTPHeaderField: "Authorization")
@@ -133,6 +129,30 @@ final class DeepgramService: NSObject, TranscriptionService, URLSessionWebSocket
 
         isTranscribing = true
         listenForMessages()
+    }
+
+    static func connectionURL(
+        language: String,
+        keywords: [String],
+        sampleRate: Int = 16_000
+    ) throws -> URL {
+        var components = URLComponents(string: "wss://api.deepgram.com/v1/listen")
+        var queryItems = [
+            URLQueryItem(name: "model", value: "nova-3"),
+            URLQueryItem(name: "language", value: language),
+            URLQueryItem(name: "encoding", value: "linear16"),
+            URLQueryItem(name: "channels", value: "1"),
+            URLQueryItem(name: "sample_rate", value: String(sampleRate)),
+            URLQueryItem(name: "punctuate", value: "true"),
+            URLQueryItem(name: "smart_format", value: "true"),
+            URLQueryItem(name: "interim_results", value: "true"),
+        ]
+        queryItems.append(contentsOf: keywords.prefix(PersonalDictionarySnapshot.cloudHintLimit).map {
+            URLQueryItem(name: "keyterm", value: $0)
+        })
+        components?.queryItems = queryItems
+        guard let url = components?.url else { throw DeepgramError.invalidURL }
+        return url
     }
 
     private func markSocketClosed() {

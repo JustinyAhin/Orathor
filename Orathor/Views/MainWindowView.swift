@@ -120,6 +120,7 @@ struct MainWindowView: View {
             ScrollView {
                 SettingsView(
                     viewModel: viewModel.settingsViewModel,
+                    dictionaryService: viewModel.dictionaryService,
                     permissions: viewModel.permissions,
                     license: viewModel.license,
                     updater: updater

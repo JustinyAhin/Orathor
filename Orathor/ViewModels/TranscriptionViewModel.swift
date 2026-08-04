@@ -14,6 +14,7 @@ final class TranscriptionViewModel {
     var isFormatting = false
 
     let settingsViewModel = SettingsViewModel()
+    let dictionaryService = PersonalDictionaryService()
     let historyService = TranscriptHistoryService()
     let permissions = PermissionsService()
     let license = LicenseManager()
@@ -22,6 +23,7 @@ final class TranscriptionViewModel {
     private var speechService: any TranscriptionService
     private let keyboardService = KeyboardService()
     private let polisher = TranscriptPolisher()
+    private let personalizer = TranscriptPersonalizer()
     private var shouldAutoInsert = false
     private(set) var recordingMode: KeyboardService.RecordingMode = .insertAtCursor
     private var recordingStartTime: Date?
@@ -29,17 +31,24 @@ final class TranscriptionViewModel {
     private var currentRecordingURL: URL?
     private var wasCancelled = false
     private var pendingRecordingStartID: UUID?
+    private var recordingDictionarySnapshot: PersonalDictionarySnapshot?
 
     private var isSetUp = false
     private let diag = DiagnosticLogger.shared
 
     init() {
+        let dictionarySnapshot = dictionaryService.snapshot(
+            cloudHintsEnabled: settingsViewModel.cloudVocabularyEnabled)
+        let context = Self.makeContext(
+            language: settingsViewModel.transcriptionLanguage,
+            engine: settingsViewModel.selectedEngine,
+            dictionary: dictionarySnapshot)
         let config = SpeechServiceConfig(
             engine: settingsViewModel.selectedEngine,
             deepgramAPIKey: settingsViewModel.deepgramApiKey,
             openAIAPIKey: settingsViewModel.openAIApiKey,
             language: settingsViewModel.transcriptionLanguage,
-            context: TranscriptionContext.fromLegacyLanguage(settingsViewModel.transcriptionLanguage),
+            context: context,
             openAITranscriptionDelay: UserDefaults.standard.string(forKey: "whisperTranscriptionDelay") ?? "low"
         )
         speechServiceConfig = config
@@ -60,13 +69,19 @@ final class TranscriptionViewModel {
 
     /// Keeps the cached service (and any warm connection it holds) unless
     /// engine, API key, or language changed since it was built.
-    private func refreshSpeechServiceIfNeeded() {
+    private func refreshSpeechServiceIfNeeded(dictionary: PersonalDictionarySnapshot? = nil) {
+        let dictionary = dictionary ?? dictionaryService.snapshot(
+            cloudHintsEnabled: settingsViewModel.cloudVocabularyEnabled)
+        let context = Self.makeContext(
+            language: settingsViewModel.transcriptionLanguage,
+            engine: settingsViewModel.selectedEngine,
+            dictionary: dictionary)
         let config = SpeechServiceConfig(
             engine: settingsViewModel.selectedEngine,
             deepgramAPIKey: settingsViewModel.deepgramApiKey,
             openAIAPIKey: settingsViewModel.openAIApiKey,
             language: settingsViewModel.transcriptionLanguage,
-            context: TranscriptionContext.fromLegacyLanguage(settingsViewModel.transcriptionLanguage),
+            context: context,
             openAITranscriptionDelay: UserDefaults.standard.string(forKey: "whisperTranscriptionDelay") ?? "low"
         )
         guard config != speechServiceConfig else { return }
@@ -266,7 +281,10 @@ final class TranscriptionViewModel {
         }
 
         guard pendingRecordingStartID == startID else { return }
-        refreshSpeechServiceIfNeeded()
+        let dictionarySnapshot = dictionaryService.snapshot(
+            cloudHintsEnabled: settingsViewModel.cloudVocabularyEnabled)
+        recordingDictionarySnapshot = dictionarySnapshot
+        refreshSpeechServiceIfNeeded(dictionary: dictionarySnapshot)
 
         do {
             errorMessage = nil
@@ -297,6 +315,7 @@ final class TranscriptionViewModel {
             pendingRecordingStartID = nil
         } catch {
             pendingRecordingStartID = nil
+            recordingDictionarySnapshot = nil
             errorMessage = error.localizedDescription
         }
     }
@@ -324,24 +343,32 @@ final class TranscriptionViewModel {
             recordingStartTime = nil
             targetApp = nil
             currentRecordingURL = nil
+            recordingDictionarySnapshot = nil
             return
         }
 
         var text = currentTranscription
+        let rawText = text
+        let dictionary = recordingDictionarySnapshot ?? dictionaryService.snapshot(
+            cloudHintsEnabled: settingsViewModel.cloudVocabularyEnabled)
         let duration = recordingStartTime.map { Date().timeIntervalSince($0) } ?? 0
 
         // Optional on-device cleanup pass (Foundation Models). Fails open to raw text.
         var didPolish = false
-        var originalText: String?
         if settingsViewModel.smartFormattingEnabled, !text.isEmpty {
             let raw = text
             isFormatting = true
-            text = await polisher.polish(text)
+            text = await polisher.polish(text, dictionary: dictionary)
             isFormatting = false
             didPolish = text != raw
-            if didPolish { originalText = raw }
             diag.log("Smart formatting — applied: \(settingsViewModel.smartFormattingEnabled), changed: \(didPolish) (\(raw.count) → \(text.count) chars)")
         }
+
+        let beforePersonalization = text
+        text = personalizer.personalize(text, using: dictionary)
+        let didPersonalize = text != beforePersonalization
+        let originalText = text != rawText ? rawText : nil
+        diag.log("Personal dictionary — terms: \(dictionary.terms.count), rules: \(dictionary.replacements.count), changed: \(didPersonalize)")
 
         diag.log("Transcription result — text length: \(text.count), mode: \(recordingMode), shouldAutoInsert: \(shouldAutoInsert), duration: \(String(format: "%.1f", duration))s")
 
@@ -392,6 +419,7 @@ final class TranscriptionViewModel {
         recordingStartTime = nil
         targetApp = nil
         currentRecordingURL = nil
+        recordingDictionarySnapshot = nil
     }
 
     var currentAudioLevel: Float {
@@ -414,11 +442,37 @@ final class TranscriptionViewModel {
         case .apple:
             AppleSpeechService()
         case .deepgram:
-            DeepgramService(apiKey: deepgramAPIKey, language: language)
+            DeepgramService(apiKey: deepgramAPIKey, language: language, context: context)
         case .openAIWhisper:
             OpenAIRealtimeTranscriptionService(
                 apiKey: openAIAPIKey, context: context, delay: openAITranscriptionDelay)
         }
+    }
+
+    private static func makeContext(
+        language: String,
+        engine: SpeechEngine,
+        dictionary: PersonalDictionarySnapshot
+    ) -> TranscriptionContext {
+        let keywords: [String]
+        switch engine {
+        case .apple:
+            keywords = []
+        case .deepgram:
+            keywords = dictionary.cloudKeywords
+        case .openAIWhisper:
+            keywords = dictionary.cloudKeywords.filter {
+                !$0.contains("<") && !$0.contains(">") && !$0.contains("\r") && !$0.contains("\n")
+            }
+            let omittedCount = dictionary.cloudKeywords.count - keywords.count
+            if omittedCount > 0 {
+                DiagnosticLogger.shared.log(
+                    "OpenAI vocabulary hints — omitted \(omittedCount) incompatible terms")
+            }
+        }
+        return TranscriptionContext(
+            keywords: keywords,
+            languages: TranscriptionContext.fromLegacyLanguage(language).languages)
     }
 
     func insertAtCursor() {

@@ -30,7 +30,7 @@ actor TranscriptPolisher {
         }
     }
 
-    private static let instructions = """
+    private static let baseInstructions = """
     You clean up dictated speech-to-text transcripts. Apply these edits and nothing more:
     - Fix capitalization and punctuation.
     - Remove filler words and verbal stumbles (um, uh, er, "you know", repeated words).
@@ -39,9 +39,16 @@ actor TranscriptPolisher {
     or add anything. Return ONLY the cleaned transcript text, with no preamble or commentary.
     """
 
+    static func instructions(for dictionary: PersonalDictionarySnapshot) -> String {
+        guard let personalization = dictionary.formattingInstructions else {
+            return baseInstructions
+        }
+        return baseInstructions + "\n\nPersonal dictionary:\n" + personalization
+    }
+
     /// Returns a cleaned version of `raw`, or `raw` unchanged if cleanup is
     /// unavailable or fails. Never throws.
-    func polish(_ raw: String) async -> String {
+    func polish(_ raw: String, dictionary: PersonalDictionarySnapshot) async -> String {
         let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return raw }
 
@@ -53,7 +60,7 @@ actor TranscriptPolisher {
 
         do {
             // Fresh session per call so transcripts don't bleed context into each other.
-            let session = LanguageModelSession(instructions: Self.instructions)
+            let session = LanguageModelSession(instructions: Self.instructions(for: dictionary))
             let response = try await session.respond(to: raw)
             let cleaned = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
             if cleaned.isEmpty {

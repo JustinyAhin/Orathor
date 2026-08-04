@@ -13,8 +13,8 @@ struct TranscriptEntry: Identifiable, Codable {
     /// Whether on-device smart formatting (Foundation Models) altered this transcript.
     /// `nil` for entries recorded before the feature existed.
     let smartFormatted: Bool?
-    /// The original transcript before smart formatting. `nil` when formatting was
-    /// off, made no change, or the entry predates the feature.
+    /// The original engine transcript before smart formatting or personal-dictionary
+    /// corrections. `nil` when post-processing made no change or the entry predates it.
     let rawText: String?
     /// Label for the model that performed formatting (e.g. on-device Foundation Models).
     let formattingModel: String?

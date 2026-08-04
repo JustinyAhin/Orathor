@@ -83,7 +83,7 @@ struct MainTranscriptRow: View {
             }
 
             if let raw = entry.rawText {
-                iconButton("text.badge.minus", help: "Copy original (unformatted)") {
+                iconButton("text.badge.minus", help: "Copy original transcription") {
                     copy(raw)
                 }
             }
