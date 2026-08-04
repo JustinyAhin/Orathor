@@ -1,6 +1,0 @@
-# Project-scoped Codex orchestration defaults.
-# Individual agents define their own model and reasoning settings.
-
-[agents]
-max_threads = 4
-max_depth = 1
