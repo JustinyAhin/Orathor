@@ -13,12 +13,24 @@
 
 /* Begin PBXFileReference section */
 		1FD750052F5AB14B0032A2F9 /* Orathor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Orathor.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000001 /* OrathorTests.xctest */ = {
+			isa = PBXFileReference;
+			explicitFileType = wrapper.cfbundle;
+			includeInIndex = 0;
+			path = OrathorTests.xctest;
+			sourceTree = BUILT_PRODUCTS_DIR;
+		};
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		1FD750072F5AB14B0032A2F9 /* Orathor */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Orathor;
+			sourceTree = "<group>";
+		};
+		A10000000000000000000002 /* OrathorTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = OrathorTests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -33,6 +45,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A10000000000000000000006 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -40,6 +59,7 @@
 			isa = PBXGroup;
 			children = (
 				1FD750072F5AB14B0032A2F9 /* Orathor */,
+				A10000000000000000000002 /* OrathorTests */,
 				1FD750062F5AB14B0032A2F9 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -48,6 +68,7 @@
 			isa = PBXGroup;
 			children = (
 				1FD750052F5AB14B0032A2F9 /* Orathor.app */,
+				A10000000000000000000001 /* OrathorTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -78,6 +99,27 @@
 			productName = Orathor;
 			productReference = 1FD750052F5AB14B0032A2F9 /* Orathor.app */;
 			productType = "com.apple.product-type.application";
+		};
+		A10000000000000000000003 /* OrathorTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10000000000000000000004 /* Build configuration list for PBXNativeTarget "OrathorTests" */;
+			buildPhases = (
+				A10000000000000000000005 /* Sources */,
+				A10000000000000000000006 /* Frameworks */,
+				A10000000000000000000007 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				A10000000000000000000008 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				A10000000000000000000002 /* OrathorTests */,
+			);
+			name = OrathorTests;
+			productName = OrathorTests;
+			productReference = A10000000000000000000001 /* OrathorTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -113,12 +155,20 @@
 			projectRoot = "";
 			targets = (
 				1FD750042F5AB14B0032A2F9 /* Orathor */,
+				A10000000000000000000003 /* OrathorTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		1FD750032F5AB14B0032A2F9 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000007 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -135,7 +185,21 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A10000000000000000000005 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		A10000000000000000000008 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 1FD750042F5AB14B0032A2F9 /* Orathor */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		1FD7500E2F5AB14B0032A2F9 /* Debug */ = {
@@ -332,6 +396,30 @@
 			};
 			name = Release;
 		};
+		A10000000000000000000009 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = segbedji.OrathorTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Orathor.app/Contents/MacOS/Orathor";
+			};
+			name = Debug;
+		};
+		A10000000000000000000010 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = segbedji.OrathorTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Orathor.app/Contents/MacOS/Orathor";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -349,6 +437,15 @@
 			buildConfigurations = (
 				1FD750112F5AB14B0032A2F9 /* Debug */,
 				1FD750122F5AB14B0032A2F9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A10000000000000000000004 /* Build configuration list for PBXNativeTarget "OrathorTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A10000000000000000000009 /* Debug */,
+				A10000000000000000000010 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

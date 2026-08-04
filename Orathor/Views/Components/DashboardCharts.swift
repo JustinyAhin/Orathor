@@ -277,7 +277,7 @@ struct EngineSlice: Identifiable {
         switch engine {
         case .apple: "Apple"
         case .deepgram: "Deepgram"
-        case .openAIWhisper: "Whisper"
+        case .openAIWhisper: "OpenAI"
         }
     }
 }

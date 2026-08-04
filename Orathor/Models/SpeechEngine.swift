@@ -11,7 +11,7 @@ enum SpeechEngine: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .apple: "Apple (Local)"
         case .deepgram: "Deepgram Nova (Cloud)"
-        case .openAIWhisper: "OpenAI Whisper (Cloud)"
+        case .openAIWhisper: "OpenAI Live Transcribe (Cloud)"
         }
     }
 
@@ -19,7 +19,7 @@ enum SpeechEngine: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .apple: "Apple Speech"
         case .deepgram: "Deepgram Nova"
-        case .openAIWhisper: "OpenAI Whisper"
+        case .openAIWhisper: "OpenAI Live Transcribe"
         }
     }
 
@@ -27,7 +27,7 @@ enum SpeechEngine: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .apple: "Apple"
         case .deepgram: "Deepgram"
-        case .openAIWhisper: "Whisper"
+        case .openAIWhisper: "OpenAI"
         }
     }
 
@@ -35,7 +35,7 @@ enum SpeechEngine: String, CaseIterable, Identifiable, Codable {
         switch self {
         case .apple: "On-device, no API key needed. Good for basic dictation."
         case .deepgram: "Cloud-based, higher accuracy. Requires API key."
-        case .openAIWhisper: "Cloud-based, realtime GPT Whisper transcription. Requires API key."
+        case .openAIWhisper: "Cloud-based live transcription. Requires API key."
         }
     }
 }

@@ -11,7 +11,7 @@ Tools like Wispr Flow cost around $12 a month, or $144 a year, for cloud dictati
 Orathor is open source, and a build from this repo is always fully unlocked. There's no feature gate hidden in the code.
 
 - **Build it yourself (free):** clone, open in Xcode, run. You get full local dictation with Apple SpeechAnalyzer at no cost, plus every cloud engine if you bring your own API key.
-- **Buy the binary (one-time license):** a prebuilt download that updates itself through Sparkle, with bundled Deepgram and Whisper minutes so you don't need a key, and priority support. It's for people who'd rather not build from source.
+- **Buy the binary (one-time license):** a prebuilt download that updates itself through Sparkle, with bundled Deepgram and OpenAI Live Transcribe minutes so you don't need a key, and priority support. It's for people who'd rather not build from source.
 
 Same app either way. You're paying for the convenience of a prebuilt binary that keeps itself up to date, not to unlock anything.
 
@@ -19,7 +19,7 @@ Same app either way. You're paying for the convenience of a prebuilt binary that
 
 If you've used Wispr Flow, SuperWhisper, Monologue, Willow Voice, MacWhisper, or VoiceInk, Orathor will feel familiar: system-wide dictation on a hotkey, with optional cleanup of the result. A few things are different.
 
-It's open source, so the on-device privacy claim is something you can verify in the code rather than a line on a landing page. It runs locally by default with Apple SpeechAnalyzer, and the cloud engines (Deepgram, Whisper) are opt-in instead of the default. It's a one-time license rather than the monthly bill most cloud dictation tools charge. You can run the cloud engines in a free build with your own API key, at cost. And because it's a native app rather than Electron, it launches instantly and barely shows up in Activity Monitor.
+It's open source, so the on-device privacy claim is something you can verify in the code rather than a line on a landing page. It runs locally by default with Apple SpeechAnalyzer, and the cloud engines (Deepgram and OpenAI Live Transcribe) are opt-in instead of the default. It's a one-time license rather than the monthly bill most cloud dictation tools charge. You can run the cloud engines in a free build with your own API key, at cost. And because it's a native app rather than Electron, it launches instantly and barely shows up in Activity Monitor.
 
 ## Install
 
@@ -47,7 +47,7 @@ You can also start and stop from the menu bar popover and copy the transcription
 |---|---|---|
 | **Apple Speech** (default) | Local, on-device (SpeechAnalyzer) | None, works out of the box |
 | **Deepgram Nova** | Cloud, higher accuracy | Requires an API key (stored in Keychain) |
-| **OpenAI Whisper** | Cloud, realtime streaming | Requires an API key (stored in Keychain) |
+| **OpenAI Live Transcribe** | Cloud, realtime streaming | Requires an API key (stored in Keychain) |
 
 Switch engines from the pill in the menu bar popover header, or in Settings.
 

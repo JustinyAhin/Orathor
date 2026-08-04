@@ -186,22 +186,22 @@
 - Smart formatting requires Apple Intelligence (Foundation Models). TranscriptPolisher.status maps availability → user-facing reason; Settings toggle is disabled with an amber caption when unavailable (e.g. appleIntelligenceNotEnabled) so the feature never fails silently
 - Provenance captured on TranscriptEntry: rawText (original), smartFormatted (bool), formattingModel (label); history row shows a wand badge + "Copy original" action. Polisher logs outcome (OK/skipped-unavailable/failed) to diagnostics
 
-### Step 20: Live Transcription Preview + Whisper Streaming
+### Step 20: Live Transcription Preview + OpenAI Live Transcribe Streaming
 - RecordingOverlay shows the transcript live while speaking: streaming text below the REC/waveform row in a fixed two-line area (bottom-anchored, clipped from the top so the latest words stay visible — SwiftUI multiline head truncation is unreliable). Panel size is constant while streaming, so no per-delta relayout
 - Panel re-fits/repositions when the overlay switches modes (recording ↔ formatting/error/preparing/accessibility prompt) via `RecordingOverlay.refreshLayout()` triggered by `.onChange(of: mode)` — pill sizes differ a lot between modes
 - Works for all three engines via the shared `transcribedText` observable — Deepgram (interim results) and Apple Speech (volatile segments) already streamed
-- OpenAI `gpt-realtime-whisper` streams deltas natively as audio arrives — turn detection must stay off (`NSNull()`, the model rejects it with "Turn detection is not supported"); added `delay: "low"` for live-caption latency
+- OpenAI Live Transcribe uses `gpt-live-transcribe` with provider-neutral captured context (automatic or expected language array, optional prompt and keywords). Turn detection stays off (`NSNull()`); `delay: "low"` remains the default live-caption setting.
 - Stop-time commit hitting `input_audio_buffer_commit_empty` (e.g. instant tap with no audio) is treated as a clean stop, not surfaced as an error
-- Fixed tail-of-sentence loss on Whisper: the 2s stop timeout could expire before the server's final `completed` transcript arrived (deltas lag speech by the `delay` budget), pasting only partial text. Timeout raised to 10s as a pure backstop — `completed` is the normal exit, dead connections resolve via `handleDisconnect` — and timeout expiry now logs to diagnostics
+- Fixed tail-of-sentence loss on OpenAI Live Transcribe: the 2s stop timeout could expire before the server's final `completed` transcript arrived (deltas lag speech by the `delay` budget), pasting only partial text. Timeout raised to 10s as a pure backstop — `completed` is the normal exit, dead connections resolve via `handleDisconnect` — and timeout expiry now logs to diagnostics
 
 ### Step 21: Dictation Latency (bd epic Orathor-qv2)
 - Pre-connect on key-down (qv2.1): WS handshake starts from `startRecording` in parallel with audio engine spin-up instead of on the first audio buffer. `TranscriptionService.startTranscribing()` is now formatless; cloud services build their audio converter lazily from the first buffer's format (target rates are fixed: 16k Deepgram, 24k OpenAI)
 - Handshake message queue: both cloud services queue outbound messages under a lock until `didOpenWithProtocol`, then flush in order — audio spoken during the handshake is no longer silently dropped. OpenAI's `session.update` moved into `didOpen` (was sent into a not-yet-open socket)
 - Stop path (qv2.4): removed the fixed 300ms post-stop sleep (removeTap is synchronous; socket ordering guarantees audio precedes Finalize/commit); Deepgram finalize timeout tightened 2s → 1s
 - Latency instrumentation in diagnostics: socket-open and first-transcript ms after connect (per engine), engine-finalized and auto-insert ms after key-up
-- Whisper `delay` is a hidden default for benchmarking minimal vs low (qv2.3): `defaults write segbedji.Orathor whisperTranscriptionDelay minimal`, default "low"
+- OpenAI `delay` is a hidden default for benchmarking minimal vs low (qv2.3): `defaults write segbedji.Orathor whisperTranscriptionDelay minimal`, default "low"
 - Measured (diagnostics markers): handshakes ran 0.7–1.9s per dictation (vs 100–400ms estimate); key-up→insert now Apple ~65ms, Deepgram 340–663ms, OpenAI 744–1007ms; no dropped audio across all runs
-- Warm connections (qv2.2): speech services are cached in the VM (rebuilt only on engine/API-key/language change via new `TranscriptionService.shutdown()` hook); Deepgram skips CloseStream and sends KeepAlive every 5s, OpenAI pings every 15s; 120s idle limit; stale warm socket falls back to normal connect with the handshake queue as safety net; converters rebuild if mic format changes between dictations
+- Warm connections (qv2.2): speech services are cached in the VM (rebuilt when cache identity changes, including OpenAI context/delay); Deepgram skips CloseStream and sends KeepAlive every 5s, OpenAI pings every 15s; 120s idle limit; stale warm socket falls back to normal connect with the handshake queue as safety net; converters rebuild if mic format changes between dictations
 
 ### Step 22: First-Run Onboarding + Permissions
 - `PermissionsService` (@Observable) — single source of truth for Microphone (`AVCaptureDevice`), Speech Recognition (`SFSpeechRecognizer`), Accessibility (`AXIsProcessTrusted`); 1s `pollWhileVisible()` from view `.task` since AX has no change notification; System Settings deep links for all three panes

@@ -17,6 +17,7 @@ final class TranscriptHistoryService {
         recordingsURL = storageURL.appendingPathComponent("Recordings", isDirectory: true)
         transcriptsFileURL = storageURL.appendingPathComponent("transcripts.json")
 
+        guard !AppRuntime.isRunningTests else { return }
         createDirectoriesIfNeeded()
         loadEntries()
     }
@@ -103,6 +104,7 @@ final class TranscriptHistoryService {
     }
 
     private func saveEntries() {
+        guard !AppRuntime.isRunningTests else { return }
         do {
             let encoder = JSONEncoder()
             encoder.dateEncodingStrategy = .iso8601

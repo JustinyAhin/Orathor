@@ -36,28 +36,24 @@ final class TranscriptionViewModel {
     init() {
         let config = SpeechServiceConfig(
             engine: settingsViewModel.selectedEngine,
-            deepgramApiKey: settingsViewModel.deepgramApiKey,
-            openAIApiKey: settingsViewModel.openAIApiKey,
-            language: settingsViewModel.transcriptionLanguage
+            deepgramAPIKey: settingsViewModel.deepgramApiKey,
+            openAIAPIKey: settingsViewModel.openAIApiKey,
+            language: settingsViewModel.transcriptionLanguage,
+            context: TranscriptionContext.fromLegacyLanguage(settingsViewModel.transcriptionLanguage),
+            openAITranscriptionDelay: UserDefaults.standard.string(forKey: "whisperTranscriptionDelay") ?? "low"
         )
         speechServiceConfig = config
         speechService = TranscriptionViewModel.makeSpeechService(
             for: config.engine,
-            deepgramApiKey: config.deepgramApiKey,
-            openAIApiKey: config.openAIApiKey,
-            language: config.language
+            deepgramAPIKey: config.deepgramAPIKey,
+            openAIAPIKey: config.openAIAPIKey,
+            language: config.language,
+            context: config.context,
+            openAITranscriptionDelay: config.openAITranscriptionDelay
         )
         configureSpeechServiceErrorHandler()
-        DispatchQueue.main.async { [self] in
-            self.setUp()
-        }
-    }
-
-    private struct SpeechServiceConfig: Equatable {
-        let engine: SpeechEngine
-        let deepgramApiKey: String
-        let openAIApiKey: String
-        let language: String
+        guard !AppRuntime.isRunningTests else { return }
+        DispatchQueue.main.async { [self] in self.setUp() }
     }
 
     private var speechServiceConfig: SpeechServiceConfig
@@ -67,17 +63,21 @@ final class TranscriptionViewModel {
     private func refreshSpeechServiceIfNeeded() {
         let config = SpeechServiceConfig(
             engine: settingsViewModel.selectedEngine,
-            deepgramApiKey: settingsViewModel.deepgramApiKey,
-            openAIApiKey: settingsViewModel.openAIApiKey,
-            language: settingsViewModel.transcriptionLanguage
+            deepgramAPIKey: settingsViewModel.deepgramApiKey,
+            openAIAPIKey: settingsViewModel.openAIApiKey,
+            language: settingsViewModel.transcriptionLanguage,
+            context: TranscriptionContext.fromLegacyLanguage(settingsViewModel.transcriptionLanguage),
+            openAITranscriptionDelay: UserDefaults.standard.string(forKey: "whisperTranscriptionDelay") ?? "low"
         )
         guard config != speechServiceConfig else { return }
         speechService.shutdown()
         speechService = TranscriptionViewModel.makeSpeechService(
             for: config.engine,
-            deepgramApiKey: config.deepgramApiKey,
-            openAIApiKey: config.openAIApiKey,
-            language: config.language
+            deepgramAPIKey: config.deepgramAPIKey,
+            openAIAPIKey: config.openAIAPIKey,
+            language: config.language,
+            context: config.context,
+            openAITranscriptionDelay: config.openAITranscriptionDelay
         )
         speechServiceConfig = config
         configureSpeechServiceErrorHandler()
@@ -171,7 +171,7 @@ final class TranscriptionViewModel {
                 }
             }
         }
-        if let openAI = speechService as? OpenAIRealtimeWhisperService {
+        if let openAI = speechService as? OpenAIRealtimeTranscriptionService {
             openAI.onError = { [weak self] message in
                 Task { @MainActor in
                     guard let self else { return }
@@ -404,17 +404,20 @@ final class TranscriptionViewModel {
 
     private static func makeSpeechService(
         for engine: SpeechEngine,
-        deepgramApiKey: String,
-        openAIApiKey: String,
-        language: String = "multi"
+        deepgramAPIKey: String,
+        openAIAPIKey: String,
+        language: String = "multi",
+        context: TranscriptionContext = TranscriptionContext(),
+        openAITranscriptionDelay: String = "low"
     ) -> any TranscriptionService {
         switch engine {
         case .apple:
             AppleSpeechService()
         case .deepgram:
-            DeepgramService(apiKey: deepgramApiKey, language: language)
+            DeepgramService(apiKey: deepgramAPIKey, language: language)
         case .openAIWhisper:
-            OpenAIRealtimeWhisperService(apiKey: openAIApiKey, language: language)
+            OpenAIRealtimeTranscriptionService(
+                apiKey: openAIAPIKey, context: context, delay: openAITranscriptionDelay)
         }
     }
 

@@ -11,7 +11,7 @@ import SwiftUI
 private let sparkleController: SPUStandardUpdaterController = {
     UserDefaults.standard.register(defaults: ["SUEnableAutomaticChecks": true])
     return SPUStandardUpdaterController(
-        startingUpdater: true,
+        startingUpdater: !AppRuntime.isRunningTests,
         updaterDelegate: nil,
         userDriverDelegate: nil
     )
@@ -23,6 +23,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        guard !AppRuntime.isRunningTests else { return }
         DiagnosticLogger.shared.logSessionStart()
 
         NSApp.setActivationPolicy(showInDock ? .regular : .accessory)
