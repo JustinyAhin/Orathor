@@ -3,11 +3,11 @@
 ## Completed
 
 ### Beads Documentation
-- Centralized the reusable Beads workflow and backup/recovery runbook in `JustinyAhin/kb/beads.md`; left generated `.beads/README.md` untouched.
+- Centralized the reusable Beads workflow and backup/recovery runbook in `JustinyAhin/kb/engineering/issue-tracking.md`; left generated `.beads/README.md` untouched.
 - Added the documented Dolt-native backup script at `scripts/beads-backup.sh` and aligned project-level Dolt ignore rules.
 
 ### Git Documentation
-- Centralized the reusable Git workflow in `JustinyAhin/kb/git.md` and replaced Orathor's local Git rules with a reference.
+- Centralized the reusable Git workflow in `JustinyAhin/kb/engineering/git.md` and replaced Orathor's local Git rules with a reference.
 
 ### Step 1: Menu Bar App
 - Converted from WindowGroup to MenuBarExtra with waveform icon

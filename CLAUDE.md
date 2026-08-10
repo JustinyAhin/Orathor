@@ -135,7 +135,7 @@ Always check permission status before using protected APIs and guide the user to
 
 ## Git
 
-For the shared Git workflow: [github.com/JustinyAhin/kb/git.md](https://github.com/JustinyAhin/kb/blob/main/git.md)
+For the shared Git workflow: [github.com/JustinyAhin/kb/engineering/git.md](https://github.com/JustinyAhin/kb/blob/main/engineering/git.md)
 
 ## Workflow
 
@@ -196,7 +196,7 @@ struct OrathorApp: App {
 
 ## Issue Tracking
 
-For the shared Beads workflow and backup/recovery runbook: [github.com/JustinyAhin/kb/beads.md](https://github.com/JustinyAhin/kb/blob/main/beads.md)
+For the shared Beads workflow and backup/recovery runbook: [github.com/JustinyAhin/kb/engineering/issue-tracking.md](https://github.com/JustinyAhin/kb/blob/main/engineering/issue-tracking.md)
 
 ## Fetching Pages
 
