@@ -16,7 +16,7 @@ enum RecordingOverlay {
             p.level = .floating
             p.isOpaque = false
             p.backgroundColor = .clear
-            p.hasShadow = true
+            p.hasShadow = false
             p.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
 
             let content = RecordingOverlayView(viewModel: viewModel)
@@ -91,7 +91,7 @@ struct RecordingOverlayView: View {
         .padding(.vertical, Spacing.sm)
         .background {
             RoundedRectangle(cornerRadius: Radius.xl)
-                .fill(.ultraThinMaterial)
+                .fill(Color.surfaceElevated)
                 .overlay(
                     RoundedRectangle(cornerRadius: Radius.xl)
                         .stroke(Color.borderSubtle, lineWidth: 0.5)
