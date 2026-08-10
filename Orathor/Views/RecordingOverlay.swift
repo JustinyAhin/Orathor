@@ -1,62 +1,10 @@
-import SwiftUI
 import AppKit
+import SwiftUI
 
-enum RecordingOverlay {
-    private static var panel: NSPanel?
-
-    static func show(viewModel: TranscriptionViewModel) {
-        if panel == nil {
-            let p = NSPanel(
-                contentRect: .zero,
-                styleMask: [.borderless, .nonactivatingPanel],
-                backing: .buffered,
-                defer: false
-            )
-            p.isFloatingPanel = true
-            p.level = .floating
-            p.isOpaque = false
-            p.backgroundColor = .clear
-            p.hasShadow = false
-            p.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-
-            let content = RecordingOverlayView(viewModel: viewModel)
-            let hostingView = NSHostingView(rootView: content)
-            p.contentView = hostingView
-            panel = p
-        }
-
-        refreshLayout()
-        panel?.orderFrontRegardless()
-    }
-
-    static func hide() {
-        panel?.orderOut(nil)
-    }
-
-    static func refreshLayout() {
-        guard let panel else { return }
-        if let hostingView = panel.contentView as? NSHostingView<RecordingOverlayView> {
-            let size = hostingView.fittingSize
-            hostingView.frame.size = size
-            panel.setContentSize(size)
-        }
-        positionAtBottomCenter()
-    }
-
-    private static func positionAtBottomCenter() {
-        guard let panel, let screen = NSScreen.main else { return }
-        let screenFrame = screen.visibleFrame
-        let x = screenFrame.midX - panel.frame.width / 2
-        let y = screenFrame.minY + 80
-        panel.setFrameOrigin(NSPoint(x: x, y: y))
-    }
-}
-
-struct RecordingOverlayView: View {
-    var viewModel: TranscriptionViewModel
-    @State private var isPulsing = false
-
-    private enum Mode: Equatable {
+@Observable
+final class RecordingOverlayController {
+    enum Mode: Equatable {
+        case starting
         case accessibilityPrompt
         case error(String)
         case preparing
@@ -64,45 +12,209 @@ struct RecordingOverlayView: View {
         case recording
     }
 
-    private var mode: Mode {
-        if viewModel.needsAccessibilityPrompt { return .accessibilityPrompt }
-        if let error = viewModel.errorMessage, !viewModel.isRecording { return .error(error) }
-        if viewModel.isPreparingModel { return .preparing }
-        if viewModel.isFormatting { return .formatting }
-        return .recording
+    enum Presentation: Equatable {
+        case idle
+        case visible(sessionID: UUID, mode: Mode)
     }
 
+    struct Lifecycle {
+        private(set) var presentation: Presentation = .idle
+
+        @discardableResult
+        mutating func present(sessionID: UUID, mode: Mode) -> Bool {
+            let next = Presentation.visible(sessionID: sessionID, mode: mode)
+            guard presentation != next else { return false }
+            presentation = next
+            return true
+        }
+
+        @discardableResult
+        mutating func update(mode: Mode, sessionID: UUID) -> Bool {
+            guard case .visible(let currentID, let currentMode) = presentation,
+                  currentID == sessionID,
+                  currentMode != mode else { return false }
+            presentation = .visible(sessionID: sessionID, mode: mode)
+            return true
+        }
+
+        @discardableResult
+        mutating func dismiss(sessionID: UUID? = nil) -> Bool {
+            guard case .visible(let currentID, _) = presentation,
+                  sessionID == nil || sessionID == currentID else { return false }
+            presentation = .idle
+            return true
+        }
+    }
+
+    private(set) var lifecycle = Lifecycle()
+    private var panel: NSPanel?
+    private var layoutTask: Task<Void, Never>?
+    private var dismissalTask: Task<Void, Never>?
+    private let diag = DiagnosticLogger.shared
+
+    var presentation: Presentation { lifecycle.presentation }
+
+    var currentSessionID: UUID? {
+        guard case .visible(let sessionID, _) = presentation else { return nil }
+        return sessionID
+    }
+
+    func present(
+        sessionID: UUID,
+        mode: Mode = .starting,
+        viewModel: TranscriptionViewModel
+    ) {
+        dismissalTask?.cancel()
+        dismissalTask = nil
+
+        let didChange = lifecycle.present(sessionID: sessionID, mode: mode)
+        ensurePanel(viewModel: viewModel)
+        guard didChange || panel?.isVisible != true else { return }
+
+        diag.log("Overlay present — session: \(sessionID), mode: \(mode)")
+        scheduleLayout(sessionID: sessionID, shouldPresent: true)
+    }
+
+    func update(mode: Mode, sessionID: UUID) {
+        guard lifecycle.update(mode: mode, sessionID: sessionID) else { return }
+        dismissalTask?.cancel()
+        dismissalTask = nil
+        diag.log("Overlay mode — session: \(sessionID), mode: \(mode)")
+        scheduleLayout(sessionID: sessionID, shouldPresent: panel?.isVisible != true)
+    }
+
+    func dismiss(sessionID: UUID? = nil) {
+        guard lifecycle.dismiss(sessionID: sessionID) else { return }
+        layoutTask?.cancel()
+        layoutTask = nil
+        dismissalTask?.cancel()
+        dismissalTask = nil
+        panel?.orderOut(nil)
+        diag.log("Overlay dismiss — session: \(sessionID?.uuidString ?? "current")")
+    }
+
+    func dismiss(
+        after duration: Duration,
+        sessionID: UUID,
+        onDismiss: (@MainActor () -> Void)? = nil
+    ) {
+        dismissalTask?.cancel()
+        dismissalTask = Task { @MainActor [weak self] in
+            do {
+                try await Task.sleep(for: duration)
+            } catch {
+                return
+            }
+            guard !Task.isCancelled, self?.currentSessionID == sessionID else { return }
+            onDismiss?()
+            self?.dismiss(sessionID: sessionID)
+        }
+    }
+
+    private func ensurePanel(viewModel: TranscriptionViewModel) {
+        guard panel == nil else { return }
+
+        let newPanel = NSPanel(
+            contentRect: .zero,
+            styleMask: [.borderless, .nonactivatingPanel],
+            backing: .buffered,
+            defer: false
+        )
+        newPanel.isFloatingPanel = true
+        newPanel.level = .floating
+        newPanel.isOpaque = false
+        newPanel.backgroundColor = .clear
+        newPanel.hasShadow = false
+        newPanel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        newPanel.contentView = NSHostingView(
+            rootView: RecordingOverlayView(viewModel: viewModel, controller: self)
+        )
+        panel = newPanel
+    }
+
+    private func scheduleLayout(sessionID: UUID, shouldPresent: Bool) {
+        layoutTask?.cancel()
+        layoutTask = Task { @MainActor [weak self] in
+            await Task.yield()
+            guard let self,
+                  !Task.isCancelled,
+                  self.currentSessionID == sessionID,
+                  let panel = self.panel,
+                  let hostingView = panel.contentView as? NSHostingView<RecordingOverlayView>,
+                  let screen = NSScreen.main else { return }
+
+            let size = hostingView.fittingSize
+            guard size.width > 0, size.height > 0 else { return }
+            let screenFrame = screen.visibleFrame
+            let frame = NSRect(
+                x: screenFrame.midX - size.width / 2,
+                y: screenFrame.minY + 80,
+                width: size.width,
+                height: size.height
+            )
+            if panel.frame != frame {
+                panel.setFrame(frame, display: false)
+                self.diag.log(
+                    "Overlay layout — session: \(sessionID), size: \(Int(size.width))x\(Int(size.height))")
+            }
+            guard self.currentSessionID == sessionID, !Task.isCancelled else { return }
+            if shouldPresent || !panel.isVisible {
+                panel.orderFrontRegardless()
+            }
+        }
+    }
+}
+
+struct RecordingOverlayView: View {
+    var viewModel: TranscriptionViewModel
+    var controller: RecordingOverlayController
+    @State private var isPulsing = false
+
+    @ViewBuilder
     var body: some View {
-        Group {
-            switch mode {
-            case .accessibilityPrompt:
-                accessibilityPromptContent
-            case .error(let message):
-                errorContent(message)
-            case .preparing:
-                preparingContent
-            case .formatting:
-                formattingContent
-            case .recording:
-                recordingContent
+        switch controller.presentation {
+        case .idle:
+            EmptyView()
+        case .visible(let sessionID, let mode):
+            Group {
+                switch mode {
+                case .starting:
+                    startingContent
+                case .accessibilityPrompt:
+                    accessibilityPromptContent
+                case .error(let message):
+                    errorContent(message)
+                case .preparing:
+                    preparingContent
+                case .formatting:
+                    formattingContent
+                case .recording:
+                    recordingContent
+                }
             }
-        }
-        .padding(.horizontal, Spacing.lg)
-        .padding(.vertical, Spacing.sm)
-        .background {
-            RoundedRectangle(cornerRadius: Radius.xl)
-                .fill(Color.surfaceElevated)
-                .overlay(
-                    RoundedRectangle(cornerRadius: Radius.xl)
-                        .stroke(Color.borderSubtle, lineWidth: 0.5)
-                )
-        }
-        .fixedSize()
-        .onChange(of: mode) {
-            // Defer so the panel measures the newly committed content
-            Task { @MainActor in
-                RecordingOverlay.refreshLayout()
+            .padding(.horizontal, Spacing.lg)
+            .padding(.vertical, Spacing.sm)
+            .background {
+                RoundedRectangle(cornerRadius: Radius.xl)
+                    .fill(Color.surfaceElevated)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: Radius.xl)
+                            .stroke(Color.borderSubtle, lineWidth: 0.5)
+                    )
             }
+            .fixedSize()
+            .id(sessionID)
+        }
+    }
+
+    private var startingContent: some View {
+        HStack(spacing: Spacing.sm) {
+            ProgressView()
+                .controlSize(.small)
+                .scaleEffect(0.7)
+            Text("Starting…")
+                .font(OType.monoSmall)
+                .foregroundStyle(Color.textPrimary)
         }
     }
 
@@ -176,6 +288,7 @@ struct RecordingOverlayView: View {
                         value: isPulsing
                     )
                     .onAppear { isPulsing = true }
+                    .onDisappear { isPulsing = false }
 
                 Text("REC")
                     .font(OType.monoSmall)

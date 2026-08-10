@@ -35,6 +35,7 @@ final class TranscriptionViewModel {
 
     private var isSetUp = false
     private let diag = DiagnosticLogger.shared
+    private let recordingOverlay = RecordingOverlayController()
 
     init() {
         let dictionarySnapshot = dictionaryService.snapshot(
@@ -122,32 +123,45 @@ final class TranscriptionViewModel {
             guard let self else { return }
             switch action {
             case .startRecording(let mode):
+                self.needsAccessibilityPrompt = false
                 self.recordingMode = mode
                 self.shouldAutoInsert = (mode == .insertAtCursor)
                 let startID = UUID()
                 self.pendingRecordingStartID = startID
-                RecordingOverlay.show(viewModel: self)
+                self.recordingOverlay.present(sessionID: startID, viewModel: self)
                 Task {
                     await self.startRecording(startID: startID)
-                    if !self.isRecording, self.errorMessage != nil {
-                        self.scheduleErrorOverlayDismiss()
+                    if !self.isRecording, let message = self.errorMessage {
+                        self.presentOverlayError(message, sessionID: startID)
                     }
                 }
             case .stopRecording:
+                let sessionID = self.recordingOverlay.currentSessionID
                 Task {
                     await self.stopRecording()
-                    if self.needsAccessibilityPrompt {
-                        self.scheduleAccessibilityPromptDismiss()
+                    if self.needsAccessibilityPrompt, let sessionID {
+                        self.recordingOverlay.update(
+                            mode: .accessibilityPrompt,
+                            sessionID: sessionID
+                        )
+                        self.recordingOverlay.dismiss(
+                            after: .seconds(8),
+                            sessionID: sessionID,
+                            onDismiss: { [weak self] in
+                                self?.needsAccessibilityPrompt = false
+                            }
+                        )
                     } else {
-                        RecordingOverlay.hide()
+                        self.recordingOverlay.dismiss(sessionID: sessionID)
                     }
                 }
             case .cancelRecording:
                 self.shouldAutoInsert = false
                 self.wasCancelled = true
+                let sessionID = self.recordingOverlay.currentSessionID
                 Task {
                     await self.stopRecording()
-                    RecordingOverlay.hide()
+                    self.recordingOverlay.dismiss(sessionID: sessionID)
                 }
             }
         }
@@ -172,7 +186,16 @@ final class TranscriptionViewModel {
         if let apple = speechService as? AppleSpeechService {
             apple.onPreparingChanged = { [weak self] preparing in
                 Task { @MainActor in
-                    self?.isPreparingModel = preparing
+                    guard let self else { return }
+                    self.isPreparingModel = preparing
+                    guard let sessionID = self.recordingOverlay.currentSessionID else { return }
+                    if preparing {
+                        self.recordingOverlay.update(mode: .preparing, sessionID: sessionID)
+                    } else if self.isRecording {
+                        self.recordingOverlay.update(mode: .recording, sessionID: sessionID)
+                    } else if self.pendingRecordingStartID != nil {
+                        self.recordingOverlay.update(mode: .starting, sessionID: sessionID)
+                    }
                 }
             }
         }
@@ -180,9 +203,9 @@ final class TranscriptionViewModel {
             deepgram.onError = { [weak self] message in
                 Task { @MainActor in
                     guard let self else { return }
-                    self.errorMessage = message
+                    let sessionID = self.recordingOverlay.currentSessionID
                     await self.stopRecording()
-                    self.scheduleErrorOverlayDismiss()
+                    self.presentOverlayError(message, sessionID: sessionID)
                 }
             }
         }
@@ -190,9 +213,9 @@ final class TranscriptionViewModel {
             openAI.onError = { [weak self] message in
                 Task { @MainActor in
                     guard let self else { return }
-                    self.errorMessage = message
+                    let sessionID = self.recordingOverlay.currentSessionID
                     await self.stopRecording()
-                    self.scheduleErrorOverlayDismiss()
+                    self.presentOverlayError(message, sessionID: sessionID)
                 }
             }
         }
@@ -200,26 +223,17 @@ final class TranscriptionViewModel {
 
     func dismissAccessibilityPrompt() {
         needsAccessibilityPrompt = false
-        RecordingOverlay.hide()
+        recordingOverlay.dismiss()
     }
 
-    private func scheduleAccessibilityPromptDismiss() {
-        Task { @MainActor in
-            try? await Task.sleep(for: .seconds(8))
-            if self.needsAccessibilityPrompt {
-                dismissAccessibilityPrompt()
-            }
+    private func presentOverlayError(_ message: String, sessionID: UUID?) {
+        if let sessionID, recordingOverlay.currentSessionID != sessionID {
+            return
         }
-    }
-
-    private func scheduleErrorOverlayDismiss() {
-        let msg = errorMessage
-        Task { @MainActor in
-            try? await Task.sleep(for: .seconds(3))
-            if self.errorMessage == msg, !self.isRecording {
-                RecordingOverlay.hide()
-            }
-        }
+        errorMessage = message
+        guard let sessionID else { return }
+        recordingOverlay.update(mode: .error(message), sessionID: sessionID)
+        recordingOverlay.dismiss(after: .seconds(3), sessionID: sessionID)
     }
 
     func toggleRecording() {
@@ -303,9 +317,8 @@ final class TranscriptionViewModel {
                 do {
                     try await self.speechService.startTranscribing()
                 } catch {
-                    self.errorMessage = error.localizedDescription
                     await self.stopRecording()
-                    self.scheduleErrorOverlayDismiss()
+                    self.presentOverlayError(error.localizedDescription, sessionID: startID)
                 }
             }
 
@@ -313,6 +326,10 @@ final class TranscriptionViewModel {
             try audioService.startRecording(saveTo: currentRecordingURL)
             isRecording = true
             pendingRecordingStartID = nil
+            recordingOverlay.update(
+                mode: isPreparingModel ? .preparing : .recording,
+                sessionID: startID
+            )
         } catch {
             pendingRecordingStartID = nil
             recordingDictionarySnapshot = nil
@@ -358,6 +375,9 @@ final class TranscriptionViewModel {
         if settingsViewModel.smartFormattingEnabled, !text.isEmpty {
             let raw = text
             isFormatting = true
+            if let sessionID = recordingOverlay.currentSessionID {
+                recordingOverlay.update(mode: .formatting, sessionID: sessionID)
+            }
             text = await polisher.polish(text, dictionary: dictionary)
             isFormatting = false
             didPolish = text != raw
