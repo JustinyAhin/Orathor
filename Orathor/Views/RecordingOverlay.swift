@@ -330,22 +330,20 @@ struct RecordingOverlayView: View {
 }
 
 private struct OverlayLevelBars: View {
-    let level: Float
-    private let barCount = 12
+    let level: AudioMeterLevel
 
     var body: some View {
         HStack(spacing: 2) {
-            ForEach(0..<barCount, id: \.self) { index in
-                let active = isActive(index)
+            ForEach(0..<AudioMeterLevel.stepCount, id: \.self) { index in
+                let active = index < level.step
                 RoundedRectangle(cornerRadius: 1)
                     .fill(active ? Color.recording : Color.textTertiary.opacity(0.25))
-                    .frame(width: 2, height: active ? max(3, CGFloat(level) * 16) : 3)
+                    .frame(width: 2, height: active ? activeHeight : 3)
             }
         }
-        .animation(.easeOut(duration: 0.05), value: level)
     }
 
-    private func isActive(_ index: Int) -> Bool {
-        Float(index) / Float(barCount) < level
+    private var activeHeight: CGFloat {
+        max(3, CGFloat(level.normalized) * 16)
     }
 }

@@ -442,7 +442,7 @@ final class TranscriptionViewModel {
         recordingDictionarySnapshot = nil
     }
 
-    var currentAudioLevel: Float {
+    var currentAudioLevel: AudioMeterLevel {
         audioService.audioLevel
     }
 

@@ -318,14 +318,13 @@ struct MenuBarView: View {
 }
 
 struct AudioLevelView: View {
-    let level: Float
+    let level: AudioMeterLevel
 
     var body: some View {
         GeometryReader { geometry in
             RoundedRectangle(cornerRadius: 2)
                 .fill(Color.recording)
-                .frame(width: geometry.size.width * CGFloat(level))
-                .animation(.easeOut(duration: 0.05), value: level)
+                .frame(width: geometry.size.width * CGFloat(level.normalized))
         }
         .background(
             RoundedRectangle(cornerRadius: 2)
