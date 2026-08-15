@@ -150,7 +150,7 @@ For the shared Git workflow: [github.com/JustinyAhin/kb/engineering/git.md](http
 1. **Build** the project:
 
 ```bash
-cd /Users/iamsegbedji/work/projects/Orathor && xcodebuild -scheme Orathor -configuration Debug build 2>&1 | tail -20
+xcodebuild -scheme Orathor -configuration Debug build 2>&1 | tail -20
 ```
 
 2. If there are build errors, fix them before moving on.
