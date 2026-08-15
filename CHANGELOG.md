@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.0.12 — 2026-08-15
+
+### New
+
+- **Personal dictionary** — add, edit, reorder, and delete custom terms and exact replacement rules; export a support-friendly JSON backup from Settings
+- **Vocabulary-aware transcription** — optionally send dictionary terms as private cloud hints to Deepgram and OpenAI, then apply deterministic replacements locally while preserving the original transcript
+
+### Improvements
+
+- **OpenAI Live Transcribe** — migrated the OpenAI engine to `gpt-live-transcribe` with language expectations, vocabulary keywords, improved final-transcript assembly, and clearer provider errors
+- **More reliable recording overlay** — each dictation now owns an explicit overlay lifecycle, preventing stale updates or dismissals during rapid start, cancel, and restart sequences
+- **Smoother audio meter** — coalesced meter publication and a stable 12-step display reduce unnecessary UI work without losing responsive feedback
+
+### Fixes
+
+- **Reduced compositor load** — replaced the recording overlay's backdrop material and window shadow with a compositor-safe solid surface
+- **License startup reliability** — recording now waits for license validation before deciding whether dictation is permitted
+
 ## 0.0.11 — 2026-06-11
 
 ### New
