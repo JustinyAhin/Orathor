@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.0.13 — 2026-08-17
+
+### Improvements
+
+- **Notarized distribution** — official downloads are signed with a Developer ID certificate, notarized by Apple, and shipped with a stapled ticket so they open normally through Gatekeeper
+
+### Fixes
+
+- **Sparkle helper signatures** — embedded updater components now receive the same Developer ID signature and secure timestamp as the main app
+
 ## 0.0.12 — 2026-08-15
 
 ### New

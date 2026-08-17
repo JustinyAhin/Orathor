@@ -11,7 +11,7 @@ Tools like Wispr Flow cost around $12 a month, or $144 a year, for cloud dictati
 Orathor is open source, and a build from this repo is always fully unlocked. There's no feature gate hidden in the code.
 
 - **Build it yourself (free):** clone, open in Xcode, run. You get full local dictation with Apple SpeechAnalyzer at no cost, plus every cloud engine if you bring your own API key.
-- **Buy the binary (one-time license):** a prebuilt download that updates itself through Sparkle, with bundled Deepgram and OpenAI Live Transcribe minutes so you don't need a key, and priority support. It's for people who'd rather not build from source.
+- **Buy the binary (one-time license):** a signed, notarized download that updates itself through Sparkle, plus priority support. It's for people who'd rather not build from source. Cloud engines still use your own API keys.
 
 Same app either way. You're paying for the convenience of a prebuilt binary that keeps itself up to date, not to unlock anything.
 
@@ -25,7 +25,7 @@ It's open source, so the on-device privacy claim is something you can verify in 
 
 1. Download the latest zip from the [Releases page](https://github.com/JustinyAhin/Orathor/releases/latest)
 2. Unzip and drag `Orathor.app` to `/Applications`
-3. The first time, right-click the app and choose Open. It isn't notarized yet, so a normal double-click gets blocked by Gatekeeper.
+3. Open Orathor normally. Apple notarization lets Gatekeeper verify the download.
 4. Orathor lives in the menu bar (no Dock icon). Look for the mic icon.
 5. Grant the permissions it asks for: Microphone, Accessibility (text insertion), and Speech Recognition (Apple Speech engine)
 

@@ -218,7 +218,7 @@
 - Full production flow verified end to end: public download → fresh 7-day trial → Polar production checkout (100% discount code) → key activation in Settings ("Licensed" + purchase email)
 - Production Polar product `75f086fc-e3a6-4d0a-ab2b-be711bfd3ac4`; org/product IDs documented in the private OrathorLicensing repo README
 - Pre-0.0.11 installs auto-update via the mirrored legacy appcast; legacy repo can be archived once everyone is past 0.0.11
-- Still open before promoting: pricing finalization on the Polar product, notarization, repo positioning pass (bead Orathor-3wi.6)
+- Still open before promoting: pricing finalization on the Polar product and repo positioning pass (bead Orathor-3wi.6). Developer ID notarization was completed for the 0.0.13 release pipeline.
 
 ### Step 25: Releases Moved to Main Repo
 - Binaries now published as GitHub Releases on `JustinyAhin/Orathor` (tag `v{version}`, zip as asset via `gh release create`); appcast.xml committed at repo root, `SUFeedURL` → raw main-branch URL
