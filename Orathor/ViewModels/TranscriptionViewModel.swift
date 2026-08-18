@@ -259,6 +259,17 @@ final class TranscriptionViewModel {
             return
         }
 
+        permissions.refresh()
+        if permissions.microphone == .notDetermined {
+            await permissions.requestMicrophone()
+            guard pendingRecordingStartID == startID else { return }
+        }
+        guard permissions.microphone == .granted else {
+            pendingRecordingStartID = nil
+            errorMessage = "Microphone permission is required. Enable Orathor in System Settings → Privacy & Security → Microphone."
+            return
+        }
+
         let engine = settingsViewModel.selectedEngine
 
         if engine == .apple {

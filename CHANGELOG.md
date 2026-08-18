@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.0.14 — 2026-08-18
+
+### Fixes
+
+- **Microphone access in release builds** — preserve and verify the audio-input entitlement after final Developer ID signing
+- **Clear microphone errors** — stop before recording and explain how to grant access when microphone permission is unavailable
+
 ## 0.0.13 — 2026-08-17
 
 ### Improvements

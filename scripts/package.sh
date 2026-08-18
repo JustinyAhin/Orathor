@@ -78,8 +78,13 @@ strings "$APP_PATH/Contents/MacOS/Orathor" | grep -F "api.polar.sh" >/dev/null \
     || { echo "FATAL: built binary does not contain licensing code — stub compiled into release."; exit 1; }
 
 # Xcode leaves Sparkle's bundled updater helpers ad-hoc signed. Re-sign the
-# complete bundle so every nested executable has our Developer ID and timestamp.
+# complete bundle so every nested executable has our Developer ID and timestamp,
+# then re-sign the main app with its required entitlements. The deep signing pass
+# replaces the app signature and otherwise strips the microphone entitlement.
 codesign --force --deep --options runtime --timestamp \
+    --sign "$DEVELOPER_IDENTITY" "$APP_PATH"
+codesign --force --options runtime --timestamp \
+    --entitlements "$RELEASE_SOURCE/Orathor/Orathor.entitlements" \
     --sign "$DEVELOPER_IDENTITY" "$APP_PATH"
 
 SIGNING_INFO="$BUILD_ROOT/codesign.txt"
@@ -90,6 +95,10 @@ grep -F "Authority=$DEVELOPER_IDENTITY" "$SIGNING_INFO" >/dev/null \
 grep -F "Timestamp=" "$SIGNING_INFO" >/dev/null \
     || { echo "FATAL: app signature does not contain a secure timestamp."; exit 1; }
 codesign -d --entitlements :- "$APP_PATH" >"$ENTITLEMENTS" 2>/dev/null
+if [ "$(/usr/libexec/PlistBuddy -c 'Print :com.apple.security.device.audio-input' "$ENTITLEMENTS" 2>/dev/null || true)" != "true" ]; then
+    echo "FATAL: release app is missing the microphone audio-input entitlement."
+    exit 1
+fi
 if plutil -p "$ENTITLEMENTS" | grep -F 'com.apple.security.get-task-allow' >/dev/null; then
     echo "FATAL: release app contains the development-only get-task-allow entitlement."
     exit 1
