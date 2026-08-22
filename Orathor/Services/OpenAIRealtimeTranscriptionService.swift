@@ -18,6 +18,8 @@ final class OpenAIRealtimeTranscriptionService: NSObject, TranscriptionService,
   private var targetFormat: AVAudioFormat?
   private var stopContinuation: CheckedContinuation<Void, Never>?
   private var stopTimeoutWorkItem: DispatchWorkItem?
+  private var finalization = OpenAITranscriptFinalization()
+  private var didStopTimeOut = false
   private var assembler = OpenAITranscriptAssembler()
   private let socketLock = NSLock()
   private var isSocketOpen = false
@@ -44,6 +46,8 @@ final class OpenAIRealtimeTranscriptionService: NSObject, TranscriptionService,
 
     transcribedText = ""
     assembler = OpenAITranscriptAssembler()
+    finalization.reset()
+    didStopTimeOut = false
     didLogFirstTranscript = false
     keepAliveTask?.cancel()
     keepAliveTask = nil
@@ -71,18 +75,21 @@ final class OpenAIRealtimeTranscriptionService: NSObject, TranscriptionService,
 
   func stopTranscribing() async {
     guard isTranscribing else { return }
-    sendJSON(["type": "input_audio_buffer.commit"])
     await withCheckedContinuation { continuation in
       stopContinuation = continuation
+      finalization.begin()
       let timeout = DispatchWorkItem { [weak self] in
-        DiagnosticLogger.shared.log("Stop timed out waiting for final transcript — tail may be cut")
-        self?.resolveStop()
+        self?.handleStopTimeout()
       }
       stopTimeoutWorkItem = timeout
       DispatchQueue.main.asyncAfter(deadline: .now() + 10, execute: timeout)
+      sendJSON(["type": "input_audio_buffer.commit"])
     }
     isTranscribing = false
-    startKeepAlive()
+    if !didStopTimeOut {
+      startKeepAlive()
+    }
+    didStopTimeOut = false
   }
 
   func shutdown() {
@@ -93,8 +100,17 @@ final class OpenAIRealtimeTranscriptionService: NSObject, TranscriptionService,
   private func resolveStop() {
     stopTimeoutWorkItem?.cancel()
     stopTimeoutWorkItem = nil
+    finalization.reset()
     stopContinuation?.resume()
     stopContinuation = nil
+  }
+
+  private func handleStopTimeout() {
+    DiagnosticLogger.shared.log(
+      "OpenAI: final transcript timed out after 10s — closing connection to isolate next recording")
+    didStopTimeOut = true
+    disconnect()
+    resolveStop()
   }
 
   private func connect() async throws {
@@ -190,6 +206,8 @@ final class OpenAIRealtimeTranscriptionService: NSObject, TranscriptionService,
     Task { @MainActor in
       guard self.isActive(task) else { return }
       switch event.type {
+      case "input_audio_buffer.committed":
+        self.handleCommittedAudioBuffer(event)
       case "conversation.item.input_audio_transcription.delta":
         guard let delta = event.delta, !delta.isEmpty else { return }
         if !self.didLogFirstTranscript, let start = self.connectStart {
@@ -200,12 +218,39 @@ final class OpenAIRealtimeTranscriptionService: NSObject, TranscriptionService,
         }
         self.transcribedText = self.assembler.applyingDelta(delta, itemID: event.itemID)
       case "conversation.item.input_audio_transcription.completed":
-        self.transcribedText = self.assembler.applyingCompleted(
-          event.transcript, itemID: event.itemID)
-        self.resolveStop()
+        self.handleCompletedTranscript(event)
       case "error": self.handleErrorEvent(event)
       default: break
       }
+    }
+  }
+
+  private func handleCommittedAudioBuffer(_ event: OpenAIRealtimeEvent) {
+    guard let itemID = event.itemID else {
+      DiagnosticLogger.shared.log("OpenAI: ignored commit acknowledgement without an item ID")
+      return
+    }
+    switch finalization.registerCommittedItem(itemID) {
+    case .waiting:
+      DiagnosticLogger.shared.log("OpenAI: committed audio item \(itemID)")
+    case .apply(_, let transcript):
+      transcribedText = assembler.applyingCompleted(transcript, itemID: itemID)
+      resolveStop()
+    case .ignored:
+      DiagnosticLogger.shared.log("OpenAI: ignored unexpected committed item \(itemID)")
+    }
+  }
+
+  private func handleCompletedTranscript(_ event: OpenAIRealtimeEvent) {
+    switch finalization.registerCompletedTranscript(event.transcript, itemID: event.itemID) {
+    case .apply(let itemID, let transcript):
+      transcribedText = assembler.applyingCompleted(transcript, itemID: itemID)
+      resolveStop()
+    case .waiting:
+      DiagnosticLogger.shared.log("OpenAI: final transcript arrived before commit acknowledgement")
+    case .ignored:
+      let itemID = event.itemID ?? "missing"
+      DiagnosticLogger.shared.log("OpenAI: ignored final transcript for stale item \(itemID)")
     }
   }
 
@@ -398,6 +443,51 @@ struct OpenAITranscriptAssembler {
   private var assembledText: String {
     (itemOrder.compactMap { finalTextByItemID[$0] }.filter { !$0.isEmpty }
       + (activeDeltaText.isEmpty ? [] : [activeDeltaText])).joined(separator: " ")
+  }
+}
+
+enum OpenAITranscriptFinalizationDisposition: Equatable {
+  case apply(itemID: String, transcript: String?)
+  case waiting
+  case ignored
+}
+
+struct OpenAITranscriptFinalization {
+  private var isAwaitingFinalTranscript = false
+  private var committedItemID: String?
+  private var completedTranscripts: [String: String?] = [:]
+
+  mutating func begin() {
+    isAwaitingFinalTranscript = true
+    committedItemID = nil
+    completedTranscripts = [:]
+  }
+
+  mutating func registerCommittedItem(_ itemID: String) -> OpenAITranscriptFinalizationDisposition {
+    guard isAwaitingFinalTranscript else { return .ignored }
+    committedItemID = itemID
+    if let transcript = completedTranscripts.removeValue(forKey: itemID) {
+      return .apply(itemID: itemID, transcript: transcript)
+    }
+    return .waiting
+  }
+
+  mutating func registerCompletedTranscript(
+    _ transcript: String?, itemID: String?
+  ) -> OpenAITranscriptFinalizationDisposition {
+    guard isAwaitingFinalTranscript, let itemID else { return .ignored }
+    if let committedItemID {
+      guard committedItemID == itemID else { return .ignored }
+      return .apply(itemID: itemID, transcript: transcript)
+    }
+    completedTranscripts[itemID] = transcript
+    return .waiting
+  }
+
+  mutating func reset() {
+    isAwaitingFinalTranscript = false
+    committedItemID = nil
+    completedTranscripts = [:]
   }
 }
 

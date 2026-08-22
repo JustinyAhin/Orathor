@@ -32,6 +32,7 @@ final class TranscriptionViewModel {
     private var wasCancelled = false
     private var pendingRecordingStartID: UUID?
     private var recordingDictionarySnapshot: PersonalDictionarySnapshot?
+    private var isFinalizingRecording = false
 
     private var isSetUp = false
     private let diag = DiagnosticLogger.shared
@@ -248,6 +249,12 @@ final class TranscriptionViewModel {
     }
 
     private func startRecording(startID: UUID) async {
+        guard !isRecording, !isFinalizingRecording else {
+            diag.log("START ignored — recording is already active or finalizing")
+            pendingRecordingStartID = nil
+            recordingOverlay.dismiss(sessionID: startID)
+            return
+        }
         await license.refresh()
         guard pendingRecordingStartID == startID else { return }
 
@@ -349,6 +356,9 @@ final class TranscriptionViewModel {
     }
 
     private func stopRecording() async {
+        guard isRecording, !isFinalizingRecording else { return }
+        isFinalizingRecording = true
+        defer { isFinalizingRecording = false }
         pendingRecordingStartID = nil
         diag.log("STOP recording — wasCancelled: \(wasCancelled)")
         let stopStart = Date()

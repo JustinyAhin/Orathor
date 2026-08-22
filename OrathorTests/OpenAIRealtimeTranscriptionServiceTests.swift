@@ -76,6 +76,35 @@ final class OpenAIRealtimeTranscriptionServiceTests: XCTestCase {
     XCTAssertEqual(separate.applyingDelta("only this", itemID: "other"), "only this")
   }
 
+  func testFinalizationAcceptsOnlyTheCommittedRecording() {
+    var finalization = OpenAITranscriptFinalization()
+    finalization.begin()
+
+    XCTAssertEqual(finalization.registerCommittedItem("current"), .waiting)
+    XCTAssertEqual(
+      finalization.registerCompletedTranscript("old words", itemID: "previous"), .ignored)
+    XCTAssertEqual(
+      finalization.registerCompletedTranscript("current words", itemID: "current"),
+      .apply(itemID: "current", transcript: "current words"))
+  }
+
+  func testFinalizationMatchesCompletionThatArrivesBeforeCommitAcknowledgement() {
+    var finalization = OpenAITranscriptFinalization()
+    finalization.begin()
+
+    XCTAssertEqual(
+      finalization.registerCompletedTranscript("finished", itemID: "current"), .waiting)
+    XCTAssertEqual(
+      finalization.registerCommittedItem("current"),
+      .apply(itemID: "current", transcript: "finished"))
+  }
+
+  func testFinalizationRejectsEventsOutsideAnActiveStop() {
+    var finalization = OpenAITranscriptFinalization()
+    XCTAssertEqual(finalization.registerCommittedItem("old"), .ignored)
+    XCTAssertEqual(finalization.registerCompletedTranscript("old words", itemID: "old"), .ignored)
+  }
+
   func testErrorFormattingRetainsCodeAndMessage() {
     XCTAssertEqual(
       OpenAIRealtimeTranscriptionService.OpenAIRealtimeTranscriptionError.formattedMessage(
