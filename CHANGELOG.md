@@ -2,6 +2,10 @@
 
 ## 0.0.14 — 2026-08-18
 
+### Upgrading from an older build
+
+If Accessibility appears enabled but Orathor still copies text to the clipboard, macOS may still trust an older development-signed build. Quit Orathor, run `tccutil reset Accessibility segbedji.Orathor`, reopen Orathor, and enable it again in System Settings → Privacy & Security → Accessibility. Quit and reopen Orathor once more after enabling it. This is a one-time migration for affected existing users; new installations are unaffected.
+
 ### Fixes
 
 - **Microphone access in release builds** — preserve and verify the audio-input entitlement after final Developer ID signing
