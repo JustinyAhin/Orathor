@@ -122,6 +122,7 @@ struct MainWindowView: View {
                     viewModel: viewModel.settingsViewModel,
                     dictionaryService: viewModel.dictionaryService,
                     permissions: viewModel.permissions,
+                    launchAtLogin: viewModel.launchAtLogin,
                     license: viewModel.license,
                     updater: updater
                 )

@@ -27,9 +27,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         DiagnosticLogger.shared.logSessionStart()
 
         NSApp.setActivationPolicy(showInDock ? .regular : .accessory)
-        DispatchQueue.main.async {
-            NSApp.activate(ignoringOtherApps: true)
-        }
 
         NotificationCenter.default.addObserver(
             self,
@@ -105,6 +102,8 @@ struct OrathorApp: App {
         }
         .defaultSize(width: 800, height: 600)
         .windowStyle(.hiddenTitleBar)
+        .defaultLaunchBehavior(.suppressed)
+        .restorationBehavior(.disabled)
         .commands {
             CommandGroup(after: .appInfo) {
                 CheckForUpdatesView(

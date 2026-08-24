@@ -6,9 +6,11 @@ struct SettingsView: View {
     @Bindable var viewModel: SettingsViewModel
     @Bindable var dictionaryService: PersonalDictionaryService
     var permissions: PermissionsService
+    @Bindable var launchAtLogin: LaunchAtLoginService
     var license: LicenseManager
     let updater: SPUUpdater
     @Environment(\.openWindow) private var openWindow
+    @Environment(\.scenePhase) private var scenePhase
     @State private var copiedDiagnostics = false
     @State private var formattingAvailable = true
     @State private var formattingMessage: String?
@@ -31,6 +33,7 @@ struct SettingsView: View {
             )
             hotkeySection
             soundsSection
+            generalSection
             appearanceSection
             updatesSection
             if license.isGated {
@@ -41,13 +44,33 @@ struct SettingsView: View {
         }
         .animation(.easeInOut(duration: 0.2), value: viewModel.selectedEngine)
         .onAppear(perform: refreshFormattingStatus)
-        .task { await permissions.pollWhileVisible() }
+        .task {
+            launchAtLogin.refresh()
+            await permissions.pollWhileVisible()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active {
+                launchAtLogin.refresh()
+            }
+        }
+        .alert("Couldn’t Update Launch at Login", isPresented: launchAtLoginErrorIsPresented) {
+            Button("OK") { launchAtLogin.clearError() }
+        } message: {
+            Text(launchAtLogin.errorMessage ?? "An unknown error occurred.")
+        }
     }
 
     private func refreshFormattingStatus() {
         let status = TranscriptPolisher.status
         formattingAvailable = status.available
         formattingMessage = status.message
+    }
+
+    private var launchAtLoginErrorIsPresented: Binding<Bool> {
+        Binding(
+            get: { launchAtLogin.errorMessage != nil },
+            set: { if !$0 { launchAtLogin.clearError() } }
+        )
     }
 
     // MARK: - Version
@@ -339,6 +362,82 @@ struct SettingsView: View {
         .padding(.vertical, Spacing.md)
     }
 
+    // MARK: - General
+
+    private var generalSection: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            ContentSectionHeader(title: "General", symbol: "gearshape.fill")
+
+            VStack(spacing: 0) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Launch at Login")
+                            .font(OType.body)
+                            .foregroundStyle(
+                                launchAtLogin.isAvailable ? Color.textPrimary : Color.textTertiary
+                            )
+                        Text(launchAtLoginCaption)
+                            .font(OType.caption)
+                            .foregroundStyle(
+                                launchAtLogin.status == .requiresApproval
+                                    ? Color.warning
+                                    : Color.textTertiary
+                            )
+                    }
+                    Spacer()
+                    if launchAtLogin.status == .requiresApproval {
+                        Button("Open Settings") {
+                            launchAtLogin.openSystemSettings()
+                        }
+                        .font(OType.caption)
+                        .buttonStyle(.plain)
+                        .foregroundStyle(Color.brand)
+                    }
+                    Toggle("", isOn: Binding(
+                        get: { launchAtLogin.isRegistered },
+                        set: { launchAtLogin.setEnabled($0) }
+                    ))
+                    .toggleStyle(.switch)
+                    .labelsHidden()
+                    .disabled(!launchAtLogin.isAvailable)
+                }
+                .padding(.horizontal, Spacing.lg)
+                .padding(.vertical, Spacing.md)
+
+                SubtleDivider()
+
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Show in Dock")
+                            .font(OType.body)
+                            .foregroundStyle(Color.textPrimary)
+                        Text("Also shows the menu bar when the window is open")
+                            .font(OType.caption)
+                            .foregroundStyle(Color.textTertiary)
+                    }
+                    Spacer()
+                    Toggle("", isOn: $viewModel.showInDock)
+                        .toggleStyle(.switch)
+                        .labelsHidden()
+                }
+                .padding(.horizontal, Spacing.lg)
+                .padding(.vertical, Spacing.md)
+            }
+            .cardStyle(padding: 0)
+        }
+    }
+
+    private var launchAtLoginCaption: String {
+        switch launchAtLogin.status {
+        case .disabled, .enabled:
+            "Start Orathor automatically when you sign in"
+        case .requiresApproval:
+            "Approval required in System Settings"
+        case .unavailable:
+            "Launch at login is unavailable"
+        }
+    }
+
     // MARK: - Appearance
 
     private var appearanceSection: some View {
@@ -383,24 +482,6 @@ struct SettingsView: View {
                 .padding(.horizontal, Spacing.lg)
                 .padding(.vertical, Spacing.md)
 
-                SubtleDivider()
-
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Show in Dock")
-                            .font(OType.body)
-                            .foregroundStyle(Color.textPrimary)
-                        Text("Also shows the menu bar when the window is open")
-                            .font(OType.caption)
-                            .foregroundStyle(Color.textTertiary)
-                    }
-                    Spacer()
-                    Toggle("", isOn: $viewModel.showInDock)
-                        .toggleStyle(.switch)
-                        .labelsHidden()
-                }
-                .padding(.horizontal, Spacing.lg)
-                .padding(.vertical, Spacing.md)
             }
             .cardStyle(padding: 0)
         }

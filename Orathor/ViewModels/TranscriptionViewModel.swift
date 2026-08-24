@@ -17,6 +17,7 @@ final class TranscriptionViewModel {
     let dictionaryService = PersonalDictionaryService()
     let historyService = TranscriptHistoryService()
     let permissions = PermissionsService()
+    let launchAtLogin = LaunchAtLoginService()
     let license = LicenseManager()
 
     private let audioService = AudioService()
