@@ -10,6 +10,8 @@ final class RecordingOverlayController {
         case preparing
         case formatting
         case recording
+        case recordingWithFallback
+        case transcribingLocally
     }
 
     enum Presentation: Equatable {
@@ -189,7 +191,11 @@ struct RecordingOverlayView: View {
                 case .formatting:
                     formattingContent
                 case .recording:
-                    recordingContent
+                    recordingContent(fallbackPending: false)
+                case .recordingWithFallback:
+                    recordingContent(fallbackPending: true)
+                case .transcribingLocally:
+                    transcribingLocallyContent
                 }
             }
             .padding(.horizontal, Spacing.lg)
@@ -276,7 +282,18 @@ struct RecordingOverlayView: View {
         }
     }
 
-    private var recordingContent: some View {
+    private var transcribingLocallyContent: some View {
+        HStack(spacing: Spacing.sm) {
+            ProgressView()
+                .controlSize(.small)
+                .scaleEffect(0.7)
+            Text("Transcribing locally…")
+                .font(OType.monoSmall)
+                .foregroundStyle(Color.textPrimary)
+        }
+    }
+
+    private func recordingContent(fallbackPending: Bool) -> some View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
             HStack(spacing: Spacing.sm) {
                 Circle()
@@ -302,6 +319,12 @@ struct RecordingOverlayView: View {
 
                 OverlayLevelBars(level: viewModel.currentAudioLevel)
                     .frame(width: 50, height: 16)
+            }
+
+            if fallbackPending {
+                Label("Cloud lost · recording continues", systemImage: "wifi.slash")
+                    .font(OType.monoMicro)
+                    .foregroundStyle(Color.warning)
             }
 
             transcriptPreview

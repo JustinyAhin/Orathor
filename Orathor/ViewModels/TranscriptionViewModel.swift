@@ -34,6 +34,12 @@ final class TranscriptionViewModel {
     private var pendingRecordingStartID: UUID?
     private var recordingDictionarySnapshot: PersonalDictionarySnapshot?
     private var isFinalizingRecording = false
+    private var activeRecordingID: UUID?
+    private var recordingEngine: SpeechEngine?
+    private var cloudFailure: TranscriptionFailure?
+    private var isForwardingAudioToCloud = true
+    private var fallbackPreparationTask: Task<Void, Never>?
+    private var preparedFallbackLanguage: String?
 
     private var isSetUp = false
     private let diag = DiagnosticLogger.shared
@@ -106,10 +112,17 @@ final class TranscriptionViewModel {
         isSetUp = true
 
         Task { await license.refresh() }
+        prepareFallbackAssetsIfPossible()
 
         settingsViewModel.onEngineChanged = { [weak self] _ in
             guard let self, !self.isRecording else { return }
             self.refreshSpeechServiceIfNeeded()
+        }
+
+        settingsViewModel.onTranscriptionLanguageChanged = { [weak self] in
+            guard let self else { return }
+            self.preparedFallbackLanguage = nil
+            self.prepareFallbackAssetsIfPossible()
         }
 
         keyboardService.insertHotkey = settingsViewModel.insertHotkey
@@ -140,7 +153,11 @@ final class TranscriptionViewModel {
             case .stopRecording:
                 let sessionID = self.recordingOverlay.currentSessionID
                 Task {
-                    await self.stopRecording()
+                    let shouldDismiss = await self.stopRecording()
+                    if !shouldDismiss {
+                        self.needsAccessibilityPrompt = false
+                        return
+                    }
                     if self.needsAccessibilityPrompt, let sessionID {
                         self.recordingOverlay.update(
                             mode: .accessibilityPrompt,
@@ -162,7 +179,7 @@ final class TranscriptionViewModel {
                 self.wasCancelled = true
                 let sessionID = self.recordingOverlay.currentSessionID
                 Task {
-                    await self.stopRecording()
+                    _ = await self.stopRecording()
                     self.recordingOverlay.dismiss(sessionID: sessionID)
                 }
             }
@@ -202,23 +219,65 @@ final class TranscriptionViewModel {
             }
         }
         if let deepgram = speechService as? DeepgramService {
-            deepgram.onError = { [weak self] message in
+            deepgram.onFailure = { [weak self, weak deepgram] failure in
                 Task { @MainActor in
-                    guard let self else { return }
-                    let sessionID = self.recordingOverlay.currentSessionID
-                    await self.stopRecording()
-                    self.presentOverlayError(message, sessionID: sessionID)
+                    guard let self, let deepgram,
+                          self.speechService === deepgram else { return }
+                    await self.handleTranscriptionFailure(failure)
                 }
             }
         }
         if let openAI = speechService as? OpenAIRealtimeTranscriptionService {
-            openAI.onError = { [weak self] message in
+            openAI.onFailure = { [weak self, weak openAI] failure in
                 Task { @MainActor in
-                    guard let self else { return }
-                    let sessionID = self.recordingOverlay.currentSessionID
-                    await self.stopRecording()
-                    self.presentOverlayError(message, sessionID: sessionID)
+                    guard let self, let openAI,
+                          self.speechService === openAI else { return }
+                    await self.handleTranscriptionFailure(failure)
                 }
+            }
+        }
+    }
+
+    private func handleTranscriptionFailure(_ failure: TranscriptionFailure) async {
+        guard let sessionID = activeRecordingID, isRecording else { return }
+        diag.log("Transcription failure — kind: \(failure.kind), message: \(failure.message)")
+
+        if isFinalizingRecording {
+            cloudFailure = failure
+            isForwardingAudioToCloud = false
+            return
+        }
+
+        if failure.kind == .transient, recordingEngine != .apple {
+            cloudFailure = failure
+            isForwardingAudioToCloud = false
+            recordingOverlay.update(mode: .recordingWithFallback, sessionID: sessionID)
+            return
+        }
+
+        _ = await stopRecording()
+        presentOverlayError(failure.message, sessionID: sessionID)
+    }
+
+    private func prepareFallbackAssetsIfPossible() {
+        permissions.refresh()
+        let language = settingsViewModel.transcriptionLanguage
+        guard permissions.speechRecognition == .granted,
+              preparedFallbackLanguage != language,
+              fallbackPreparationTask == nil else { return }
+
+        fallbackPreparationTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            do {
+                try await AppleSpeechService(language: language).prepareAssets()
+                self.preparedFallbackLanguage = language
+                self.diag.log("Apple fallback assets ready — language: \(language)")
+            } catch {
+                self.diag.log("Apple fallback asset preparation failed: \(error)")
+            }
+            self.fallbackPreparationTask = nil
+            if self.settingsViewModel.transcriptionLanguage != language {
+                self.prepareFallbackAssetsIfPossible()
             }
         }
     }
@@ -279,6 +338,9 @@ final class TranscriptionViewModel {
         }
 
         let engine = settingsViewModel.selectedEngine
+        if engine != .apple {
+            prepareFallbackAssetsIfPossible()
+        }
 
         if engine == .apple {
             if !hasPermission {
@@ -323,10 +385,17 @@ final class TranscriptionViewModel {
             errorMessage = nil
             recordingStartTime = Date()
             targetApp = TextInsertionService.getFrontmostApp()
+            activeRecordingID = startID
+            recordingEngine = engine
+            cloudFailure = nil
+            isForwardingAudioToCloud = true
             diag.log("START recording — engine: \(engine), mode: \(recordingMode), targetApp: \(targetApp?.name ?? "nil") (\(targetApp?.bundleIdentifier ?? "nil")), shouldAutoInsert: \(shouldAutoInsert), accessibility: \(TextInsertionService.hasAccessibilityPermission)")
 
             audioService.onAudioBuffer = { [weak self] buffer, _ in
-                self?.speechService.processAudioBuffer(buffer)
+                guard let self else { return }
+                if self.recordingEngine == .apple || self.isForwardingAudioToCloud {
+                    self.speechService.processAudioBuffer(buffer)
+                }
             }
 
             // Connect on key-down so the WS handshake overlaps audio engine
@@ -336,8 +405,8 @@ final class TranscriptionViewModel {
                 do {
                     try await self.speechService.startTranscribing()
                 } catch {
-                    await self.stopRecording()
-                    self.presentOverlayError(error.localizedDescription, sessionID: startID)
+                    let failure = Self.failure(forStartError: error)
+                    await self.handleTranscriptionFailure(failure)
                 }
             }
 
@@ -350,23 +419,33 @@ final class TranscriptionViewModel {
                 sessionID: startID
             )
         } catch {
+            speechService.shutdown()
+            if let url = currentRecordingURL {
+                try? FileManager.default.removeItem(at: url)
+            }
             pendingRecordingStartID = nil
             recordingDictionarySnapshot = nil
+            recordingStartTime = nil
+            targetApp = nil
+            currentRecordingURL = nil
+            resetRecordingSession()
             errorMessage = error.localizedDescription
         }
     }
 
-    private func stopRecording() async {
-        guard isRecording, !isFinalizingRecording else { return }
+    @discardableResult
+    private func stopRecording() async -> Bool {
+        guard isRecording, !isFinalizingRecording else { return false }
         isFinalizingRecording = true
         defer { isFinalizingRecording = false }
         pendingRecordingStartID = nil
+        let sessionID = activeRecordingID
         diag.log("STOP recording — wasCancelled: \(wasCancelled)")
         let stopStart = Date()
         // No flush delay needed: removeTap is synchronous and all audio is
         // enqueued on the socket before Finalize/commit, so ordering holds.
         audioService.stopRecording()
-        await speechService.stopTranscribing()
+        let stopResult = await speechService.stopTranscribing()
         diag.log("Stop: engine finalized \(Int(Date().timeIntervalSince(stopStart) * 1000))ms after key-up")
         isRecording = false
 
@@ -383,10 +462,59 @@ final class TranscriptionViewModel {
             targetApp = nil
             currentRecordingURL = nil
             recordingDictionarySnapshot = nil
-            return
+            resetRecordingSession()
+            return true
         }
 
+        let requestedEngine = recordingEngine ?? settingsViewModel.selectedEngine
+        var outputEngine: SpeechEngine? = requestedEngine
+        var transcriptStatus = TranscriptStatus.complete
+        var transcriptFailureMessage: String?
+        var didAttemptFallback = false
         var text = currentTranscription
+        let cloudText = text
+
+        let stopFailure: TranscriptionFailure?
+        if case .failed(let failure) = stopResult {
+            stopFailure = failure
+        } else {
+            stopFailure = nil
+        }
+        let fallbackFailure = cloudFailure ?? stopFailure
+
+        if TranscriptionFallbackPolicy.shouldFallback(
+            requestedEngine: requestedEngine,
+            failure: fallbackFailure
+        ),
+           let recordingURL = currentRecordingURL {
+            didAttemptFallback = true
+            if let sessionID = activeRecordingID {
+                recordingOverlay.update(mode: .transcribingLocally, sessionID: sessionID)
+            }
+            let fallbackStart = Date()
+            diag.log("Apple fallback started — requested engine: \(requestedEngine)")
+            do {
+                let fallbackService = AppleSpeechService(
+                    language: settingsViewModel.transcriptionLanguage)
+                text = try await fallbackService.transcribeFile(at: recordingURL)
+                outputEngine = .apple
+                diag.log(
+                    "Apple fallback completed — chars: \(text.count), duration: "
+                        + "\(Int(Date().timeIntervalSince(fallbackStart) * 1000))ms"
+                )
+            } catch {
+                text = cloudText
+                transcriptStatus = text.isEmpty ? .failed : .partial
+                outputEngine = text.isEmpty ? nil : requestedEngine
+                transcriptFailureMessage = error.localizedDescription
+                diag.log("Apple fallback failed: \(error)")
+            }
+        } else if let stopFailure = fallbackFailure {
+            transcriptStatus = text.isEmpty ? .failed : .partial
+            transcriptFailureMessage = stopFailure.message
+            if text.isEmpty { outputEngine = nil }
+        }
+
         let rawText = text
         let dictionary = recordingDictionarySnapshot ?? dictionaryService.snapshot(
             cloudHintsEnabled: settingsViewModel.cloudVocabularyEnabled)
@@ -412,7 +540,7 @@ final class TranscriptionViewModel {
         let originalText = text != rawText ? rawText : nil
         diag.log("Personal dictionary — terms: \(dictionary.terms.count), rules: \(dictionary.replacements.count), changed: \(didPersonalize)")
 
-        diag.log("Transcription result — text length: \(text.count), mode: \(recordingMode), shouldAutoInsert: \(shouldAutoInsert), duration: \(String(format: "%.1f", duration))s")
+        diag.log("Transcription result — text length: \(text.count), requested: \(requestedEngine), output: \(String(describing: outputEngine)), status: \(transcriptStatus), mode: \(recordingMode), shouldAutoInsert: \(shouldAutoInsert), duration: \(String(format: "%.1f", duration))s")
 
         if !text.isEmpty {
             switch recordingMode {
@@ -439,7 +567,7 @@ final class TranscriptionViewModel {
         shouldAutoInsert = false
         recordingMode = .insertAtCursor
 
-        if !text.isEmpty {
+        if !text.isEmpty || transcriptStatus == .failed {
             let entry = TranscriptEntry(
                 text: text,
                 timestamp: Date(),
@@ -448,7 +576,10 @@ final class TranscriptionViewModel {
                 targetAppName: targetApp?.name,
                 targetAppBundleID: targetApp?.bundleIdentifier,
                 audioFileName: currentRecordingURL?.lastPathComponent,
-                engine: settingsViewModel.selectedEngine,
+                engine: outputEngine,
+                requestedEngine: requestedEngine,
+                status: transcriptStatus,
+                failureMessage: transcriptFailureMessage,
                 smartFormatted: didPolish,
                 rawText: originalText,
                 formattingModel: didPolish ? TranscriptPolisher.modelDescription : nil
@@ -462,6 +593,38 @@ final class TranscriptionViewModel {
         targetApp = nil
         currentRecordingURL = nil
         recordingDictionarySnapshot = nil
+        resetRecordingSession()
+
+        if transcriptStatus == .partial {
+            presentOverlayError(
+                didAttemptFallback
+                    ? "Local fallback failed · partial transcript used."
+                    : "Transcription incomplete · partial transcript used.",
+                sessionID: sessionID
+            )
+            return false
+        }
+        if transcriptStatus == .failed {
+            presentOverlayError(
+                "Transcription failed · recording saved.",
+                sessionID: sessionID
+            )
+            return false
+        }
+        return true
+    }
+
+    private func resetRecordingSession() {
+        activeRecordingID = nil
+        recordingEngine = nil
+        cloudFailure = nil
+        isForwardingAudioToCloud = true
+        audioService.onAudioBuffer = nil
+    }
+
+    private static func failure(forStartError error: Error) -> TranscriptionFailure {
+        let kind: TranscriptionFailureKind = error is URLError ? .transient : .nonRecoverable
+        return TranscriptionFailure(kind: kind, message: error.localizedDescription)
     }
 
     var currentAudioLevel: AudioMeterLevel {
@@ -482,7 +645,7 @@ final class TranscriptionViewModel {
     ) -> any TranscriptionService {
         switch engine {
         case .apple:
-            AppleSpeechService()
+            AppleSpeechService(language: language)
         case .deepgram:
             DeepgramService(apiKey: deepgramAPIKey, language: language, context: context)
         case .openAIWhisper:
@@ -530,7 +693,7 @@ final class TranscriptionViewModel {
         if isRecording {
             shouldAutoInsert = false
             Task {
-                await stopRecording()
+                _ = await stopRecording()
                 NSApp.deactivate()
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
                     TextInsertionService.insertText(text)

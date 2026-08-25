@@ -1,5 +1,11 @@
 import Foundation
 
+enum TranscriptStatus: String, Codable, Equatable {
+    case complete
+    case partial
+    case failed
+}
+
 struct TranscriptEntry: Identifiable, Codable {
     let id: UUID
     let text: String
@@ -9,7 +15,13 @@ struct TranscriptEntry: Identifiable, Codable {
     let targetAppName: String?
     let targetAppBundleID: String?
     let audioFileName: String?
+    /// Engine that produced the stored text. `nil` when transcription failed.
     let engine: SpeechEngine?
+    /// Engine selected by the user. Differs from `engine` after local fallback.
+    let requestedEngine: SpeechEngine?
+    /// `nil` for entries written before fallback status was introduced.
+    let status: TranscriptStatus?
+    let failureMessage: String?
     /// Whether on-device smart formatting (Foundation Models) altered this transcript.
     /// `nil` for entries recorded before the feature existed.
     let smartFormatted: Bool?
@@ -28,6 +40,9 @@ struct TranscriptEntry: Identifiable, Codable {
         targetAppBundleID: String?,
         audioFileName: String? = nil,
         engine: SpeechEngine? = nil,
+        requestedEngine: SpeechEngine? = nil,
+        status: TranscriptStatus? = .complete,
+        failureMessage: String? = nil,
         smartFormatted: Bool? = nil,
         rawText: String? = nil,
         formattingModel: String? = nil
@@ -41,6 +56,9 @@ struct TranscriptEntry: Identifiable, Codable {
         self.targetAppBundleID = targetAppBundleID
         self.audioFileName = audioFileName
         self.engine = engine
+        self.requestedEngine = requestedEngine
+        self.status = status
+        self.failureMessage = failureMessage
         self.smartFormatted = smartFormatted
         self.rawText = rawText
         self.formattingModel = formattingModel

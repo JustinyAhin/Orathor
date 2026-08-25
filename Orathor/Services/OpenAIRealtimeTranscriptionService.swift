@@ -7,7 +7,7 @@ final class OpenAIRealtimeTranscriptionService: NSObject, TranscriptionService,
 {
   var transcribedText = ""
   var isTranscribing = false
-  var onError: ((String) -> Void)?
+  var onFailure: ((TranscriptionFailure) -> Void)?
 
   private let apiKey: String
   private let context: TranscriptionContext
@@ -20,6 +20,7 @@ final class OpenAIRealtimeTranscriptionService: NSObject, TranscriptionService,
   private var stopTimeoutWorkItem: DispatchWorkItem?
   private var finalization = OpenAITranscriptFinalization()
   private var didStopTimeOut = false
+  private var terminalFailure: TranscriptionFailure?
   private var assembler = OpenAITranscriptAssembler()
   private let socketLock = NSLock()
   private var isSocketOpen = false
@@ -48,6 +49,7 @@ final class OpenAIRealtimeTranscriptionService: NSObject, TranscriptionService,
     assembler = OpenAITranscriptAssembler()
     finalization.reset()
     didStopTimeOut = false
+    terminalFailure = nil
     didLogFirstTranscript = false
     keepAliveTask?.cancel()
     keepAliveTask = nil
@@ -73,8 +75,9 @@ final class OpenAIRealtimeTranscriptionService: NSObject, TranscriptionService,
     sendJSON(["type": "input_audio_buffer.append", "audio": data.base64EncodedString()])
   }
 
-  func stopTranscribing() async {
-    guard isTranscribing else { return }
+  func stopTranscribing() async -> TranscriptionStopResult {
+    if let terminalFailure { return .failed(terminalFailure) }
+    guard isTranscribing else { return .completed }
     await withCheckedContinuation { continuation in
       stopContinuation = continuation
       finalization.begin()
@@ -89,7 +92,9 @@ final class OpenAIRealtimeTranscriptionService: NSObject, TranscriptionService,
     if !didStopTimeOut {
       startKeepAlive()
     }
+    if let terminalFailure { return .failed(terminalFailure) }
     didStopTimeOut = false
+    return .completed
   }
 
   func shutdown() {
@@ -109,6 +114,10 @@ final class OpenAIRealtimeTranscriptionService: NSObject, TranscriptionService,
     DiagnosticLogger.shared.log(
       "OpenAI: final transcript timed out after 10s — closing connection to isolate next recording")
     didStopTimeOut = true
+    terminalFailure = TranscriptionFailure(
+      kind: .transient,
+      message: "OpenAI did not finish the transcript before timing out."
+    )
     disconnect()
     resolveStop()
   }
@@ -183,7 +192,16 @@ final class OpenAIRealtimeTranscriptionService: NSObject, TranscriptionService,
     isTranscribing = false
     disconnect()
     resolveStop()
-    onError?("Connection to OpenAI lost. Transcription may be incomplete.")
+    let statusCode = (task.response as? HTTPURLResponse)?.statusCode
+    let kind = TranscriptionFallbackPolicy.failureKind(forHTTPStatus: statusCode)
+    let message = if let statusCode, kind == .nonRecoverable {
+      "OpenAI rejected the connection (HTTP \(statusCode))."
+    } else {
+      "Connection to OpenAI lost. Transcription may be incomplete."
+    }
+    let failure = TranscriptionFailure(kind: kind, message: message)
+    terminalFailure = failure
+    onFailure?(failure)
   }
 
   private func listenForMessages(on task: URLSessionWebSocketTask) {
@@ -261,10 +279,22 @@ final class OpenAIRealtimeTranscriptionService: NSObject, TranscriptionService,
     }
     let message = OpenAIRealtimeTranscriptionError.formattedMessage(
       code: event.error?.code, message: event.error?.message)
+    let failure = TranscriptionFailure(
+      kind: Self.failureKind(for: event.error?.code), message: message)
+    terminalFailure = failure
     isTranscribing = false
     disconnect()
     resolveStop()
-    onError?(message)
+    onFailure?(failure)
+  }
+
+  static func failureKind(for code: String?) -> TranscriptionFailureKind {
+    switch code?.lowercased() {
+    case "server_error", "internal_error", "service_unavailable", "temporarily_unavailable":
+      .transient
+    default:
+      .nonRecoverable
+    }
   }
 
   private func setupAudioConverter(sourceFormat: AVAudioFormat) {

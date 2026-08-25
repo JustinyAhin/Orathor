@@ -108,6 +108,7 @@ final class SettingsViewModel {
     var transcriptionLanguage: String {
         didSet {
             UserDefaults.standard.set(transcriptionLanguage, forKey: "transcriptionLanguage")
+            onTranscriptionLanguageChanged?()
         }
     }
 
@@ -125,6 +126,7 @@ final class SettingsViewModel {
 
     var onEngineChanged: ((SpeechEngine) -> Void)?
     var onHotkeyChanged: (() -> Void)?
+    var onTranscriptionLanguageChanged: (() -> Void)?
 
     var isDeepgramConfigured: Bool {
         !deepgramApiKey.isEmpty

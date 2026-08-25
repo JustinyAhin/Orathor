@@ -20,6 +20,7 @@ final class AppleSpeechService: TranscriptionService {
     private var converter: AVAudioConverter?
     private var inputBuilder: AsyncStream<AnalyzerInput>.Continuation?
     private var recognizerTask: Task<Void, Never>?
+    private var inputAudioFile: AVAudioFile?
 
     /// Accumulated finalized text. Volatile (in-progress) results are appended
     /// transiently on top of this for display, then folded in once finalized.
@@ -93,6 +94,96 @@ final class AppleSpeechService: TranscriptionService {
         isTranscribing = true
     }
 
+    /// Ensures the configured on-device language model is installed without
+    /// starting a transcription session.
+    func prepareAssets() async throws {
+        if SpeechTranscriber.isAvailable {
+            let resolved = await resolvedSpeechLocale()
+            guard let resolved else { throw SpeechError.localeNotSupported(locale) }
+            try await prepare(
+                module: SpeechTranscriber(locale: resolved, preset: .progressiveTranscription)
+            )
+        } else {
+            let resolved = await resolvedDictationLocale()
+            guard let resolved else { throw SpeechError.localeNotSupported(locale) }
+            try await prepare(
+                module: DictationTranscriber(locale: resolved, preset: .progressiveLongDictation)
+            )
+        }
+    }
+
+    /// Transcribes a completed recording as one input, allowing a failed cloud
+    /// session to be replaced without trying to merge partial transcripts.
+    func transcribeFile(at url: URL) async throws -> String {
+        guard !isTranscribing, !isStarting else { return transcribedText }
+        isStarting = true
+        defer { isStarting = false }
+
+        transcribedText = ""
+        finalizedText = ""
+        let file = try AVAudioFile(forReading: url)
+        inputAudioFile = file
+
+        do {
+            if SpeechTranscriber.isAvailable {
+                guard let resolved = await resolvedSpeechLocale() else {
+                    throw SpeechError.localeNotSupported(locale)
+                }
+                let transcriber = SpeechTranscriber(
+                    locale: resolved, preset: .progressiveTranscription)
+                try await prepare(module: transcriber)
+                recognizerTask = consumeResults(transcriber.results) { $0.text }
+                analyzer = try await SpeechAnalyzer(
+                    inputAudioFile: file,
+                    modules: [transcriber],
+                    finishAfterFile: true
+                )
+            } else {
+                guard let resolved = await resolvedDictationLocale() else {
+                    throw SpeechError.localeNotSupported(locale)
+                }
+                let dictation = DictationTranscriber(
+                    locale: resolved, preset: .progressiveLongDictation)
+                try await prepare(module: dictation)
+                recognizerTask = consumeResults(dictation.results) { $0.text }
+                analyzer = try await SpeechAnalyzer(
+                    inputAudioFile: file,
+                    modules: [dictation],
+                    finishAfterFile: true
+                )
+            }
+
+            isTranscribing = true
+            await recognizerTask?.value
+            let result = transcribedText
+            resetSessionState()
+            guard !result.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                throw SpeechError.noTranscription
+            }
+            return result
+        } catch {
+            recognizerTask?.cancel()
+            resetSessionState()
+            throw error
+        }
+    }
+
+    private func resolvedSpeechLocale() async -> Locale? {
+        if let resolved = await SpeechTranscriber.supportedLocale(equivalentTo: locale) {
+            return resolved
+        }
+        return await SpeechTranscriber.supportedLocale(
+            equivalentTo: Locale(identifier: "en-US"))
+    }
+
+    private func resolvedDictationLocale() async -> Locale? {
+        if let resolved = await DictationTranscriber.supportedLocale(equivalentTo: locale) {
+            return resolved
+        }
+        return await DictationTranscriber.supportedLocale(
+            equivalentTo: Locale(identifier: "en-US"))
+    }
+
     private func startAnalyzer(with module: any SpeechModule) async throws {
         let analyzer = SpeechAnalyzer(modules: [module])
         analyzerFormat = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [module])
@@ -141,15 +232,21 @@ final class AppleSpeechService: TranscriptionService {
         // Not used by Apple Speech — buffers are passed directly.
     }
 
-    func stopTranscribing() async {
+    func stopTranscribing() async -> TranscriptionStopResult {
         inputBuilder?.finish()
         try? await analyzer?.finalizeAndFinishThroughEndOfInput()
         // Finishing the analyzer ends the results stream; drain it so the final
         // segment is captured before teardown rather than cancelled mid-flight.
         await drainResults()
 
+        resetSessionState()
+        return .completed
+    }
+
+    private func resetSessionState() {
         analyzer = nil
         inputBuilder = nil
+        inputAudioFile = nil
         converter = nil
         analyzerFormat = nil
         recognizerTask = nil
@@ -242,6 +339,7 @@ final class AppleSpeechService: TranscriptionService {
     enum SpeechError: LocalizedError {
         case recognizerUnavailable
         case localeNotSupported(Locale)
+        case noTranscription
 
         var errorDescription: String? {
             switch self {
@@ -250,6 +348,8 @@ final class AppleSpeechService: TranscriptionService {
             case .localeNotSupported(let locale):
                 let name = Locale.current.localizedString(forIdentifier: locale.identifier) ?? locale.identifier
                 return "\(name) isn't supported for on-device transcription."
+            case .noTranscription:
+                return "Apple Speech did not produce a transcript."
             }
         }
     }

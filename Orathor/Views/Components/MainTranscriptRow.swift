@@ -9,6 +9,14 @@ struct MainTranscriptRow: View {
     @State private var isHovered = false
     @State private var showCopied = false
 
+    private var status: TranscriptStatus { entry.status ?? .complete }
+    private var displayText: String {
+        status == .failed ? "Transcription failed · audio saved" : entry.text
+    }
+    private var usedFallback: Bool {
+        entry.requestedEngine != nil && entry.requestedEngine != entry.engine
+    }
+
     var body: some View {
         HStack(alignment: .top, spacing: Spacing.md) {
             Text(entry.timestamp, format: .dateTime.hour().minute())
@@ -38,9 +46,21 @@ struct MainTranscriptRow: View {
                             .foregroundStyle(Color.brand)
                             .help("Smart formatted · \(entry.formattingModel ?? "on-device")")
                     }
+
+                    if status == .partial || status == .failed {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .font(.system(size: 9))
+                            .foregroundStyle(Color.warning)
+                            .help(status == .partial ? "Partial transcript" : "Transcription failed · audio saved")
+                    } else if usedFallback {
+                        Image(systemName: "arrow.trianglehead.2.clockwise.rotate.90")
+                            .font(.system(size: 9))
+                            .foregroundStyle(Color.warning)
+                            .help("Transcribed with Apple fallback")
+                    }
                 }
 
-                Text(TextHighlighter.highlight(entry.text, query: searchText))
+                Text(TextHighlighter.highlight(displayText, query: searchText))
                     .font(OType.body)
                     .foregroundStyle(Color.textPrimary)
                     .lineLimit(3)
@@ -78,8 +98,10 @@ struct MainTranscriptRow: View {
 
     private var actionButtons: some View {
         HStack(spacing: Spacing.xxxs) {
-            iconButton(showCopied ? "checkmark" : "doc.on.doc", help: "Copy") {
-                copyText()
+            if status != .failed {
+                iconButton(showCopied ? "checkmark" : "doc.on.doc", help: "Copy") {
+                    copyText()
+                }
             }
 
             if let raw = entry.rawText {

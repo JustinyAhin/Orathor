@@ -12,6 +12,13 @@ struct TranscriptRow: View {
     @State private var didCopy = false
 
     private var textFont: Font { compact ? OType.callout : OType.body }
+    private var status: TranscriptStatus { entry.status ?? .complete }
+    private var displayText: String {
+        status == .failed ? "Transcription failed · audio saved" : entry.text
+    }
+    private var usedFallback: Bool {
+        entry.requestedEngine != nil && entry.requestedEngine != entry.engine
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xxs) {
@@ -43,9 +50,11 @@ struct TranscriptRow: View {
                 .stroke(didCopy ? Color.indicatorGreen.opacity(0.4) : (isHovered ? Color.borderSubtle : .clear), lineWidth: 0.5)
         )
         .contentShape(Rectangle())
-        .onTapGesture { copy() }
-        .pointerStyle(.link)
-        .help("Click to copy")
+        .onTapGesture {
+            if status != .failed { copy() }
+        }
+        .pointerStyle(status == .failed ? .default : .link)
+        .help(status == .failed ? "Audio recording preserved" : "Click to copy")
         .onHover { isHovered = $0 }
         .animation(.easeInOut(duration: 0.15), value: isHovered)
         .animation(.easeInOut(duration: 0.18), value: didCopy)
@@ -72,7 +81,7 @@ struct TranscriptRow: View {
     }
 
     private var highlightedText: AttributedString {
-        TextHighlighter.highlight(entry.text, query: searchText)
+        TextHighlighter.highlight(displayText, query: searchText)
     }
 
     @ViewBuilder
@@ -94,6 +103,19 @@ struct TranscriptRow: View {
 
     private var metadata: some View {
         HStack(spacing: Spacing.xxs) {
+            if status == .partial {
+                Text("Partial")
+                    .foregroundStyle(Color.warning)
+                Text("\u{2022}")
+            } else if status == .failed {
+                Text("Failed")
+                    .foregroundStyle(Color.warning)
+                Text("\u{2022}")
+            } else if usedFallback {
+                Text("Apple fallback")
+                    .foregroundStyle(Color.warning)
+                Text("\u{2022}")
+            }
             let seconds = Int(entry.durationSeconds)
             Text("\(seconds)s")
             Text("\u{2022}")

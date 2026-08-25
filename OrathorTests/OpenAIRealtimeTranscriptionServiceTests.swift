@@ -118,6 +118,81 @@ final class OpenAIRealtimeTranscriptionServiceTests: XCTestCase {
         code: nil, message: nil), "OpenAI transcription failed.")
   }
 
+  func testProviderErrorClassificationOnlyRetriesTemporaryServiceFailures() {
+    XCTAssertEqual(
+      OpenAIRealtimeTranscriptionService.failureKind(for: "server_error"), .transient)
+    XCTAssertEqual(
+      OpenAIRealtimeTranscriptionService.failureKind(for: "service_unavailable"), .transient)
+    XCTAssertEqual(
+      OpenAIRealtimeTranscriptionService.failureKind(for: "insufficient_quota"), .nonRecoverable)
+    XCTAssertEqual(
+      OpenAIRealtimeTranscriptionService.failureKind(for: "rate_limit_exceeded"), .nonRecoverable)
+    XCTAssertEqual(
+      OpenAIRealtimeTranscriptionService.failureKind(for: "invalid_request_error"), .nonRecoverable)
+  }
+
+  func testFallbackPolicyRequiresTransientCloudFailure() {
+    let transient = TranscriptionFailure(kind: .transient, message: "Offline")
+    let permanent = TranscriptionFailure(kind: .nonRecoverable, message: "Bad key")
+
+    XCTAssertTrue(
+      TranscriptionFallbackPolicy.shouldFallback(
+        requestedEngine: .deepgram, failure: transient))
+    XCTAssertTrue(
+      TranscriptionFallbackPolicy.shouldFallback(
+        requestedEngine: .openAIWhisper, failure: transient))
+    XCTAssertFalse(
+      TranscriptionFallbackPolicy.shouldFallback(
+        requestedEngine: .apple, failure: transient))
+    XCTAssertFalse(
+      TranscriptionFallbackPolicy.shouldFallback(
+        requestedEngine: .deepgram, failure: permanent))
+    XCTAssertEqual(
+      TranscriptionFallbackPolicy.failureKind(forHTTPStatus: nil), .transient)
+    XCTAssertEqual(
+      TranscriptionFallbackPolicy.failureKind(forHTTPStatus: 503), .transient)
+    XCTAssertEqual(
+      TranscriptionFallbackPolicy.failureKind(forHTTPStatus: 401), .nonRecoverable)
+    XCTAssertEqual(
+      TranscriptionFallbackPolicy.failureKind(forHTTPStatus: 429), .nonRecoverable)
+  }
+
+  func testLegacyTranscriptEntryDecodesAsCompleteWithoutFallbackMetadata() throws {
+    let json = """
+      {
+        "id": "00000000-0000-0000-0000-000000000001",
+        "text": "Legacy transcript",
+        "timestamp": 0,
+        "durationSeconds": 2,
+        "wordCount": 2,
+        "engine": "deepgram"
+      }
+      """
+
+    let entry = try JSONDecoder().decode(
+      TranscriptEntry.self, from: try XCTUnwrap(json.data(using: .utf8)))
+    XCTAssertNil(entry.status)
+    XCTAssertNil(entry.requestedEngine)
+    XCTAssertNil(entry.failureMessage)
+    XCTAssertEqual(entry.engine, .deepgram)
+  }
+
+  func testFallbackAndFailedEntriesRetainOutcomeMetadata() {
+    let fallback = TranscriptEntry(
+      text: "Recovered", timestamp: Date(), durationSeconds: 1, wordCount: 1,
+      targetAppName: nil, targetAppBundleID: nil, engine: .apple,
+      requestedEngine: .openAIWhisper, status: .complete)
+    let failed = TranscriptEntry(
+      text: "", timestamp: Date(), durationSeconds: 1, wordCount: 0,
+      targetAppName: nil, targetAppBundleID: nil, audioFileName: "recording.m4a",
+      engine: nil, requestedEngine: .deepgram, status: .failed,
+      failureMessage: "Local model unavailable")
+
+    XCTAssertNotEqual(fallback.engine, fallback.requestedEngine)
+    XCTAssertEqual(failed.status, .failed)
+    XCTAssertEqual(failed.audioFileName, "recording.m4a")
+  }
+
   private func transcription(from payload: [String: Any]) throws -> [String: Any] {
     let input = try input(from: payload)
     return try XCTUnwrap(input["transcription"] as? [String: Any])

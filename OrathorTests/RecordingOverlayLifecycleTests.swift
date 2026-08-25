@@ -43,4 +43,17 @@ final class RecordingOverlayLifecycleTests: XCTestCase {
         XCTAssertFalse(lifecycle.dismiss(sessionID: sessionID))
         XCTAssertEqual(lifecycle.presentation, .idle)
     }
+
+    func testFallbackModesRemainInTheSameRecordingSession() {
+        let sessionID = UUID()
+        var lifecycle = RecordingOverlayController.Lifecycle()
+
+        XCTAssertTrue(lifecycle.present(sessionID: sessionID, mode: .recording))
+        XCTAssertTrue(lifecycle.update(mode: .recordingWithFallback, sessionID: sessionID))
+        XCTAssertTrue(lifecycle.update(mode: .transcribingLocally, sessionID: sessionID))
+        XCTAssertEqual(
+            lifecycle.presentation,
+            .visible(sessionID: sessionID, mode: .transcribingLocally)
+        )
+    }
 }

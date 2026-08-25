@@ -4,7 +4,7 @@ import AVFoundation
 final class DeepgramService: NSObject, TranscriptionService, URLSessionWebSocketDelegate {
     var transcribedText = ""
     var isTranscribing = false
-    var onError: ((String) -> Void)?
+    var onFailure: ((TranscriptionFailure) -> Void)?
 
     private let apiKey: String
     private let language: String
@@ -17,7 +17,8 @@ final class DeepgramService: NSObject, TranscriptionService, URLSessionWebSocket
 
     private var reconnectAttempts = 0
     private let maxReconnectAttempts = 3
-    private var finalizeContinuation: CheckedContinuation<Void, Never>?
+    private var finalizeContinuation: CheckedContinuation<Bool, Never>?
+    private var terminalFailure: TranscriptionFailure?
 
     // Sends into a socket whose handshake hasn't completed are silently dropped,
     // so messages queue under the lock until didOpen flushes them in order. The
@@ -49,6 +50,7 @@ final class DeepgramService: NSObject, TranscriptionService, URLSessionWebSocket
         finalText = ""
         lastInterim = ""
         reconnectAttempts = 0
+        terminalFailure = nil
         didLogFirstTranscript = false
         keepAliveTask?.cancel()
         keepAliveTask = nil
@@ -75,24 +77,39 @@ final class DeepgramService: NSObject, TranscriptionService, URLSessionWebSocket
         enqueueOrSend(.data(data))
     }
 
-    func stopTranscribing() async {
+    func stopTranscribing() async -> TranscriptionStopResult {
+        if let terminalFailure {
+            return .failed(terminalFailure)
+        }
+
         // Send Finalize to flush remaining audio, then wait for the response
         sendTextMessage(["type": "Finalize"])
 
         // Wait for final result or timeout after 1 second — the from_finalize
         // response normally arrives well under that; the timeout only covers a
         // dead connection.
-        await withCheckedContinuation { continuation in
+        let didFinalize = await withCheckedContinuation { continuation in
             finalizeContinuation = continuation
 
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
-                self?.resolveFinalize()
+                self?.resolveFinalize(succeeded: false)
             }
         }
 
         isTranscribing = false
-        // No CloseStream — hold the socket open for the next dictation
-        startKeepAlive()
+        if didFinalize {
+            // No CloseStream — hold the socket open for the next dictation
+            startKeepAlive()
+            return .completed
+        }
+
+        let failure = TranscriptionFailure(
+            kind: .transient,
+            message: "Deepgram did not finish the transcript before timing out."
+        )
+        terminalFailure = failure
+        disconnect()
+        return .failed(failure)
     }
 
     func shutdown() {
@@ -100,8 +117,8 @@ final class DeepgramService: NSObject, TranscriptionService, URLSessionWebSocket
         disconnect()
     }
 
-    private func resolveFinalize() {
-        finalizeContinuation?.resume()
+    private func resolveFinalize(succeeded: Bool) {
+        finalizeContinuation?.resume(returning: succeeded)
         finalizeContinuation = nil
     }
 
@@ -128,7 +145,7 @@ final class DeepgramService: NSObject, TranscriptionService, URLSessionWebSocket
         task.resume()
 
         isTranscribing = true
-        listenForMessages()
+        listenForMessages(on: task)
     }
 
     static func connectionURL(
@@ -197,17 +214,42 @@ final class DeepgramService: NSObject, TranscriptionService, URLSessionWebSocket
         }
     }
 
-    private func handleDisconnect() {
-        markSocketClosed()
+    private func handleDisconnect(for task: URLSessionWebSocketTask) {
+        guard markSocketClosedIfActive(task) else { return }
         guard isTranscribing else {
             // Warm connection died while idle — next start reconnects fresh
             disconnect()
             return
         }
-        guard reconnectAttempts < maxReconnectAttempts else {
-            onError?("Connection to Deepgram lost. Transcription may be incomplete.")
+        let statusCode = (task.response as? HTTPURLResponse)?.statusCode
+        let failureKind = TranscriptionFallbackPolicy.failureKind(
+            forHTTPStatus: statusCode)
+        if failureKind == .nonRecoverable {
+            let status = statusCode.map(String.init) ?? "unknown"
+            let failure = TranscriptionFailure(
+                kind: .nonRecoverable,
+                message: "Deepgram rejected the connection (HTTP \(status))."
+            )
+            terminalFailure = failure
+            isTranscribing = false
+            disconnect()
+            resolveFinalize(succeeded: false)
+            onFailure?(failure)
             return
         }
+        guard reconnectAttempts < maxReconnectAttempts else {
+            let failure = TranscriptionFailure(
+                kind: .transient,
+                message: "Connection to Deepgram lost. Transcription may be incomplete."
+            )
+            terminalFailure = failure
+            isTranscribing = false
+            disconnect()
+            resolveFinalize(succeeded: false)
+            onFailure?(failure)
+            return
+        }
+        releaseSocketForReconnect()
         reconnectAttempts += 1
 
         let delay = pow(2.0, Double(reconnectAttempts))
@@ -221,22 +263,35 @@ final class DeepgramService: NSObject, TranscriptionService, URLSessionWebSocket
 
     // MARK: - Message Handling
 
-    private func listenForMessages() {
-        webSocketTask?.receive { [weak self] result in
-            guard let self else { return }
+    private func listenForMessages(on task: URLSessionWebSocketTask) {
+        task.receive { [weak self, weak task] result in
+            guard let self, let task, self.isActive(task) else { return }
 
             switch result {
             case .success(let message):
                 if case .string(let text) = message {
                     self.handleMessage(text)
                 }
-                self.listenForMessages()
+                self.listenForMessages(on: task)
             case .failure:
                 Task { @MainActor in
-                    self.handleDisconnect()
+                    self.handleDisconnect(for: task)
                 }
             }
         }
+    }
+
+    private func releaseSocketForReconnect() {
+        socketLock.lock()
+        let task = webSocketTask
+        let session = urlSession
+        webSocketTask = nil
+        urlSession = nil
+        isSocketOpen = false
+        socketLock.unlock()
+
+        task?.cancel(with: .goingAway, reason: nil)
+        session?.invalidateAndCancel()
     }
 
     private func handleMessage(_ text: String) {
@@ -262,7 +317,7 @@ final class DeepgramService: NSObject, TranscriptionService, URLSessionWebSocket
                 if response.isFinal == true {
                     self.appendFinalTranscript(transcript)
                     if fromFinalize {
-                        self.resolveFinalize()
+                        self.resolveFinalize(succeeded: true)
                     }
                 } else {
                     self.updateInterimTranscript(transcript)
@@ -359,11 +414,11 @@ final class DeepgramService: NSObject, TranscriptionService, URLSessionWebSocket
     }
 
     private func send(_ message: URLSessionWebSocketTask.Message) {
-        webSocketTask?.send(message) { error in
-            if error != nil {
-                Task { @MainActor in
-                    self.handleDisconnect()
-                }
+        guard let task = webSocketTask else { return }
+        task.send(message) { [weak self, weak task] error in
+            guard error != nil, let self, let task else { return }
+            Task { @MainActor in
+                self.handleDisconnect(for: task)
             }
         }
     }
@@ -372,6 +427,10 @@ final class DeepgramService: NSObject, TranscriptionService, URLSessionWebSocket
 
     func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didOpenWithProtocol protocol: String?) {
         socketLock.lock()
+        guard webSocketTask === self.webSocketTask else {
+            socketLock.unlock()
+            return
+        }
         isSocketOpen = true
         let queued = pendingMessages
         pendingMessages = []
@@ -385,8 +444,22 @@ final class DeepgramService: NSObject, TranscriptionService, URLSessionWebSocket
 
     func urlSession(_ session: URLSession, webSocketTask: URLSessionWebSocketTask, didCloseWith closeCode: URLSessionWebSocketTask.CloseCode, reason: Data?) {
         Task { @MainActor in
-            self.handleDisconnect()
+            self.handleDisconnect(for: webSocketTask)
         }
+    }
+
+    private func isActive(_ task: URLSessionWebSocketTask) -> Bool {
+        socketLock.lock()
+        defer { socketLock.unlock() }
+        return task === webSocketTask
+    }
+
+    private func markSocketClosedIfActive(_ task: URLSessionWebSocketTask) -> Bool {
+        socketLock.lock()
+        defer { socketLock.unlock() }
+        guard task === webSocketTask else { return false }
+        isSocketOpen = false
+        return true
     }
 
     // MARK: - Types
