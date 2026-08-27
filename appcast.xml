@@ -3,13 +3,13 @@
     <channel>
         <title>Orathor</title>
         <item>
-            <title>0.0.14</title>
-            <pubDate>Tue, 18 Aug 2026 09:07:25 +0100</pubDate>
-            <sparkle:version>14</sparkle:version>
-            <sparkle:shortVersionString>0.0.14</sparkle:shortVersionString>
+            <title>0.0.15</title>
+            <pubDate>Thu, 27 Aug 2026 11:55:38 +0100</pubDate>
+            <sparkle:version>15</sparkle:version>
+            <sparkle:shortVersionString>0.0.15</sparkle:shortVersionString>
             <sparkle:minimumSystemVersion>26.2</sparkle:minimumSystemVersion>
             <sparkle:hardwareRequirements>arm64</sparkle:hardwareRequirements>
-            <enclosure url="https://github.com/JustinyAhin/Orathor/releases/download/v0.0.14/Orathor-0.0.14-14.zip" length="2772734" type="application/octet-stream" sparkle:edSignature="cOa+AM3jQDO3fJmO87s6fKBh4w/RdeJNUk7i2DqKCJc0uWzkWzAXULcYONF86WQE7AFK07DGda/4QH6MrcepDA=="/>
+            <enclosure url="https://github.com/JustinyAhin/Orathor/releases/download/v0.0.15/Orathor-0.0.15-15.zip" length="2845396" type="application/octet-stream" sparkle:edSignature="Fuihg3twNjG/6TUCo13qgFMCtRwQW1kmagDVrY4tu8UfF6wMFsG9rqVGf6lwlD8zmFMakRTm+vIsbsYiIoNDBw=="/>
         </item>
     </channel>
 </rss>
