@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.0.15 — 2026-08-27
+
+### New
+
+- **Launch at login** — optionally start Orathor automatically when signing in to your Mac
+
+### Improvements
+
+- **Automatic local fallback** — when Deepgram or OpenAI fails during a recording, Orathor transparently finishes the transcription with Apple Speech and marks the engine used in history
+
+### Fixes
+
+- **OpenAI session isolation** — delayed transcript events from an earlier recording can no longer leak into a later dictation
+- **Stable menu bar popover** — transcript actions no longer resize the popover repeatedly when hovering between rows
+
 ## 0.0.14 — 2026-08-18
 
 ### Upgrading from an older build
