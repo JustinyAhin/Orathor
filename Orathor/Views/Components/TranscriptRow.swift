@@ -34,10 +34,6 @@ struct TranscriptRow: View {
                 .lineLimit(lineLimit)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            if isHovered && !didCopy {
-                actionBar
-                    .transition(.opacity)
-            }
         }
         .padding(.horizontal, Spacing.sm)
         .padding(.vertical, Spacing.xs)
@@ -75,6 +71,9 @@ struct TranscriptRow: View {
             .font(OType.monoMicro)
             .foregroundStyle(Color.indicatorGreen)
             .transition(.opacity)
+        } else if isHovered {
+            actionMenu
+                .transition(.opacity)
         } else {
             metadata
         }
@@ -127,43 +126,40 @@ struct TranscriptRow: View {
         .foregroundStyle(Color.textTertiary)
     }
 
-    private var actionBar: some View {
-        HStack(spacing: Spacing.sm) {
-            Spacer()
-            Menu {
-                if historyService.audioFileURL(for: entry) != nil {
-                    Button {
-                        togglePlayback()
-                    } label: {
-                        Label(
-                            playbackService.isPlaying ? "Stop" : "Play",
-                            systemImage: playbackService.isPlaying ? "stop.fill" : "play.fill"
-                        )
-                    }
-
-                    Button {
-                        showInFinder()
-                    } label: {
-                        Label("Show in Finder", systemImage: "folder")
-                    }
-
-                    Divider()
-                }
-
-                Button(role: .destructive) {
-                    historyService.delete(entry)
+    private var actionMenu: some View {
+        Menu {
+            if historyService.audioFileURL(for: entry) != nil {
+                Button {
+                    togglePlayback()
                 } label: {
-                    Label("Delete", systemImage: "trash")
+                    Label(
+                        playbackService.isPlaying ? "Stop" : "Play",
+                        systemImage: playbackService.isPlaying ? "stop.fill" : "play.fill"
+                    )
                 }
-            } label: {
-                Image(systemName: "ellipsis.circle")
-                    .font(.system(size: 12))
-                    .foregroundStyle(Color.textSecondary)
+
+                Button {
+                    showInFinder()
+                } label: {
+                    Label("Show in Finder", systemImage: "folder")
+                }
+
+                Divider()
             }
-            .buttonStyle(.plain)
-            .menuIndicator(.hidden)
-            .fixedSize()
+
+            Button(role: .destructive) {
+                historyService.delete(entry)
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        } label: {
+            Image(systemName: "ellipsis.circle")
+                .font(.system(size: 12))
+                .foregroundStyle(Color.textSecondary)
         }
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .fixedSize()
     }
 
     private func copy() {
