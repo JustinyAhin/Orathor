@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.0.16 — 2026-08-27
+
+### Improvements
+
+- **Independent development build** — local builds now appear as Orathor Dev with their own macOS permission identity while continuing to share settings, API keys, transcripts, recordings, and dictionary data with the customer app
+
+### Fixes
+
+- **Stable popover across Spaces** — the menu bar window stays anchored to its icon instead of sliding across the desktop when macOS restores it from another Space
+- **Accessibility permission stability** — rebuilding Orathor Dev no longer invalidates the customer app's Accessibility permission
+
 ## 0.0.15 — 2026-08-27
 
 ### New
