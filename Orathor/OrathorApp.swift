@@ -11,7 +11,7 @@ import SwiftUI
 private let sparkleController: SPUStandardUpdaterController = {
     UserDefaults.standard.register(defaults: ["SUEnableAutomaticChecks": true])
     return SPUStandardUpdaterController(
-        startingUpdater: !AppRuntime.isRunningTests,
+        startingUpdater: !AppRuntime.isRunningTests && !AppRuntime.isDebugBuild,
         updaterDelegate: nil,
         userDriverDelegate: nil
     )
@@ -19,7 +19,7 @@ private let sparkleController: SPUStandardUpdaterController = {
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var showInDock: Bool {
-        UserDefaults.standard.object(forKey: "showInDock") as? Bool ?? false
+        AppPreferences.shared.object(forKey: "showInDock") as? Bool ?? false
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -122,7 +122,7 @@ struct OrathorApp: App {
         .windowStyle(.hiddenTitleBar)
         .windowResizability(.contentSize)
         .defaultLaunchBehavior(
-            UserDefaults.standard.bool(forKey: "hasCompletedOnboarding") ? .suppressed : .presented
+            AppPreferences.shared.bool(forKey: "hasCompletedOnboarding") ? .suppressed : .presented
         )
         .restorationBehavior(.disabled)
     }

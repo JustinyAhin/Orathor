@@ -7,7 +7,8 @@ struct OnboardingView: View {
     var viewModel: TranscriptionViewModel
 
     @Environment(\.dismiss) private var dismiss
-    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @AppStorage("hasCompletedOnboarding", store: AppPreferences.shared)
+    private var hasCompletedOnboarding = false
     @State private var step: Step = .welcome
     @State private var didPromptAccessibility = false
     @State private var initialHistoryCount = 0

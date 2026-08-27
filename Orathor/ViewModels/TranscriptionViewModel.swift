@@ -58,7 +58,7 @@ final class TranscriptionViewModel {
             openAIAPIKey: settingsViewModel.openAIApiKey,
             language: settingsViewModel.transcriptionLanguage,
             context: context,
-            openAITranscriptionDelay: UserDefaults.standard.string(forKey: "whisperTranscriptionDelay") ?? "low"
+            openAITranscriptionDelay: AppPreferences.shared.string(forKey: "whisperTranscriptionDelay") ?? "low"
         )
         speechServiceConfig = config
         speechService = TranscriptionViewModel.makeSpeechService(
@@ -91,7 +91,7 @@ final class TranscriptionViewModel {
             openAIAPIKey: settingsViewModel.openAIApiKey,
             language: settingsViewModel.transcriptionLanguage,
             context: context,
-            openAITranscriptionDelay: UserDefaults.standard.string(forKey: "whisperTranscriptionDelay") ?? "low"
+            openAITranscriptionDelay: AppPreferences.shared.string(forKey: "whisperTranscriptionDelay") ?? "low"
         )
         guard config != speechServiceConfig else { return }
         speechService.shutdown()

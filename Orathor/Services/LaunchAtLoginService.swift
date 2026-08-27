@@ -78,7 +78,7 @@ final class LaunchAtLoginService {
     }
 
     init() {
-        if AppRuntime.isRunningTests {
+        if AppRuntime.isRunningTests || AppRuntime.isDebugBuild {
             controller = UnavailableLaunchAtLoginController()
         } else {
             controller = SystemLaunchAtLoginController()

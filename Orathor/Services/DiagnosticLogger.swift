@@ -105,7 +105,7 @@ nonisolated final class DiagnosticLogger: Sendable {
             hw = String(cString: model)
         }
 
-        let defaults = UserDefaults.standard
+        let defaults = AppPreferences.shared
         let engine = defaults.string(forKey: "speechEngine") ?? "apple"
         let insertKey = defaults.string(forKey: "insertHotkey") ?? "rightOption"
         let clipboardKey = defaults.string(forKey: "clipboardHotkey") ?? "none"

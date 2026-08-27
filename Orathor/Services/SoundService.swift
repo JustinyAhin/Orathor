@@ -28,7 +28,7 @@ enum SoundService {
     }
 
     private static func soundName(forKey key: String, default defaultName: String) -> String {
-        UserDefaults.standard.string(forKey: key) ?? defaultName
+        AppPreferences.shared.string(forKey: key) ?? defaultName
     }
 
     static func playStart() {

@@ -32,7 +32,7 @@ final class OpenAIRealtimeTranscriptionService: NSObject, TranscriptionService,
 
   init(
     apiKey: String, context: TranscriptionContext = TranscriptionContext(),
-    delay: String = UserDefaults.standard.string(forKey: "whisperTranscriptionDelay") ?? "low"
+    delay: String = AppPreferences.shared.string(forKey: "whisperTranscriptionDelay") ?? "low"
   ) {
     self.apiKey = apiKey
     self.context = context

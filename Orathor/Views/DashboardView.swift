@@ -3,7 +3,8 @@ import SwiftUI
 struct DashboardView: View {
     let historyService: TranscriptHistoryService
 
-    @AppStorage("dashboardActivityPeriod") private var period: ActivityPeriod = .week
+    @AppStorage("dashboardActivityPeriod", store: AppPreferences.shared)
+    private var period: ActivityPeriod = .week
     @State private var playbackService = AudioPlaybackService()
 
     private var entries: [TranscriptEntry] { historyService.entries }

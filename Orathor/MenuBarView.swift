@@ -38,6 +38,7 @@ struct MenuBarView: View {
             footer
         }
         .frame(width: 340)
+        .background(MenuBarWindowConfigurator())
         .task {
             await viewModel.checkPermissions()
             formattingAvailable = TranscriptPolisher.status.available
@@ -314,6 +315,29 @@ struct MenuBarView: View {
 
     private var currentLanguageLabel: String {
         DeepgramLanguage.allOptions.first { $0.code == viewModel.settingsViewModel.transcriptionLanguage }?.label ?? "Auto-detect"
+    }
+}
+
+private struct MenuBarWindowConfigurator: NSViewRepresentable {
+    func makeNSView(context: Context) -> MenuBarWindowReaderView {
+        MenuBarWindowReaderView()
+    }
+
+    func updateNSView(_ nsView: MenuBarWindowReaderView, context: Context) {
+        nsView.configureWindow()
+    }
+}
+
+private final class MenuBarWindowReaderView: NSView {
+    override func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        configureWindow()
+    }
+
+    func configureWindow() {
+        guard let window else { return }
+        window.animationBehavior = .none
+        window.collectionBehavior.formUnion([.canJoinAllSpaces, .stationary])
     }
 }
 

@@ -338,6 +338,7 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = "Orathor Dev";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Orathor needs microphone access to transcribe your speech.";
@@ -347,8 +348,9 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 0.0.15;
-				PRODUCT_BUNDLE_IDENTIFIER = segbedji.Orathor;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = segbedji.Orathor.debug;
+				PRODUCT_MODULE_NAME = Orathor;
+				PRODUCT_NAME = "Orathor Dev";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -404,7 +406,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = segbedji.OrathorTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Orathor.app/Contents/MacOS/Orathor";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Orathor Dev.app/Contents/MacOS/Orathor Dev";
 			};
 			name = Debug;
 		};

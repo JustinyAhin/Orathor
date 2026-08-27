@@ -27,7 +27,7 @@ enum AppearanceMode: String, CaseIterable {
 final class SettingsViewModel {
     var selectedEngine: SpeechEngine {
         didSet {
-            UserDefaults.standard.set(selectedEngine.rawValue, forKey: "speechEngine")
+            AppPreferences.shared.set(selectedEngine.rawValue, forKey: "speechEngine")
             onEngineChanged?(selectedEngine)
         }
     }
@@ -57,7 +57,7 @@ final class SettingsViewModel {
             if let clipboardHotkey, insertHotkey == clipboardHotkey {
                 self.clipboardHotkey = oldValue
             }
-            UserDefaults.standard.set(insertHotkey.rawValue, forKey: "insertHotkey")
+            AppPreferences.shared.set(insertHotkey.rawValue, forKey: "insertHotkey")
             onHotkeyChanged?()
         }
     }
@@ -68,29 +68,29 @@ final class SettingsViewModel {
                 insertHotkey = oldValue ?? .rightOption
             }
             if let clipboardHotkey {
-                UserDefaults.standard.set(clipboardHotkey.rawValue, forKey: "clipboardHotkey")
+                AppPreferences.shared.set(clipboardHotkey.rawValue, forKey: "clipboardHotkey")
             } else {
-                UserDefaults.standard.removeObject(forKey: "clipboardHotkey")
+                AppPreferences.shared.removeObject(forKey: "clipboardHotkey")
             }
             onHotkeyChanged?()
         }
     }
 
     var startSound: String {
-        didSet { UserDefaults.standard.set(startSound, forKey: "startSound") }
+        didSet { AppPreferences.shared.set(startSound, forKey: "startSound") }
     }
 
     var stopSound: String {
-        didSet { UserDefaults.standard.set(stopSound, forKey: "stopSound") }
+        didSet { AppPreferences.shared.set(stopSound, forKey: "stopSound") }
     }
 
     var cancelSound: String {
-        didSet { UserDefaults.standard.set(cancelSound, forKey: "cancelSound") }
+        didSet { AppPreferences.shared.set(cancelSound, forKey: "cancelSound") }
     }
 
     var showInDock: Bool {
         didSet {
-            UserDefaults.standard.set(showInDock, forKey: "showInDock")
+            AppPreferences.shared.set(showInDock, forKey: "showInDock")
             NSApp.setActivationPolicy(showInDock ? .regular : .accessory)
             DispatchQueue.main.async {
                 NSApp.activate(ignoringOtherApps: true)
@@ -100,27 +100,27 @@ final class SettingsViewModel {
 
     var appearanceMode: AppearanceMode {
         didSet {
-            UserDefaults.standard.set(appearanceMode.rawValue, forKey: "appearanceMode")
+            AppPreferences.shared.set(appearanceMode.rawValue, forKey: "appearanceMode")
             NSApp.appearance = appearanceMode.appAppearance
         }
     }
 
     var transcriptionLanguage: String {
         didSet {
-            UserDefaults.standard.set(transcriptionLanguage, forKey: "transcriptionLanguage")
+            AppPreferences.shared.set(transcriptionLanguage, forKey: "transcriptionLanguage")
             onTranscriptionLanguageChanged?()
         }
     }
 
     var smartFormattingEnabled: Bool {
         didSet {
-            UserDefaults.standard.set(smartFormattingEnabled, forKey: "smartFormatting")
+            AppPreferences.shared.set(smartFormattingEnabled, forKey: "smartFormatting")
         }
     }
 
     var cloudVocabularyEnabled: Bool {
         didSet {
-            UserDefaults.standard.set(cloudVocabularyEnabled, forKey: "cloudVocabularyEnabled")
+            AppPreferences.shared.set(cloudVocabularyEnabled, forKey: "cloudVocabularyEnabled")
         }
     }
 
@@ -137,30 +137,30 @@ final class SettingsViewModel {
     }
 
     init() {
-        let stored = UserDefaults.standard.string(forKey: "speechEngine") ?? SpeechEngine.apple.rawValue
+        let stored = AppPreferences.shared.string(forKey: "speechEngine") ?? SpeechEngine.apple.rawValue
         selectedEngine = SpeechEngine(rawValue: stored) ?? .apple
         deepgramApiKey = KeychainService.load(key: "deepgramApiKey") ?? ""
         openAIApiKey = KeychainService.load(key: "openaiApiKey") ?? ""
 
-        let storedInsert = UserDefaults.standard.string(forKey: "insertHotkey") ?? HotkeyModifier.rightOption.rawValue
+        let storedInsert = AppPreferences.shared.string(forKey: "insertHotkey") ?? HotkeyModifier.rightOption.rawValue
         insertHotkey = HotkeyModifier(rawValue: storedInsert) ?? .rightOption
 
-        if let storedClipboard = UserDefaults.standard.string(forKey: "clipboardHotkey") {
+        if let storedClipboard = AppPreferences.shared.string(forKey: "clipboardHotkey") {
             clipboardHotkey = HotkeyModifier(rawValue: storedClipboard)
         }
 
-        showInDock = UserDefaults.standard.object(forKey: "showInDock") as? Bool ?? false
+        showInDock = AppPreferences.shared.object(forKey: "showInDock") as? Bool ?? false
 
-        let storedAppearance = UserDefaults.standard.string(forKey: "appearanceMode") ?? AppearanceMode.dark.rawValue
+        let storedAppearance = AppPreferences.shared.string(forKey: "appearanceMode") ?? AppearanceMode.dark.rawValue
         appearanceMode = AppearanceMode(rawValue: storedAppearance) ?? .dark
 
-        transcriptionLanguage = UserDefaults.standard.string(forKey: "transcriptionLanguage") ?? "multi"
-        smartFormattingEnabled = UserDefaults.standard.object(forKey: "smartFormatting") as? Bool ?? false
-        cloudVocabularyEnabled = UserDefaults.standard.object(forKey: "cloudVocabularyEnabled") as? Bool ?? true
+        transcriptionLanguage = AppPreferences.shared.string(forKey: "transcriptionLanguage") ?? "multi"
+        smartFormattingEnabled = AppPreferences.shared.object(forKey: "smartFormatting") as? Bool ?? false
+        cloudVocabularyEnabled = AppPreferences.shared.object(forKey: "cloudVocabularyEnabled") as? Bool ?? true
 
-        startSound = UserDefaults.standard.string(forKey: "startSound") ?? SoundService.defaultStart
-        stopSound = UserDefaults.standard.string(forKey: "stopSound") ?? SoundService.defaultStop
-        cancelSound = UserDefaults.standard.string(forKey: "cancelSound") ?? SoundService.defaultCancel
+        startSound = AppPreferences.shared.string(forKey: "startSound") ?? SoundService.defaultStart
+        stopSound = AppPreferences.shared.string(forKey: "stopSound") ?? SoundService.defaultStop
+        cancelSound = AppPreferences.shared.string(forKey: "cancelSound") ?? SoundService.defaultCancel
 
         // Defer appearance so it doesn't interfere with MenuBarExtra setup
         let mode = appearanceMode
