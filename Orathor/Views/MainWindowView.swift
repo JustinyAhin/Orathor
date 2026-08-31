@@ -1,9 +1,8 @@
-import Sparkle
 import SwiftUI
 
 struct MainWindowView: View {
     var viewModel: TranscriptionViewModel
-    let updater: SPUUpdater
+    let updater: AppUpdateController
     @State private var selectedSection: AppSection = .dashboard
 
     var body: some View {

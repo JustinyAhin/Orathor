@@ -1,7 +1,10 @@
 import Foundation
 import os
 
-private let logger = Logger(subsystem: "segbedji.Orathor", category: "TranscriptHistory")
+private let logger = Logger(
+    subsystem: AppDistribution.storageIdentifier,
+    category: "TranscriptHistory"
+)
 
 @Observable
 final class TranscriptHistoryService {
@@ -13,7 +16,10 @@ final class TranscriptHistoryService {
 
     init() {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        storageURL = appSupport.appendingPathComponent("segbedji.Orathor", isDirectory: true)
+        storageURL = appSupport.appendingPathComponent(
+            AppDistribution.storageIdentifier,
+            isDirectory: true
+        )
         recordingsURL = storageURL.appendingPathComponent("Recordings", isDirectory: true)
         transcriptsFileURL = storageURL.appendingPathComponent("transcripts.json")
 

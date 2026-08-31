@@ -1,0 +1,21 @@
+Orathor — Setapp Binary Distribution Terms
+
+Copyright (c) 2026 Justin Ahinon. All rights reserved.
+
+This official prebuilt Orathor binary is licensed, not sold. Access to
+this distribution requires an active Setapp membership and is also
+governed by the applicable Setapp terms. It may not be redistributed,
+resold, modified, or reverse engineered, except to the extent permitted
+by applicable law.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY ARISING FROM THE USE OF THE SOFTWARE.
+
+Source code is available under the GNU General Public License v3.0 at:
+https://github.com/JustinyAhin/Orathor
+Builds made from that source are governed by the GPL v3, not these
+binary distribution terms. "Orathor" — the name, logo, and app icon —
+is a trademark of Justin Ahinon and is not covered by the GPL.

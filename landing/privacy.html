@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Privacy Policy — Orathor</title>
+  <meta name="description" content="How Orathor handles audio, transcripts, API keys, and diagnostics.">
+  <link rel="icon" href="favicon.png">
+  <style>
+    :root { color-scheme: dark; --bg:#101112; --panel:#17191b; --text:#f3f0e9; --muted:#aaa7a0; --line:#303235; --link:#8db8ee; }
+    * { box-sizing:border-box; }
+    body { margin:0; background:var(--bg); color:var(--text); font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    main { width:min(720px,calc(100% - 40px)); margin:0 auto; padding:72px 0 96px; }
+    nav { margin-bottom:52px; } nav a { color:var(--muted); text-decoration:none; }
+    h1 { font-size:clamp(38px,7vw,58px); line-height:1.05; letter-spacing:-.035em; margin:0 0 14px; }
+    h2 { font-size:22px; margin:42px 0 8px; } p,li { color:var(--muted); } strong { color:var(--text); }
+    a { color:var(--link); } .updated { font-size:14px; color:var(--muted); }
+    .summary { margin:32px 0; padding:22px 24px; background:var(--panel); border:1px solid var(--line); border-radius:12px; }
+  </style>
+</head>
+<body><main>
+  <nav><a href="index.html">← Orathor</a></nav>
+  <h1>Privacy policy</h1>
+  <p class="updated">Last updated August 31, 2026</p>
+  <p class="summary"><strong>Short version:</strong> Orathor processes speech on your Mac by default. Cloud transcription is optional and only used when you select it and provide your own API key.</p>
+
+  <h2>Information stored on your Mac</h2>
+  <p>Orathor stores your preferences, transcript history, saved recordings, personal dictionary, and diagnostic log locally in your macOS user account. Cloud-provider API keys are stored in the macOS Keychain. Orathor does not operate an account database for this information.</p>
+
+  <h2>Audio and transcription</h2>
+  <p>The default Apple speech engine processes dictation on-device. When you deliberately select Deepgram or OpenAI as the speech engine, Orathor sends the audio needed for that dictation to the selected provider using the API key you supplied. Their handling of that data is governed by their own privacy policies and your agreement with them.</p>
+
+  <h2>Licensing and Setapp</h2>
+  <p>The direct-download edition communicates with Polar to activate and periodically validate a license. The Setapp edition communicates with Setapp to verify membership and report the user-interaction event required for menu-bar apps. Those services may process account, device, network, and usage information under their own privacy policies. Orathor does not receive your payment-card details.</p>
+
+  <h2>Diagnostics and analytics</h2>
+  <p>Orathor does not include advertising analytics or a third-party crash-reporting SDK. The app keeps a small local diagnostic log. It is only shared with the developer when you choose to copy and send it.</p>
+
+  <h2>Deletion and retention</h2>
+  <p>You can delete individual transcript entries in the app. Removing Orathor’s files from your Application Support and preferences folders, and its API-key entries from Keychain, removes the locally stored data. Data sent to an optional cloud provider is subject to that provider’s retention controls.</p>
+
+  <h2>Contact</h2>
+  <p>For privacy questions, open a private-safe support request through <a href="https://github.com/JustinyAhin/Orathor/issues">Orathor support on GitHub</a>. Do not include transcript text, audio, API keys, or license keys in a public issue.</p>
+</main></body>
+</html>

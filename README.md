@@ -70,12 +70,19 @@ An optional on-device polish pass (Apple Foundation Models) fixes punctuation, r
 # Build (debug)
 xcodebuild -scheme Orathor -configuration Debug build
 
+# Build the Setapp edition (debug)
+xcodebuild -scheme "Orathor Setapp" -configuration Debug build
+
 # Quit, rebuild, and relaunch
 ./scripts/rebuild.sh
 
 # Open in Xcode
 open Orathor.xcodeproj
 ```
+
+The schemes share the application source but keep distribution code separate:
+`Orathor` links Polar licensing and Sparkle, while `Orathor Setapp` links the
+Setapp SDK and contains neither. See the [Setapp release guide](kb/setapp-release.md).
 
 ### Tech stack
 
@@ -87,7 +94,7 @@ open Orathor.xcodeproj
 - `SpeechAnalyzer` / `SpeechTranscriber` for on-device transcription
 - `FoundationModels` for on-device smart formatting
 - macOS `CGEvent` APIs for text insertion
-- **Sparkle** for auto-updates
+- **Sparkle** for direct-edition updates; **Setapp SDK** for the Setapp edition
 
 ## License
 

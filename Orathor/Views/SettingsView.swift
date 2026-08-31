@@ -1,5 +1,6 @@
+#if !SETAPP
 import OrathorLicensing
-import Sparkle
+#endif
 import SwiftUI
 
 struct SettingsView: View {
@@ -7,17 +8,19 @@ struct SettingsView: View {
     @Bindable var dictionaryService: PersonalDictionaryService
     var permissions: PermissionsService
     @Bindable var launchAtLogin: LaunchAtLoginService
-    var license: LicenseManager
-    let updater: SPUUpdater
+    var license: AppLicenseManager
+    let updater: AppUpdateController
     @Environment(\.openWindow) private var openWindow
     @Environment(\.scenePhase) private var scenePhase
     @State private var copiedDiagnostics = false
     @State private var formattingAvailable = true
     @State private var formattingMessage: String?
     @State private var didPromptAccessibility = false
+    #if !SETAPP
     @State private var licenseKeyInput = ""
     @State private var licenseActionError: String?
     @State private var isActivatingLicense = false
+    #endif
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xxl) {
@@ -35,10 +38,14 @@ struct SettingsView: View {
             soundsSection
             generalSection
             appearanceSection
+            #if SETAPP
+            setappMembershipSection
+            #else
             updatesSection
             if license.isGated {
                 licenseSection
             }
+            #endif
             diagnosticsSection
             versionFooter
         }
@@ -46,6 +53,7 @@ struct SettingsView: View {
         .onAppear(perform: refreshFormattingStatus)
         .task {
             launchAtLogin.refresh()
+            await license.refresh()
             await permissions.pollWhileVisible()
         }
         .onChange(of: scenePhase) { _, phase in
@@ -594,6 +602,72 @@ struct SettingsView: View {
         }
     }
 
+    #if SETAPP
+    // MARK: - Setapp Membership
+
+    private var setappMembershipSection: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            ContentSectionHeader(title: "Setapp membership", symbol: "checkmark.seal.fill")
+
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(setappMembershipTitle)
+                        .font(OType.body)
+                        .foregroundStyle(Color.textPrimary)
+                    Text(setappMembershipCaption)
+                        .font(OType.caption)
+                        .foregroundStyle(setappMembershipColor)
+                }
+                Spacer()
+                Image(systemName: setappMembershipSymbol)
+                    .font(.system(size: 16))
+                    .foregroundStyle(setappMembershipColor)
+            }
+            .padding(.horizontal, Spacing.lg)
+            .padding(.vertical, Spacing.md)
+            .cardStyle(padding: 0)
+        }
+    }
+
+    private var setappMembershipTitle: String {
+        switch license.membershipStatus {
+        case .checking: "Checking membership…"
+        case .active: "Setapp membership active"
+        case .inactive: "Setapp membership inactive"
+        }
+    }
+
+    private var setappMembershipCaption: String {
+        switch license.membershipStatus {
+        case .checking:
+            "Connect to Setapp to verify your membership"
+        case .active(let expirationDate):
+            if let expirationDate {
+                "Available through \(expirationDate.formatted(date: .abbreviated, time: .omitted))"
+            } else {
+                "Orathor is included with your Setapp subscription"
+            }
+        case .inactive:
+            "Open Setapp and renew or sign in to continue using Orathor"
+        }
+    }
+
+    private var setappMembershipColor: Color {
+        switch license.membershipStatus {
+        case .checking: Color.textTertiary
+        case .active: Color.success
+        case .inactive: Color.warning
+        }
+    }
+
+    private var setappMembershipSymbol: String {
+        switch license.membershipStatus {
+        case .checking: "ellipsis.circle"
+        case .active: "checkmark.seal.fill"
+        case .inactive: "exclamationmark.triangle.fill"
+        }
+    }
+    #else
     // MARK: - License
 
     private var licenseSection: some View {
@@ -728,6 +802,7 @@ struct SettingsView: View {
             licenseActionError = error.localizedDescription
         }
     }
+    #endif
 
     // MARK: - Hotkeys
 

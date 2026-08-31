@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Support — Orathor</title>
+  <meta name="description" content="Help and support for Orathor voice dictation on macOS.">
+  <link rel="icon" href="favicon.png">
+  <style>
+    :root { color-scheme:dark; --bg:#101112; --panel:#17191b; --text:#f3f0e9; --muted:#aaa7a0; --line:#303235; --link:#8db8ee; }
+    * { box-sizing:border-box; } body { margin:0; background:var(--bg); color:var(--text); font:16px/1.7 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
+    main { width:min(720px,calc(100% - 40px)); margin:0 auto; padding:72px 0 96px; } nav { margin-bottom:52px; } nav a { color:var(--muted); text-decoration:none; }
+    h1 { font-size:clamp(38px,7vw,58px); line-height:1.05; letter-spacing:-.035em; margin:0 0 14px; } h2 { font-size:22px; margin:42px 0 8px; }
+    p,li { color:var(--muted); } strong { color:var(--text); } a { color:var(--link); }
+  </style>
+</head>
+<body><main>
+  <nav><a href="index.html">← Orathor</a></nav>
+  <h1>Support</h1>
+  <p>Orathor requires macOS 26.2 or later. It lives in the menu bar and uses a configurable hold-to-dictate shortcut.</p>
+
+  <h2>Dictation does not start</h2>
+  <p>Open Orathor Settings and check Microphone, Speech Recognition, and Accessibility. Accessibility is required to insert text into the app under your cursor. If a permission looks stuck, open the matching macOS System Settings page from Orathor and grant it again.</p>
+
+  <h2>Cloud engines do not connect</h2>
+  <p>Deepgram and OpenAI are optional bring-your-own-key engines. Confirm the selected provider’s API key is valid and that the Mac is online. Switch back to Apple for on-device dictation.</p>
+
+  <h2>Send a useful report</h2>
+  <p>In Settings → Diagnostics, choose “Copy Diagnostic Log.” Review it, remove anything you do not want to share, then include it with a <a href="https://github.com/JustinyAhin/Orathor/issues/new">GitHub support issue</a>. Never post an API key, license key, private transcript, or recording.</p>
+
+  <h2>Setapp membership</h2>
+  <p>If the Setapp edition reports an inactive membership, open the Setapp desktop app, sign in, and verify your subscription. Setapp handles billing and subscription support.</p>
+
+  <h2>Updates and release history</h2>
+  <p>Setapp updates the Setapp edition. The direct edition checks for updates through Sparkle. See the <a href="https://github.com/JustinyAhin/Orathor/blob/main/CHANGELOG.md">Orathor changelog</a> for release details.</p>
+</main></body>
+</html>

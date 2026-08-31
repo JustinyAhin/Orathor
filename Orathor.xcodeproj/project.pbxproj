@@ -9,10 +9,12 @@
 /* Begin PBXBuildFile section */
 		1F472CF12F5C7C3B00234182 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = 1F472CF02F5C7C3B00234182 /* Sparkle */; };
 		1FA11CE32F5C7C3B00234182 /* OrathorLicensing in Frameworks */ = {isa = PBXBuildFile; productRef = 1FA11CE22F5C7C3B00234182 /* OrathorLicensing */; };
+		B20000000000000000000001 /* Setapp in Frameworks */ = {isa = PBXBuildFile; productRef = B2000000000000000000000B /* Setapp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		1FD750052F5AB14B0032A2F9 /* Orathor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Orathor.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B20000000000000000000002 /* Orathor Setapp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Orathor Setapp.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000001 /* OrathorTests.xctest */ = {
 			isa = PBXFileReference;
 			explicitFileType = wrapper.cfbundle;
@@ -22,9 +24,31 @@
 		};
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		B2000000000000000000000C /* Direct distribution exclusions */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"Licenses/Orathor-Setapp-Terms.txt",
+			);
+			target = 1FD750042F5AB14B0032A2F9 /* Orathor */;
+		};
+		B2000000000000000000000D /* Setapp distribution exclusions */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"Licenses/Orathor-Binary-Terms.txt",
+				"Licenses/Sparkle-LICENSE.txt",
+			);
+			target = B20000000000000000000006 /* Orathor Setapp */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		1FD750072F5AB14B0032A2F9 /* Orathor */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				B2000000000000000000000C /* Direct distribution exclusions */,
+				B2000000000000000000000D /* Setapp distribution exclusions */,
+			);
 			path = Orathor;
 			sourceTree = "<group>";
 		};
@@ -52,6 +76,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B20000000000000000000003 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B20000000000000000000001 /* Setapp in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -68,6 +100,7 @@
 			isa = PBXGroup;
 			children = (
 				1FD750052F5AB14B0032A2F9 /* Orathor.app */,
+				B20000000000000000000002 /* Orathor Setapp.app */,
 				A10000000000000000000001 /* OrathorTests.xctest */,
 			);
 			name = Products;
@@ -121,6 +154,29 @@
 			productReference = A10000000000000000000001 /* OrathorTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		B20000000000000000000006 /* Orathor Setapp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B20000000000000000000009 /* Build configuration list for PBXNativeTarget "Orathor Setapp" */;
+			buildPhases = (
+				B20000000000000000000004 /* Sources */,
+				B20000000000000000000003 /* Frameworks */,
+				B20000000000000000000005 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				1FD750072F5AB14B0032A2F9 /* Orathor */,
+			);
+			name = "Orathor Setapp";
+			packageProductDependencies = (
+				B2000000000000000000000B /* Setapp */,
+			);
+			productName = "Orathor Setapp";
+			productReference = B20000000000000000000002 /* Orathor Setapp.app */;
+			productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -132,6 +188,9 @@
 				LastUpgradeCheck = 2630;
 				TargetAttributes = {
 					1FD750042F5AB14B0032A2F9 = {
+						CreatedOnToolsVersion = 26.3;
+					};
+					B20000000000000000000006 = {
 						CreatedOnToolsVersion = 26.3;
 					};
 				};
@@ -148,6 +207,7 @@
 			packageReferences = (
 				1F472CEF2F5C7C3B00234182 /* XCRemoteSwiftPackageReference "Sparkle" */,
 				1FA11CE12F5C7C3B00234182 /* XCLocalSwiftPackageReference "Packages/OrathorLicensing" */,
+				B2000000000000000000000A /* XCRemoteSwiftPackageReference "Setapp-framework" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 1FD750062F5AB14B0032A2F9 /* Products */;
@@ -155,6 +215,7 @@
 			projectRoot = "";
 			targets = (
 				1FD750042F5AB14B0032A2F9 /* Orathor */,
+				B20000000000000000000006 /* Orathor Setapp */,
 				A10000000000000000000003 /* OrathorTests */,
 			);
 		};
@@ -175,6 +236,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B20000000000000000000005 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -186,6 +254,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		A10000000000000000000005 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B20000000000000000000004 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -422,6 +497,93 @@
 			};
 			name = Release;
 		};
+		B20000000000000000000007 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_STANDALONE_ICON_BEHAVIOR = All;
+				CODE_SIGN_ENTITLEMENTS = Orathor/Orathor.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 16;
+				DEVELOPMENT_TEAM = 4235L6T592;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Info-Setapp.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = "Orathor Setapp Dev";
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Orathor needs microphone access to transcribe your speech.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Orathor uses speech recognition to convert your voice to text.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 0.0.16;
+				PRODUCT_BUNDLE_IDENTIFIER = "segbedji.Orathor.debug-setapp";
+				PRODUCT_MODULE_NAME = OrathorSetapp;
+				PRODUCT_NAME = "Orathor Setapp Dev";
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "SETAPP $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		B20000000000000000000008 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ARCHS = (
+					arm64,
+					x86_64,
+				);
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_STANDALONE_ICON_BEHAVIOR = All;
+				CODE_SIGN_ENTITLEMENTS = Orathor/Orathor.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 16;
+				DEVELOPMENT_TEAM = 4235L6T592;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SELECTED_FILES = readonly;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "Info-Setapp.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = Orathor;
+				INFOPLIST_KEY_LSUIElement = YES;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Orathor needs microphone access to transcribe your speech.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "Orathor uses speech recognition to convert your voice to text.";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 0.0.16;
+				ONLY_ACTIVE_ARCH = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = "segbedji.Orathor-setapp";
+				PRODUCT_MODULE_NAME = OrathorSetapp;
+				PRODUCT_NAME = Orathor;
+				REGISTER_APP_GROUPS = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "SETAPP $(inherited)";
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -452,6 +614,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		B20000000000000000000009 /* Build configuration list for PBXNativeTarget "Orathor Setapp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B20000000000000000000007 /* Debug */,
+				B20000000000000000000008 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
@@ -461,6 +632,14 @@
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 2.9.0;
+			};
+		};
+		B2000000000000000000000A /* XCRemoteSwiftPackageReference "Setapp-framework" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/MacPaw/Setapp-framework.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.3.6;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -481,6 +660,11 @@
 		1FA11CE22F5C7C3B00234182 /* OrathorLicensing */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = OrathorLicensing;
+		};
+		B2000000000000000000000B /* Setapp */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = B2000000000000000000000A /* XCRemoteSwiftPackageReference "Setapp-framework" */;
+			productName = Setapp;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

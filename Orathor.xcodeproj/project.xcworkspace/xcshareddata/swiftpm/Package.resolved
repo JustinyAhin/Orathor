@@ -1,6 +1,15 @@
 {
-  "originHash" : "e721da7f9826abdffcb6185e886155efa2514bd6234475f1afa893e29eb258d6",
+  "originHash" : "2611a9ec7bc760cab135dfc77f3b569d3d755ea1cc3c2450e4b3a47a6ec69928",
   "pins" : [
+    {
+      "identity" : "setapp-framework",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/MacPaw/Setapp-framework.git",
+      "state" : {
+        "revision" : "9fce6c9abda361d1f7eddfffd95b36be05c07315",
+        "version" : "5.3.6"
+      }
+    },
     {
       "identity" : "sparkle",
       "kind" : "remoteSourceControl",

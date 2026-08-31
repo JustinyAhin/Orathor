@@ -1,7 +1,10 @@
 import Foundation
 import os
 
-private let dictionaryLogger = Logger(subsystem: "segbedji.Orathor", category: "PersonalDictionary")
+private let dictionaryLogger = Logger(
+    subsystem: AppDistribution.storageIdentifier,
+    category: "PersonalDictionary"
+)
 
 @Observable
 nonisolated final class PersonalDictionaryService {
@@ -35,7 +38,7 @@ nonisolated final class PersonalDictionaryService {
         } else {
             let appSupport = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
             self.storageURL = appSupport
-                .appendingPathComponent("segbedji.Orathor", isDirectory: true)
+                .appendingPathComponent(AppDistribution.storageIdentifier, isDirectory: true)
                 .appendingPathComponent("personal-dictionary.json")
         }
         let shouldLoad = storageURL != nil

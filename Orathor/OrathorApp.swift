@@ -5,17 +5,23 @@
 //  Created by Justin Ahinon on 06/03/2026.
 //
 
-import Sparkle
 import SwiftUI
 
-private let sparkleController: SPUStandardUpdaterController = {
+#if !SETAPP
+import Sparkle
+
+private let updateController: AppUpdateController = {
     UserDefaults.standard.register(defaults: ["SUEnableAutomaticChecks": true])
-    return SPUStandardUpdaterController(
+    let sparkleController = SPUStandardUpdaterController(
         startingUpdater: !AppRuntime.isRunningTests && !AppRuntime.isDebugBuild,
         updaterDelegate: nil,
         userDriverDelegate: nil
     )
+    return AppUpdateController(updater: sparkleController.updater)
 }()
+#else
+private let updateController = AppUpdateController()
+#endif
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var showInDock: Bool {
@@ -24,6 +30,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         guard !AppRuntime.isRunningTests else { return }
+        SetappDistribution.configure()
         DiagnosticLogger.shared.logSessionStart()
 
         NSApp.setActivationPolicy(showInDock ? .regular : .accessory)
@@ -98,21 +105,18 @@ struct OrathorApp: App {
         .menuBarExtraStyle(.window)
 
         Window("Orathor", id: "main") {
-            MainWindowView(viewModel: viewModel, updater: sparkleController.updater)
+            MainWindowView(viewModel: viewModel, updater: updateController)
         }
         .defaultSize(width: 800, height: 600)
         .windowStyle(.hiddenTitleBar)
         .defaultLaunchBehavior(.suppressed)
         .restorationBehavior(.disabled)
         .commands {
+            #if !SETAPP
             CommandGroup(after: .appInfo) {
-                CheckForUpdatesView(
-                    viewModel: CheckForUpdatesViewModel(
-                        updater: sparkleController.updater
-                    ),
-                    updater: sparkleController.updater
-                )
+                CheckForUpdatesView(updater: updateController)
             }
+            #endif
             CommandGroup(replacing: .help) {}
         }
 
@@ -129,11 +133,10 @@ struct OrathorApp: App {
 }
 
 struct CheckForUpdatesView: View {
-    @ObservedObject var viewModel: CheckForUpdatesViewModel
-    let updater: SPUUpdater
+    @ObservedObject var updater: AppUpdateController
 
     var body: some View {
         Button("Check for Updates…", action: updater.checkForUpdates)
-            .disabled(!viewModel.canCheckForUpdates)
+            .disabled(!updater.canCheckForUpdates)
     }
 }

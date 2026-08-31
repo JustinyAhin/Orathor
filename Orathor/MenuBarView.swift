@@ -1,4 +1,6 @@
+#if !SETAPP
 import OrathorLicensing
+#endif
 import SwiftUI
 
 struct MenuBarView: View {
@@ -44,6 +46,7 @@ struct MenuBarView: View {
             formattingAvailable = TranscriptPolisher.status.available
         }
         .onAppear {
+            SetappDistribution.reportUserInteraction()
             escapeMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
                 if event.keyCode == 53 {
                     NSApp.keyWindow?.close()

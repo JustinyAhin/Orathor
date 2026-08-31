@@ -10,12 +10,18 @@ nonisolated final class DiagnosticLogger: Sendable {
     static let shared = DiagnosticLogger()
 
     private let fileURL: URL
-    private let queue = DispatchQueue(label: "segbedji.Orathor.diagnostics", qos: .utility)
+    private let queue = DispatchQueue(
+        label: "\(AppDistribution.storageIdentifier).diagnostics",
+        qos: .utility
+    )
     private let maxFileSize = 512 * 1024 // 512 KB — auto-rotates when exceeded
 
     private init() {
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let dir = appSupport.appendingPathComponent("segbedji.Orathor", isDirectory: true)
+        let dir = appSupport.appendingPathComponent(
+            AppDistribution.storageIdentifier,
+            isDirectory: true
+        )
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         fileURL = dir.appendingPathComponent("diagnostics.log")
     }
@@ -114,6 +120,7 @@ nonisolated final class DiagnosticLogger: Sendable {
         let lines = [
             "--- Session Start ---",
             "App: \(appVersion) (\(buildNumber))",
+            "Distribution: \(AppDistribution.channelName)",
             "OS: \(osString)",
             "Hardware: \(hw)",
             "Engine: \(engine)",

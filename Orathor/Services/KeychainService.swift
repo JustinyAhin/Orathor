@@ -4,7 +4,7 @@ import Security
 enum KeychainService {
     /// The macOS login-keychain service is intentionally stable across the
     /// Debug and customer bundle identifiers.
-    private static let service = "com.orathor.keys"
+    private static let service = AppDistribution.keychainService
 
     static func save(key: String, value: String) {
         guard let data = value.data(using: .utf8) else { return }

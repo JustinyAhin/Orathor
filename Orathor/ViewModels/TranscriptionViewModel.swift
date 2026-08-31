@@ -1,6 +1,8 @@
 import AppKit
 import AVFoundation
+#if !SETAPP
 import OrathorLicensing
+#endif
 import Speech
 
 @Observable
@@ -18,7 +20,7 @@ final class TranscriptionViewModel {
     let historyService = TranscriptHistoryService()
     let permissions = PermissionsService()
     let launchAtLogin = LaunchAtLoginService()
-    let license = LicenseManager()
+    let license = AppLicenseManager()
 
     private let audioService = AudioService()
     private var speechService: any TranscriptionService
