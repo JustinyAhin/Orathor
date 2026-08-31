@@ -337,7 +337,7 @@ private final class MenuBarWindowReaderView: NSView {
     func configureWindow() {
         guard let window else { return }
         window.animationBehavior = .none
-        window.collectionBehavior.formUnion([.canJoinAllSpaces, .stationary])
+        window.collectionBehavior.insert(.canJoinAllSpaces)
     }
 }
 
