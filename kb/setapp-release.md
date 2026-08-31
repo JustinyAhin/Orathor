@@ -15,6 +15,8 @@ The apps use separate bundle identifiers and separate settings, keychain, transc
 4. Publish `landing/privacy.html`, `landing/terms.html`, and `landing/support.html`; add their public URLs to the Setapp listing. Review the legal text before relying on it.
 5. Complete the listing metadata, screenshots, description, and review notes.
 
+Use `kb/setapp-listing.md` as the prepared listing copy and submission checklist.
+
 ## Local verification
 
 Resolve packages and build both channels:

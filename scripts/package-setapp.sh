@@ -100,6 +100,10 @@ if [ "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$INFO_PLIST")" !
     echo "FATAL: Setapp bundle identifier is incorrect."
     exit 1
 fi
+for required_key in CFBundleName CFBundleIconFile CFBundleVersion CFBundleShortVersionString; do
+    /usr/libexec/PlistBuddy -c "Print :$required_key" "$INFO_PLIST" >/dev/null 2>&1 \
+        || { echo "FATAL: required Info.plist key $required_key is missing."; exit 1; }
+done
 /usr/libexec/PlistBuddy -c 'Print :NSUpdateSecurityPolicy:AllowProcesses:MEHY5QF425:0' "$INFO_PLIST" \
     | grep -Fx "com.setapp.DesktopClient.SetappAgent" >/dev/null \
     || { echo "FATAL: required Setapp NSUpdateSecurityPolicy is missing."; exit 1; }
@@ -163,7 +167,36 @@ mkdir -p "$STAGING_DIR"
 cp -R "$APP_PATH" "$STAGING_DIR/Orathor.app"
 cp "$RELEASE_SOURCE/Orathor/Assets.xcassets/AppIcon.appiconset/icon_512x512@2x.png" \
     "$STAGING_DIR/AppIcon.png"
-ditto -c -k --sequesterRsrc --keepParent "$STAGING_DIR" "$ZIP_PATH"
+ICON_WIDTH=$(sips -g pixelWidth "$STAGING_DIR/AppIcon.png" | awk '/pixelWidth/ { print $2 }')
+ICON_HEIGHT=$(sips -g pixelHeight "$STAGING_DIR/AppIcon.png" | awk '/pixelHeight/ { print $2 }')
+if [ "$ICON_WIDTH" != "1024" ] || [ "$ICON_HEIGHT" != "1024" ]; then
+    echo "FATAL: AppIcon.png must be exactly 1024 x 1024 pixels."
+    exit 1
+fi
+
+# Setapp rejects Finder-style metadata folders, so do not use
+# --sequesterRsrc for the submission archive.
+ditto -c -k --keepParent "$STAGING_DIR" "$ZIP_PATH"
+
+VERIFY_DIR="$BUILD_ROOT/archive-verification"
+mkdir -p "$VERIFY_DIR"
+ditto -x -k "$ZIP_PATH" "$VERIFY_DIR"
+EXTRACTED_ROOT="$VERIFY_DIR/$(basename "$STAGING_DIR")"
+if find "$VERIFY_DIR" -name __MACOSX -print -quit | grep -q .; then
+    echo "FATAL: submission archive contains a __MACOSX metadata directory."
+    exit 1
+fi
+if [ "$(find "$VERIFY_DIR" -mindepth 1 -maxdepth 1 | wc -l | tr -d ' ')" != "1" ] \
+    || [ ! -d "$EXTRACTED_ROOT/Orathor.app" ] \
+    || [ ! -f "$EXTRACTED_ROOT/AppIcon.png" ]; then
+    echo "FATAL: archive must contain one directory with Orathor.app and AppIcon.png."
+    exit 1
+fi
+ARCHIVE_SIZE=$(stat -f %z "$ZIP_PATH")
+if [ "$ARCHIVE_SIZE" -gt 1073741824 ]; then
+    echo "FATAL: Setapp submission archive exceeds 1 GB."
+    exit 1
+fi
 
 echo ""
 echo "Setapp submission archive ready:"
