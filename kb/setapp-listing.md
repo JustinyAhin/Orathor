@@ -42,9 +42,9 @@ No Orathor account is required. The Setapp edition contains no separate license 
 
 ## Policy and support URLs
 
-- Privacy: `https://orathor.com/privacy.html`
-- Terms: `https://orathor.com/terms.html`
-- Support: `https://orathor.com/support.html`
+- Privacy: `https://orathor.com/privacy`
+- Terms: `https://orathor.com/terms`
+- Support: `https://orathor.com/support`
 
 These URLs must return HTTP 200 before the version is submitted.
 
