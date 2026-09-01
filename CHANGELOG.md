@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.0.17 — 2026-09-01
+
+### Fixes
+
+- **Reliable popover across Spaces** — clicking the menu bar icon now opens its popover on the active Space instead of leaving the window pinned to another desktop
+
 ## 0.0.16 — 2026-08-27
 
 ### Improvements
