@@ -46,10 +46,18 @@ You can also start and stop from the menu bar popover and copy the transcription
 | Engine | Type | Setup |
 |---|---|---|
 | **Apple Speech** (default) | Local, on-device (SpeechAnalyzer) | None, works out of the box |
+| **Phonon 2** | Local, English only (Apple silicon) | Download the engine in Settings; no API key or Homebrew needed |
 | **Deepgram Nova** | Cloud, higher accuracy | Requires an API key (stored in Keychain) |
 | **OpenAI Live Transcribe** | Cloud, realtime streaming | Requires an API key (stored in Keychain) |
 
 Switch engines from the pill in the menu bar popover header, or in Settings.
+
+Phonon 2 runs offline after its one-time setup. Its model is a 164 MB download,
+with additional Python/MLX runtime downloads. It uses about 3 GB of memory while
+loaded and releases the model after two minutes without dictation. Apple remains
+the default; Phonon does not currently support vocabulary hints, so technical
+names may still need correction. Model attribution and runtime details are in
+[the integration notes](kb/phonon-integration.md).
 
 ## Smart formatting
 

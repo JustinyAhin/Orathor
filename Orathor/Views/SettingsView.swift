@@ -94,6 +94,8 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 0) {
                 engineRow(.apple)
                 SubtleDivider()
+                engineRow(.phonon)
+                SubtleDivider()
                 engineRow(.deepgram)
                 SubtleDivider()
                 engineRow(.openAIWhisper)
@@ -154,6 +156,10 @@ struct SettingsView: View {
             Text(viewModel.selectedEngine.description)
                 .font(OType.caption)
                 .foregroundStyle(Color.textTertiary)
+
+            if viewModel.selectedEngine == .phonon {
+                PhononSettingsView(runtime: viewModel.phononRuntime, canManage: viewModel.canManagePhonon, install: viewModel.installPhonon)
+            }
         }
     }
 
@@ -277,7 +283,7 @@ struct SettingsView: View {
 
     private var selectedCloudEngineIsConfigured: Bool {
         switch viewModel.selectedEngine {
-        case .apple:
+        case .apple, .phonon:
             true
         case .deepgram:
             viewModel.isDeepgramConfigured
@@ -290,6 +296,8 @@ struct SettingsView: View {
         switch engine {
         case .apple:
             "On-device, private"
+        case .phonon:
+            "On-device, English only · Apple silicon"
         case .deepgram:
             "Cloud, higher accuracy"
         case .openAIWhisper:

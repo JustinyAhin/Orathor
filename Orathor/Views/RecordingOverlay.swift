@@ -265,7 +265,7 @@ struct RecordingOverlayView: View {
             ProgressView()
                 .controlSize(.small)
                 .scaleEffect(0.7)
-            Text("Preparing language…")
+            Text("Preparing speech engine…")
                 .font(OType.monoSmall)
                 .foregroundStyle(Color.textPrimary)
         }
@@ -322,7 +322,7 @@ struct RecordingOverlayView: View {
             }
 
             if fallbackPending {
-                Label("Cloud lost · recording continues", systemImage: "wifi.slash")
+                Label("Engine interrupted · recording continues", systemImage: "exclamationmark.circle")
                     .font(OType.monoMicro)
                     .foregroundStyle(Color.warning)
             }

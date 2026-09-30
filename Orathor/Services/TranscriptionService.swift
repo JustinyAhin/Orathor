@@ -1,18 +1,18 @@
 import AVFoundation
 
-enum TranscriptionFailureKind: Equatable, Sendable {
+nonisolated enum TranscriptionFailureKind: Equatable, Sendable {
     case transient
     case nonRecoverable
 }
 
-struct TranscriptionFailure: LocalizedError, Equatable, Sendable {
+nonisolated struct TranscriptionFailure: LocalizedError, Equatable, Sendable {
     let kind: TranscriptionFailureKind
     let message: String
 
     var errorDescription: String? { message }
 }
 
-enum TranscriptionStopResult: Equatable, Sendable {
+nonisolated enum TranscriptionStopResult: Equatable, Sendable {
     case completed
     case failed(TranscriptionFailure)
 }

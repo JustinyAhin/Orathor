@@ -25,6 +25,19 @@ enum AppearanceMode: String, CaseIterable {
 
 @Observable
 final class SettingsViewModel {
+    let phononRuntime = PhononRuntime.shared
+    var canManagePhonon = true
+    var onPhononWillInstall: (() -> Void)?
+
+    func installPhonon() {
+        guard canManagePhonon else { return }
+        onPhononWillInstall?()
+        phononRuntime.install { [weak self] in
+            guard let self, self.selectedEngine == .phonon else { return }
+            self.onEngineChanged?(.phonon)
+        }
+    }
+
     var selectedEngine: SpeechEngine {
         didSet {
             AppPreferences.shared.set(selectedEngine.rawValue, forKey: "speechEngine")
@@ -139,8 +152,10 @@ final class SettingsViewModel {
     init() {
         let stored = AppPreferences.shared.string(forKey: "speechEngine") ?? SpeechEngine.apple.rawValue
         selectedEngine = SpeechEngine(rawValue: stored) ?? .apple
-        deepgramApiKey = KeychainService.load(key: "deepgramApiKey") ?? ""
-        openAIApiKey = KeychainService.load(key: "openaiApiKey") ?? ""
+        // Hosted tests do not use cloud credentials. Reading the real Keychain
+        // here can block the entire test host behind an authorization dialog.
+        deepgramApiKey = AppRuntime.isRunningTests ? "" : KeychainService.load(key: "deepgramApiKey") ?? ""
+        openAIApiKey = AppRuntime.isRunningTests ? "" : KeychainService.load(key: "openaiApiKey") ?? ""
 
         let storedInsert = AppPreferences.shared.string(forKey: "insertHotkey") ?? HotkeyModifier.rightOption.rawValue
         insertHotkey = HotkeyModifier(rawValue: storedInsert) ?? .rightOption

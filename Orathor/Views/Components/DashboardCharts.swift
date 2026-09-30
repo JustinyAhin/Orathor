@@ -276,6 +276,7 @@ struct EngineSlice: Identifiable {
     var shortName: String {
         switch engine {
         case .apple: "Apple"
+        case .phonon: "Phonon"
         case .deepgram: "Deepgram"
         case .openAIWhisper: "OpenAI"
         }

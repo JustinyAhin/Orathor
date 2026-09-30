@@ -5,12 +5,16 @@ import Speech
 
 @Observable
 final class TranscriptionViewModel {
-    var isRecording = false
+    var isRecording = false {
+        didSet { settingsViewModel.canManagePhonon = !isRecording && !isPreparingModel }
+    }
     var errorMessage: String?
     var hasPermission = false
     var hasAccessibility = false
     var needsAccessibilityPrompt = false
-    var isPreparingModel = false
+    var isPreparingModel = false {
+        didSet { settingsViewModel.canManagePhonon = !isRecording && !isPreparingModel }
+    }
     var isFormatting = false
 
     let settingsViewModel = SettingsViewModel()
@@ -36,6 +40,7 @@ final class TranscriptionViewModel {
     private var isFinalizingRecording = false
     private var activeRecordingID: UUID?
     private var recordingEngine: SpeechEngine?
+    private var recordingLanguage: String?
     private var cloudFailure: TranscriptionFailure?
     private var isForwardingAudioToCloud = true
     private var fallbackPreparationTask: Task<Void, Never>?
@@ -56,7 +61,7 @@ final class TranscriptionViewModel {
             engine: settingsViewModel.selectedEngine,
             deepgramAPIKey: settingsViewModel.deepgramApiKey,
             openAIAPIKey: settingsViewModel.openAIApiKey,
-            language: settingsViewModel.transcriptionLanguage,
+            language: settingsViewModel.selectedEngine == .phonon ? "en" : settingsViewModel.transcriptionLanguage,
             context: context,
             openAITranscriptionDelay: AppPreferences.shared.string(forKey: "whisperTranscriptionDelay") ?? "low"
         )
@@ -89,7 +94,7 @@ final class TranscriptionViewModel {
             engine: settingsViewModel.selectedEngine,
             deepgramAPIKey: settingsViewModel.deepgramApiKey,
             openAIAPIKey: settingsViewModel.openAIApiKey,
-            language: settingsViewModel.transcriptionLanguage,
+            language: settingsViewModel.selectedEngine == .phonon ? "en" : settingsViewModel.transcriptionLanguage,
             context: context,
             openAITranscriptionDelay: AppPreferences.shared.string(forKey: "whisperTranscriptionDelay") ?? "low"
         )
@@ -116,8 +121,21 @@ final class TranscriptionViewModel {
 
         settingsViewModel.onEngineChanged = { [weak self] _ in
             guard let self, !self.isRecording else { return }
+            if self.pendingRecordingStartID != nil {
+                self.pendingRecordingStartID = nil
+                self.recordingOverlay.dismiss()
+            }
             self.refreshSpeechServiceIfNeeded()
+            self.prepareFallbackAssetsIfPossible()
+            self.preloadPhononIfPossible()
         }
+
+        settingsViewModel.onPhononWillInstall = { [weak self] in
+            guard let self else { return }
+            if let phonon = self.speechService as? PhononSpeechService { phonon.shutdown() }
+        }
+
+        preloadPhononIfPossible()
 
         settingsViewModel.onTranscriptionLanguageChanged = { [weak self] in
             guard let self else { return }
@@ -193,6 +211,8 @@ final class TranscriptionViewModel {
         permissions.refresh()
         if settingsViewModel.selectedEngine == .apple {
             hasPermission = permissions.speechRecognition == .granted
+        } else if settingsViewModel.selectedEngine == .phonon {
+            hasPermission = settingsViewModel.phononRuntime.isInstalled && PhononRuntime.isSupported
         } else if settingsViewModel.selectedEngine == .deepgram {
             hasPermission = settingsViewModel.isDeepgramConfigured
         } else {
@@ -202,6 +222,22 @@ final class TranscriptionViewModel {
     }
 
     private func configureSpeechServiceErrorHandler() {
+        if let phonon = speechService as? PhononSpeechService {
+            phonon.onPreparingChanged = { [weak self, weak phonon] preparing in
+                guard let self, let phonon, self.speechService === phonon else { return }
+                self.isPreparingModel = preparing
+                guard let sessionID = self.recordingOverlay.currentSessionID else { return }
+                self.recordingOverlay.update(
+                    mode: preparing ? .preparing : (self.isRecording ? .recording : .starting),
+                    sessionID: sessionID)
+            }
+            phonon.onFailure = { [weak self, weak phonon] failure in
+                Task { @MainActor in
+                    guard let self, let phonon, self.speechService === phonon else { return }
+                    await self.handleTranscriptionFailure(failure)
+                }
+            }
+        }
         if let apple = speechService as? AppleSpeechService {
             apple.onPreparingChanged = { [weak self] preparing in
                 Task { @MainActor in
@@ -259,9 +295,25 @@ final class TranscriptionViewModel {
         presentOverlayError(failure.message, sessionID: sessionID)
     }
 
+    private var fallbackLanguage: String {
+        settingsViewModel.selectedEngine == .phonon ? "en" : settingsViewModel.transcriptionLanguage
+    }
+
+    private func preloadPhononIfPossible() {
+        guard settingsViewModel.phononRuntime.isInstalled,
+              let phonon = speechService as? PhononSpeechService else { return }
+        Task { [weak self, weak phonon] in
+            guard let self, let phonon else { return }
+            do { try await phonon.prepare() } catch {
+                guard self.speechService === phonon else { return }
+                self.diag.log("Phonon preload failed: \(error)")
+            }
+        }
+    }
+
     private func prepareFallbackAssetsIfPossible() {
         permissions.refresh()
-        let language = settingsViewModel.transcriptionLanguage
+        let language = fallbackLanguage
         guard permissions.speechRecognition == .granted,
               preparedFallbackLanguage != language,
               fallbackPreparationTask == nil else { return }
@@ -276,7 +328,7 @@ final class TranscriptionViewModel {
                 self.diag.log("Apple fallback asset preparation failed: \(error)")
             }
             self.fallbackPreparationTask = nil
-            if self.settingsViewModel.transcriptionLanguage != language {
+            if self.fallbackLanguage != language {
                 self.prepareFallbackAssetsIfPossible()
             }
         }
@@ -343,7 +395,7 @@ final class TranscriptionViewModel {
         }
 
         if engine == .apple {
-            if !hasPermission {
+            if permissions.speechRecognition != .granted {
                 let status = SFSpeechRecognizer.authorizationStatus()
                 if status == .authorized {
                     hasPermission = true
@@ -383,10 +435,20 @@ final class TranscriptionViewModel {
 
         do {
             errorMessage = nil
+            // Local model loading happens before microphone capture. Releasing
+            // the shortcut during preparation must cancel this start.
+            if let phonon = speechService as? PhononSpeechService {
+                try await phonon.startTranscribing()
+                guard pendingRecordingStartID == startID else {
+                    phonon.shutdown()
+                    return
+                }
+            }
             recordingStartTime = Date()
             targetApp = TextInsertionService.getFrontmostApp()
             activeRecordingID = startID
             recordingEngine = engine
+            recordingLanguage = engine == .phonon ? "en" : settingsViewModel.transcriptionLanguage
             cloudFailure = nil
             isForwardingAudioToCloud = true
             diag.log("START recording — engine: \(engine), mode: \(recordingMode), targetApp: \(targetApp?.name ?? "nil") (\(targetApp?.bundleIdentifier ?? "nil")), shouldAutoInsert: \(shouldAutoInsert), accessibility: \(TextInsertionService.hasAccessibilityPermission)")
@@ -400,13 +462,15 @@ final class TranscriptionViewModel {
 
             // Connect on key-down so the WS handshake overlaps audio engine
             // spin-up; audio arriving mid-handshake queues inside the service.
-            Task { [weak self] in
-                guard let self else { return }
-                do {
-                    try await self.speechService.startTranscribing()
-                } catch {
-                    let failure = Self.failure(forStartError: error)
-                    await self.handleTranscriptionFailure(failure)
+            if engine != .phonon {
+                Task { [weak self] in
+                    guard let self else { return }
+                    do {
+                        try await self.speechService.startTranscribing()
+                    } catch {
+                        let failure = Self.failure(forStartError: error)
+                        await self.handleTranscriptionFailure(failure)
+                    }
                 }
             }
 
@@ -419,6 +483,7 @@ final class TranscriptionViewModel {
                 sessionID: startID
             )
         } catch {
+            guard pendingRecordingStartID == startID else { return }
             speechService.shutdown()
             if let url = currentRecordingURL {
                 try? FileManager.default.removeItem(at: url)
@@ -435,6 +500,16 @@ final class TranscriptionViewModel {
 
     @discardableResult
     private func stopRecording() async -> Bool {
+        if !isRecording, pendingRecordingStartID != nil {
+            pendingRecordingStartID = nil
+            if let phonon = speechService as? PhononSpeechService { phonon.shutdown() }
+            isPreparingModel = false
+            wasCancelled = false
+            recordingDictionarySnapshot = nil
+            shouldAutoInsert = false
+            resetRecordingSession()
+            return true
+        }
         guard isRecording, !isFinalizingRecording else { return false }
         isFinalizingRecording = true
         defer { isFinalizingRecording = false }
@@ -494,8 +569,12 @@ final class TranscriptionViewModel {
             let fallbackStart = Date()
             diag.log("Apple fallback started — requested engine: \(requestedEngine)")
             do {
+                permissions.refresh()
+                guard permissions.speechRecognition == .granted else {
+                    throw TranscriptionFailure(kind: .nonRecoverable, message: "Apple fallback requires Speech Recognition permission. Enable it in System Settings → Privacy & Security → Speech Recognition.")
+                }
                 let fallbackService = AppleSpeechService(
-                    language: settingsViewModel.transcriptionLanguage)
+                    language: recordingLanguage ?? settingsViewModel.transcriptionLanguage)
                 text = try await fallbackService.transcribeFile(at: recordingURL)
                 outputEngine = .apple
                 diag.log(
@@ -617,12 +696,14 @@ final class TranscriptionViewModel {
     private func resetRecordingSession() {
         activeRecordingID = nil
         recordingEngine = nil
+        recordingLanguage = nil
         cloudFailure = nil
         isForwardingAudioToCloud = true
         audioService.onAudioBuffer = nil
     }
 
     private static func failure(forStartError error: Error) -> TranscriptionFailure {
+        if let failure = error as? TranscriptionFailure { return failure }
         let kind: TranscriptionFailureKind = error is URLError ? .transient : .nonRecoverable
         return TranscriptionFailure(kind: kind, message: error.localizedDescription)
     }
@@ -646,6 +727,8 @@ final class TranscriptionViewModel {
         switch engine {
         case .apple:
             AppleSpeechService(language: language)
+        case .phonon:
+            PhononSpeechService()
         case .deepgram:
             DeepgramService(apiKey: deepgramAPIKey, language: language, context: context)
         case .openAIWhisper:
@@ -661,7 +744,7 @@ final class TranscriptionViewModel {
     ) -> TranscriptionContext {
         let keywords: [String]
         switch engine {
-        case .apple:
+        case .apple, .phonon:
             keywords = []
         case .deepgram:
             keywords = dictionary.cloudKeywords
@@ -677,7 +760,7 @@ final class TranscriptionViewModel {
         }
         return TranscriptionContext(
             keywords: keywords,
-            languages: TranscriptionContext.fromLegacyLanguage(language).languages)
+            languages: TranscriptionContext.fromLegacyLanguage(engine == .phonon ? "en" : language).languages)
     }
 
     func insertAtCursor() {
