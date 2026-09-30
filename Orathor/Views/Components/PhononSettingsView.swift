@@ -31,7 +31,7 @@ struct PhononSettingsView: View {
                 }
             }
             Text(
-                "The model is 164 MB. Allow about 3 GB of disk space for setup and 3 GB of memory while loaded. After setup, dictation works offline."
+                "The model is 164 MB. Allow about 3 GB of disk space for setup. Phonon stays ready while selected, using about 3 GB of memory. After setup, dictation works offline."
             )
             .font(OType.caption)
             .foregroundStyle(Color.textTertiary)

@@ -47,6 +47,40 @@ final class PhononSpeechServiceTests: XCTestCase {
         XCTAssertEqual(service.transcribedText, "Current words")
     }
 
+    func testPreloadedModelStartsWithoutPreparingAgain() async throws {
+        let worker = FakePhononWorker()
+        let service = makeService(worker)
+        defer { service.shutdown() }
+        var preparationStates: [Bool] = []
+        service.onPreparingChanged = { preparationStates.append($0) }
+        try await service.prepare()
+        XCTAssertEqual(preparationStates, [true, false])
+        preparationStates.removeAll()
+        for _ in 0..<2 {
+            try await service.startTranscribing()
+            let outcome = await service.stopTranscribing()
+            XCTAssertEqual(outcome, .completed)
+        }
+        XCTAssertEqual(worker.prepareCount, 1)
+        XCTAssertTrue(preparationStates.isEmpty, "A ready engine must not display preparation")
+        XCTAssertTrue(worker.isReady)
+        XCTAssertEqual(worker.shutdownCount, 0)
+    }
+
+    func testShutdownReleasesTheModelAndNextUsePreparesAgain() async throws {
+        let worker = FakePhononWorker()
+        let service = makeService(worker)
+        defer { service.shutdown() }
+        try await service.prepare()
+        service.shutdown()
+        XCTAssertFalse(worker.isReady)
+        try await service.startTranscribing()
+        XCTAssertEqual(worker.prepareCount, 2)
+        XCTAssertTrue(worker.isReady)
+        let outcome = await service.stopTranscribing()
+        XCTAssertEqual(outcome, .completed)
+    }
+
     func testRuntimeFailureIsReportedOnceAndPreservesPartialForFallback() async throws {
         let worker = FakePhononWorker()
         let service = makeService(worker)
@@ -145,6 +179,8 @@ final class PhononSpeechServiceTests: XCTestCase {
 
 @MainActor
 private final class FakePhononWorker: PhononWorkerControlling {
+    var isReady = false
+    var prepareCount = 0
     var onPartial: ((UUID, String) -> Void)?
     var onFailure: ((TranscriptionFailure) -> Void)?
     var sessions: [UUID] = []
@@ -156,8 +192,10 @@ private final class FakePhononWorker: PhononWorkerControlling {
     var holdPreparation = false
     var prepareContinuation: CheckedContinuation<Void, Never>?
     func prepare(configuration: PhononConfiguration) async throws {
+        prepareCount += 1
         if let prepareError { throw prepareError }
         if holdPreparation { await withCheckedContinuation { prepareContinuation = $0 } }
+        isReady = true
     }
     func start(session: UUID) async throws {
         sessions.append(session)
@@ -172,5 +210,8 @@ private final class FakePhononWorker: PhononWorkerControlling {
         operations.append("finish")
         return "Finished transcript"
     }
-    func shutdown() { shutdownCount += 1 }
+    func shutdown() {
+        isReady = false
+        shutdownCount += 1
+    }
 }

@@ -3,6 +3,7 @@ import Foundation
 
 @MainActor
 protocol PhononWorkerControlling: AnyObject {
+    var isReady: Bool { get }
     var onPartial: ((UUID, String) -> Void)? { get set }
     var onFailure: ((TranscriptionFailure) -> Void)? { get set }
     func prepare(configuration: PhononConfiguration) async throws
@@ -51,14 +52,15 @@ final class PhononWorker: PhononWorkerControlling {
     private var generation = UUID()
     private var preparationID: UUID?
     private var preparationTask: Task<Void, Error>?
-    private(set) var isReady = false
+    private var hasLoadedModel = false
+    var isReady: Bool { hasLoadedModel && process?.isRunning == true }
     var processIdentifier: Int32? {
         guard let process, process.isRunning else { return nil }
         return process.processIdentifier
     }
 
     func prepare(configuration: PhononConfiguration) async throws {
-        if isReady, process?.isRunning == true { return }
+        if isReady { return }
         if let preparationTask { return try await preparationTask.value }
         shutdown()
         let token = UUID()
@@ -82,7 +84,7 @@ final class PhononWorker: PhononWorkerControlling {
                 self.fail(failure)
                 throw failure
             }
-            self.isReady = true
+            self.hasLoadedModel = true
             DiagnosticLogger.shared.log("Phonon: model loaded and warmed")
         }
         preparationTask = task
@@ -100,7 +102,7 @@ final class PhononWorker: PhononWorkerControlling {
 
     func shutdown() {
         generation = UUID()
-        isReady = false
+        hasLoadedModel = false
         preparationID = nil
         preparationTask?.cancel()
         preparationTask = nil

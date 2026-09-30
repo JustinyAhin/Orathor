@@ -47,8 +47,9 @@ silence segmentation, and 30-second segment cap.
 Preparation finishes before microphone capture. Releasing the shortcut during
 preparation cancels the pending recording. Key-up drains the audio queue before
 requesting finalization. The loaded model is reused between recordings and
-released after two minutes idle or when switching engines. Transient failures
-during a recording use the existing saved-audio Apple fallback in English.
+kept ready while Phonon is selected. Switching engines releases it; quitting
+closes the helper's pipes so it exits. Warm starts skip the preparation UI.
+Transient failures during a recording use the existing saved-audio Apple fallback in English.
 History retains requested and actual output engines. Cancellation skips history
 and insertion through the existing recording flow.
 
@@ -62,6 +63,11 @@ the actual Swift service, asserting live partials, final text, model-process
 reuse, and shutdown. Supply `ORATHOR_PHONON_REPLAY_MANIFEST` and optionally
 `ORATHOR_PHONON_REPLAY_OUTPUT` to the test host. Private recordings and resulting
 transcripts stay outside the repository.
+
+Set `ORATHOR_PHONON_REPLAY_IDLE_SECONDS=125` to wait past the former two-minute
+idle limit between the first and second clips. The test checks that the model
+process stays ready, no preparation UI is emitted, and warm starts take less
+than one second. The private replay results include start times and idle gaps.
 
 For an Xcode CLI run, prefix test-host environment variables with `TEST_RUNNER_`:
 
@@ -78,6 +84,12 @@ on the M3 Max, median first partial was 0.73 seconds and median finalization was
 0.05 seconds. One model process served all six recordings and exited after
 shutdown. These are timings for the selected clips, not an accuracy claim.
 Debug and Release builds also passed.
+
+The keep-ready regression run later that day passed all 50 tests. It inserted a
+125-second pause between saved clips and reused the same model process without
+emitting preparation UI. Service start after the pause was 0.93 ms; all six warm
+service starts were below 1 ms. These measure the service's start request, not
+the complete hotkey-to-microphone path. First partial median remained 0.73 seconds.
 
 ## Attribution
 

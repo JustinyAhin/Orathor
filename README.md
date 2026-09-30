@@ -54,7 +54,8 @@ Switch engines from the pill in the menu bar popover header, or in Settings.
 
 Phonon 2 runs offline after its one-time setup. Its model is a 164 MB download,
 with additional Python/MLX runtime downloads. It uses about 3 GB of memory while
-loaded and releases the model after two minutes without dictation. Apple remains
+loaded and stays ready while selected, until switching engines or quitting.
+Apple remains
 the default; Phonon does not currently support vocabulary hints, so technical
 names may still need correction. Model attribution and runtime details are in
 [the integration notes](kb/phonon-integration.md).

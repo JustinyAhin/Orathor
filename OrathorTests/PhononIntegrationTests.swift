@@ -17,6 +17,8 @@ final class PhononIntegrationTests: XCTestCase {
         let text: String
         let firstPartialSeconds: Double?
         let finalizationSeconds: Double
+        let startSeconds: Double
+        let idleBeforeSeconds: Double
         let processIdentifier: Int32
     }
 
@@ -48,9 +50,22 @@ final class PhononIntegrationTests: XCTestCase {
         async let secondPreparation: Void = service.prepare()
         _ = try await (firstPreparation, secondPreparation)
         let processID = try XCTUnwrap(worker.processIdentifier)
+        let idleSeconds = environment["ORATHOR_PHONON_REPLAY_IDLE_SECONDS"].flatMap(Double.init) ?? 0
+        var preparationStates: [Bool] = []
+        service.onPreparingChanged = { preparationStates.append($0) }
         var results: [Result] = []
-        for clip in clips {
+        for (index, clip) in clips.enumerated() {
+            let idleBefore = index == 1 ? idleSeconds : 0
+            if idleBefore > 0 {
+                NSLog("Phonon replay: waiting %.0f seconds between dictations", idleBefore)
+                try await Task.sleep(for: .seconds(idleBefore))
+                XCTAssertTrue(worker.isReady, "The selected model must stay ready while idle")
+            }
+            let keyDown = Date()
             try await service.startTranscribing()
+            let startSeconds = Date().timeIntervalSince(keyDown)
+            XCTAssertLessThan(startSeconds, 1, "A warm start must not reload the model")
+            XCTAssertTrue(preparationStates.isEmpty, "Warm dictation must skip preparation UI")
             XCTAssertEqual(worker.processIdentifier, processID, "Reuse the model across dictations")
             let audio = try AVAudioFile(forReading: URL(filePath: clip.wav))
             let start = Date()
@@ -79,7 +94,8 @@ final class PhononIntegrationTests: XCTestCase {
             results.append(
                 Result(
                     id: clip.id, text: service.transcribedText, firstPartialSeconds: firstPartial,
-                    finalizationSeconds: Date().timeIntervalSince(stop), processIdentifier: processID))
+                    finalizationSeconds: Date().timeIntervalSince(stop), startSeconds: startSeconds,
+                    idleBeforeSeconds: idleBefore, processIdentifier: processID))
         }
         if let outputPath = environment["ORATHOR_PHONON_REPLAY_OUTPUT"] {
             let encoder = JSONEncoder()

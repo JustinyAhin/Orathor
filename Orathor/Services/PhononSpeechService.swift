@@ -100,7 +100,6 @@ final class PhononSpeechService: TranscriptionService {
     private var terminalFailure: TranscriptionFailure?
     private var isStopping = false
     @ObservationIgnored private var pumpTask: Task<Void, Never>?
-    @ObservationIgnored private var idleTask: Task<Void, Never>?
 
     init(
         worker: (any PhononWorkerControlling)? = nil,
@@ -117,10 +116,10 @@ final class PhononSpeechService: TranscriptionService {
     }
 
     func prepare() async throws {
+        guard !worker.isReady else { return }
         onPreparingChanged?(true)
         defer { onPreparingChanged?(false) }
         try await worker.prepare(configuration: configurationProvider())
-        if !isTranscribing { scheduleIdleRelease() }
     }
 
     func startTranscribing() async throws {
@@ -128,8 +127,6 @@ final class PhononSpeechService: TranscriptionService {
             throw TranscriptionFailure(
                 kind: .nonRecoverable, message: "A Phonon recording is already active.")
         }
-        idleTask?.cancel()
-        idleTask = nil
         terminalFailure = nil
         transcribedText = ""
         isStopping = false
@@ -216,21 +213,9 @@ final class PhononSpeechService: TranscriptionService {
         sessionID = nil
         audioQueue.clear()
         if let terminalFailure { return .failed(terminalFailure) }
-        // Keep the loaded engine warm for consecutive dictations, then release
-        // its approximately 3 GB memory footprint after two minutes idle.
-        scheduleIdleRelease()
+        // The selected engine stays ready between dictations. Its owner calls
+        // shutdown when switching engines; the helper also exits with the app.
         return .completed
-    }
-
-    private func scheduleIdleRelease() {
-        idleTask?.cancel()
-        idleTask = Task { [weak self] in
-            do { try await Task.sleep(for: .seconds(120)) } catch { return }
-            guard !Task.isCancelled, let self, !self.isTranscribing else { return }
-            self.worker.shutdown()
-            self.idleTask = nil
-            DiagnosticLogger.shared.log("Phonon: released idle model")
-        }
     }
 
     func shutdown() {
@@ -240,8 +225,6 @@ final class PhononSpeechService: TranscriptionService {
         onPreparingChanged?(false)
         pumpTask?.cancel()
         pumpTask = nil
-        idleTask?.cancel()
-        idleTask = nil
         audioQueue.clear()
         worker.shutdown()
     }
