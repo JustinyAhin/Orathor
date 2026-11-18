@@ -6,18 +6,25 @@ private let logger = Logger(subsystem: "segbedji.Orathor", category: "Transcript
 @Observable
 final class TranscriptHistoryService {
     private(set) var entries: [TranscriptEntry] = []
+    private(set) var loadErrorMessage: String?
 
     private let storageURL: URL
     private let recordingsURL: URL
     private let transcriptsFileURL: URL
+    private let shouldPersist: Bool
 
-    init() {
-        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        storageURL = appSupport.appendingPathComponent("segbedji.Orathor", isDirectory: true)
-        recordingsURL = storageURL.appendingPathComponent("Recordings", isDirectory: true)
-        transcriptsFileURL = storageURL.appendingPathComponent("transcripts.json")
+    init(storageURL: URL? = nil) {
+        let manager = FileManager.default
+        let appSupport =
+            manager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? manager.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support")
+        self.storageURL =
+            storageURL ?? appSupport.appendingPathComponent("segbedji.Orathor", isDirectory: true)
+        recordingsURL = self.storageURL.appendingPathComponent("Recordings", isDirectory: true)
+        transcriptsFileURL = self.storageURL.appendingPathComponent("transcripts.json")
+        shouldPersist = storageURL != nil || !AppRuntime.isRunningTests
 
-        guard !AppRuntime.isRunningTests else { return }
+        guard shouldPersist else { return }
         createDirectoriesIfNeeded()
         loadEntries()
     }
@@ -54,11 +61,19 @@ final class TranscriptHistoryService {
     }
 
     func add(_ entry: TranscriptEntry) {
+        guard loadErrorMessage == nil else {
+            logger.error("Refusing to change history after a loading error")
+            return
+        }
         entries.insert(entry, at: 0)
         saveEntries()
     }
 
     func delete(_ entry: TranscriptEntry) {
+        guard loadErrorMessage == nil else {
+            logger.error("Refusing to delete history after a loading error")
+            return
+        }
         if let audioURL = audioFileURL(for: entry) {
             try? FileManager.default.removeItem(at: audioURL)
         }
@@ -99,12 +114,14 @@ final class TranscriptHistoryService {
             entries = try decoder.decode([TranscriptEntry].self, from: data)
             logger.notice("Loaded \(self.entries.count) entries from disk")
         } catch {
+            loadErrorMessage =
+                "Couldn’t load your saved transcripts. Recording is paused to protect your history."
             logger.error("Failed to load: \(error)")
         }
     }
 
     private func saveEntries() {
-        guard !AppRuntime.isRunningTests else { return }
+        guard shouldPersist, loadErrorMessage == nil else { return }
         do {
             let encoder = JSONEncoder()
             encoder.dateEncodingStrategy = .iso8601

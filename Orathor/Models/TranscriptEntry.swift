@@ -15,10 +15,13 @@ struct TranscriptEntry: Identifiable, Codable {
     let targetAppName: String?
     let targetAppBundleID: String?
     let audioFileName: String?
-    /// Engine that produced the stored text. `nil` when transcription failed.
-    let engine: SpeechEngine?
+    /// Engine that produced the stored text. `nil` if absent or unsupported by this app version.
+    var engine: SpeechEngine? { engineRawValue.flatMap { SpeechEngine(rawValue: $0) } }
     /// Engine selected by the user. Differs from `engine` after local fallback.
-    let requestedEngine: SpeechEngine?
+    var requestedEngine: SpeechEngine? { requestedEngineRawValue.flatMap { SpeechEngine(rawValue: $0) } }
+    // Retain identifiers from newer builds without requiring engine support.
+    private let engineRawValue: String?
+    private let requestedEngineRawValue: String?
     /// `nil` for entries written before fallback status was introduced.
     let status: TranscriptStatus?
     let failureMessage: String?
@@ -30,6 +33,14 @@ struct TranscriptEntry: Identifiable, Codable {
     let rawText: String?
     /// Label for the model that performed formatting (e.g. on-device Foundation Models).
     let formattingModel: String?
+
+    private enum CodingKeys: String, CodingKey {
+        case id, text, timestamp, durationSeconds, wordCount
+        case targetAppName, targetAppBundleID, audioFileName
+        case engineRawValue = "engine"
+        case requestedEngineRawValue = "requestedEngine"
+        case status, failureMessage, smartFormatted, rawText, formattingModel
+    }
 
     init(
         text: String,
@@ -55,8 +66,8 @@ struct TranscriptEntry: Identifiable, Codable {
         self.targetAppName = targetAppName
         self.targetAppBundleID = targetAppBundleID
         self.audioFileName = audioFileName
-        self.engine = engine
-        self.requestedEngine = requestedEngine
+        self.engineRawValue = engine?.rawValue
+        self.requestedEngineRawValue = requestedEngine?.rawValue
         self.status = status
         self.failureMessage = failureMessage
         self.smartFormatted = smartFormatted

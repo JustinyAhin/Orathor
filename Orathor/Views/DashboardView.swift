@@ -29,7 +29,9 @@ struct DashboardView: View {
     }
 
     var body: some View {
-        if entries.isEmpty {
+        if let message = historyService.loadErrorMessage {
+            ContentUnavailableView("Saved history unavailable", systemImage: "exclamationmark.triangle", description: Text(message))
+        } else if entries.isEmpty {
             emptyState
         } else {
             ScrollView {

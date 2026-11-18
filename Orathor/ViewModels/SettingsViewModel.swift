@@ -139,8 +139,9 @@ final class SettingsViewModel {
     init() {
         let stored = AppPreferences.shared.string(forKey: "speechEngine") ?? SpeechEngine.apple.rawValue
         selectedEngine = SpeechEngine(rawValue: stored) ?? .apple
-        deepgramApiKey = KeychainService.load(key: "deepgramApiKey") ?? ""
-        openAIApiKey = KeychainService.load(key: "openaiApiKey") ?? ""
+        // Hosted tests never need the user's cloud credentials or Keychain prompts.
+        deepgramApiKey = AppRuntime.isRunningTests ? "" : KeychainService.load(key: "deepgramApiKey") ?? ""
+        openAIApiKey = AppRuntime.isRunningTests ? "" : KeychainService.load(key: "openaiApiKey") ?? ""
 
         let storedInsert = AppPreferences.shared.string(forKey: "insertHotkey") ?? HotkeyModifier.rightOption.rawValue
         insertHotkey = HotkeyModifier(rawValue: storedInsert) ?? .rightOption

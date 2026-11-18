@@ -70,6 +70,7 @@ final class TranscriptionViewModel {
             openAITranscriptionDelay: config.openAITranscriptionDelay
         )
         configureSpeechServiceErrorHandler()
+        errorMessage = historyService.loadErrorMessage
         guard !AppRuntime.isRunningTests else { return }
         DispatchQueue.main.async { [self] in self.setUp() }
     }
@@ -313,6 +314,12 @@ final class TranscriptionViewModel {
             diag.log("START ignored — recording is already active or finalizing")
             pendingRecordingStartID = nil
             recordingOverlay.dismiss(sessionID: startID)
+            return
+        }
+        if let historyError = historyService.loadErrorMessage {
+            pendingRecordingStartID = nil
+            recordingOverlay.dismiss(sessionID: startID)
+            errorMessage = historyError
             return
         }
         await license.refresh()
