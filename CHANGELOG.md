@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.0.18 — 2026-11-18
+
+### Fixes
+
+- **Recents list in the menu bar** — the popover shows your recent transcripts again instead of an empty space under the search bar
+- **App icons for every app** — transcripts from apps with a space in their name (Google Chrome, Beeper Desktop, Rex Beta) show the app's icon instead of a generic file icon
+- **Safer transcript history** — history with entries from an engine this version does not know still loads, and Orathor never overwrites your saved history after a failed load
+
 ## 0.0.17 — 2026-09-01
 
 ### Fixes
