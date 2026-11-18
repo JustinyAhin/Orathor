@@ -370,7 +370,7 @@ private struct TopAppRow: View {
     @ViewBuilder
     private var appIcon: some View {
         if let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
-            Image(nsImage: NSWorkspace.shared.icon(forFile: appURL.path()))
+            Image(nsImage: NSWorkspace.shared.icon(forFile: appURL.path(percentEncoded: false)))
                 .resizable()
                 .frame(width: 20, height: 20)
         } else {

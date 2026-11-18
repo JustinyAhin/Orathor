@@ -90,7 +90,7 @@ struct MainTranscriptRow: View {
     private var appIcon: some View {
         if let bundleID = entry.targetAppBundleID,
            let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) {
-            Image(nsImage: NSWorkspace.shared.icon(forFile: appURL.path()))
+            Image(nsImage: NSWorkspace.shared.icon(forFile: appURL.path(percentEncoded: false)))
                 .resizable()
                 .frame(width: 14, height: 14)
         }
