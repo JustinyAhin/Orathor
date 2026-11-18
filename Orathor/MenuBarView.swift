@@ -184,7 +184,7 @@ struct MenuBarView: View {
                     .padding(.horizontal, Spacing.sm)
                     .padding(.vertical, Spacing.sm)
                 }
-                .frame(maxHeight: 320)
+                .frame(minHeight: 200, maxHeight: 320)
             }
         }
     }
